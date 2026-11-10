@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Buckshot Roulette 3D (GitHub Pages Edition)</title>
+  <style>
+    body { margin: 0; background: #0b0b0b; color: #fff; font-family: sans-serif; overflow: hidden; }
+    #ui {
+      position: absolute; top: 20px; left: 20px; z-index: 10;
+      background: rgba(15, 15, 15, 0.9); padding: 25px; border-radius: 10px;
+      border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    }
+    input { padding: 8px; font-size: 16px; width: 120px; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px; text-align: center; }
+    button { padding: 9px 15px; font-size: 16px; background: #b22222; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    button:hover { background: #ff0000; }
+    #status { margin-top: 15px; font-size: 14px; color: #aaa; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+
+  <div id="ui">
+    <h2>BUCKSHOT ROULETTE 3D</h2>
+    <div id="menu">
+      <p>3桁の部屋コードを入力または作成:</p>
+      <input type="text" id="roomInput" placeholder="例: 777" maxlength="3">
+      <button id="connectBtn">部屋に入る / 作成</button>
+    </div>
+    <div id="status">接続待機中...</div>
+  </div>
+
+  <!-- Three.js (3D描画用) と PeerJS (サーバーレス対戦用) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+  <script>
+    // --- 1. Three.js 3Dシーンの構築 ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0a0a);
+
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 3, 4);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // ライティング
+    scene.add(new THREE.AmbientLight(0x222222));
+    const pointLight = new THREE.PointLight(0xff3311, 2.5, 10);
+    pointLight.position.set(0, 2, 0);
+    scene.add(pointLight);
+
+    // カジノのテーブル
+    const table = new THREE.Mesh(
+      new THREE.BoxGeometry(3.5, 0.2, 2),
+      new THREE.MeshStandardMaterial({ color: 0x181818, roughness: 0.9 })
+    );
+    scene.add(table);
+
+    // 簡易的な銃のモデル（ボックスの組み合わせ）
+    const gunGroup = new THREE.Group();
+    const barrel = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.05, 0.05, 1, 16),
+      new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.9 })
+    );
+    barrel.rotation.x = Math.PI / 2;
+    gunGroup.add(barrel);
+    gunGroup.position.set(0, 0.3, 0.5);
+    scene.add(gunGroup);
+
+    function animate() {
+      requestAnimationFrame(animate);
+      gunGroup.rotation.y += 0.005; // 雰囲気用の回転
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // --- 2. PeerJS による 3桁コード通信ロジック ---
+    let peer = null;
+    let conn = null;
+    const PREFIX = "buckshot-roulette-room-"; // 競合防止用プレフィックス
+
+    document.getElementById('connectBtn').addEventListener('click', () => {
+      const code = document.getElementById('roomInput').value;
+      if (code.length !== 3) {
+        alert("3桁の数字を入力してください");
+        return;
+      }
+
+      const myId = PREFIX + code;
+      document.getElementById('status').innerText = `部屋 ${code} に接続を試みています...`;
+
+      // まずホスト（部屋作成者）としてPeerを作成を試みる
+      peer = new Peer(myId);
+
+      peer.on('open', (id) => {
+        // 自分がホストになれた場合（部屋がなかった場合）
+        document.getElementById('status').innerText = `部屋 ${code} を作成しました。相手の接続を待っています...`;
+        
+        peer.on('connection', (connection) => {
+          conn = connection;
+          setupConnection();
+          document.getElementById('status').innerText = "対戦相手が参加しました！ゲーム開始";
+          document.getElementById('menu').style.display = 'none';
+        });
+      });
+
+      peer.on('error', (err) => {
+        // すでにそのID（部屋）が存在する場合は、ゲストとして参加する
+        if (err.type === 'unavailable-id') {
+          document.getElementById('status').innerText = `部屋 ${code} に参加しています...`;
+          peer.destroy(); // 古いインスタンス破棄
+          
+          peer = new Peer(); // ランダムIDで一時Peer作成
+          peer.on('open', () => {
+            conn = peer.connect(myId);
+            setupConnection();
+            document.getElementById('status').innerText = `部屋 ${code} に接続しました！ゲーム開始`;
+            document.getElementById('menu').style.display = 'none';
+          });
+        } else {
+          document.getElementById('status').innerText = "エラー: " + err.type;
+        }
+      });
+    });
+
+    function setupConnection() {
+      conn.on('data', (data) => {
+        console.log("受信したアクション:", data);
+        // ここに相手の行動（撃った、パスしたなど）を反映する処理を書く
+      });
+
+      conn.on('close', () => {
+        alert("対戦相手が切断しました。");
+        location.reload();
+      });
+    }
+  </script>
+</body>
+</html>
