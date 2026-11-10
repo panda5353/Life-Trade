@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Live or Die (LoD) ver0.2</title>
+  <title>Live or Die (LoD) ver0.3 Monster Edition</title>
   <style>
     * {
       box-sizing: border-box;
@@ -30,7 +30,7 @@
       z-index: 1;
     }
 
-    /* BGM Iframe */
+    /* BGM (YouTube Iframe) */
     #bgm-container {
       position: absolute;
       width: 1px;
@@ -41,7 +41,7 @@
       pointer-events: none;
     }
 
-    /* 暗転＆除細動器演出用オーバーレイ */
+    /* 除細動器・ゲームオーバー演出 */
     #resus-overlay {
       position: absolute;
       top: 0;
@@ -64,11 +64,18 @@
     }
     .resus-text {
       color: #00ffcc;
-      font-size: 2.5rem;
-      font-weight: bold;
-      letter-spacing: 4px;
-      text-shadow: 0 0 20px #00ffcc;
-      animation: blink 0.4s infinite alternate;
+      font-size: 3rem;
+      font-weight: 900;
+      letter-spacing: 6px;
+      text-shadow: 0 0 25px #00ffcc;
+      animation: blink 0.3s infinite alternate;
+    }
+    .death-text {
+      color: #ff0000;
+      font-size: 3.5rem;
+      font-weight: 900;
+      letter-spacing: 8px;
+      text-shadow: 0 0 30px #ff0000;
     }
     @keyframes blink {
       0% { opacity: 0.2; }
@@ -110,7 +117,7 @@
 
     .lod-highlight {
       color: #ff0000;
-      font-size: 4.5rem;
+      font-size: 4.8rem;
       text-shadow: 0 0 25px #ff0000;
       display: inline-block;
       animation: pulse 2s infinite alternate;
@@ -118,7 +125,7 @@
 
     @keyframes pulse {
       0% { transform: scale(1); }
-      100% { transform: scale(1.03); }
+      100% { transform: scale(1.05); }
     }
 
     .right-half {
@@ -152,6 +159,10 @@
       border-radius: 4px;
       outline: none;
     }
+    .code-input:focus {
+      border-color: #ff0000;
+      box-shadow: 0 0 15px rgba(255, 0, 0, 0.4);
+    }
 
     .btn {
       width: 100%;
@@ -165,6 +176,10 @@
       cursor: pointer;
       letter-spacing: 2px;
       box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
+      transition: all 0.2s;
+    }
+    .btn:active {
+      transform: scale(0.98);
     }
     .btn-secondary {
       background: #222;
@@ -181,7 +196,7 @@
       min-height: 20px;
     }
 
-    /* ゲームUI */
+    /* HUD UI */
     #game-ui {
       position: absolute;
       top: 0;
@@ -207,7 +222,7 @@
       border: 1px solid #333;
       padding: 12px 20px;
       border-radius: 6px;
-      min-width: 180px;
+      min-width: 200px;
     }
 
     .player-name {
@@ -226,7 +241,7 @@
       height: 18px;
       background: #ff0000;
       box-shadow: 0 0 8px #ff0000;
-      border-radius: 2px;
+      border-radius: 50%;
     }
     .hp-node.empty {
       background: #222;
@@ -234,7 +249,7 @@
     }
 
     .shell-counter {
-      background: rgba(0,0,0,0.8);
+      background: rgba(0,0,0,0.85);
       border: 1px solid #444;
       padding: 8px 18px;
       border-radius: 20px;
@@ -249,35 +264,6 @@
       align-items: center;
       gap: 12px;
       pointer-events: auto;
-    }
-
-    .items-container {
-      display: flex;
-      gap: 8px;
-      background: rgba(0,0,0,0.7);
-      padding: 8px 12px;
-      border-radius: 8px;
-      border: 1px solid #333;
-      min-height: 60px;
-    }
-
-    .item-btn {
-      padding: 8px 12px;
-      background: #1a1a1a;
-      border: 1px solid #444;
-      border-radius: 6px;
-      color: #fff;
-      font-size: 0.85rem;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2px;
-      transition: all 0.2s;
-    }
-    .item-btn:hover {
-      border-color: #ff0000;
-      background: #2a2a2a;
     }
 
     .action-controls {
@@ -296,8 +282,12 @@
       border-radius: 6px;
       transition: all 0.2s;
     }
+    .act-btn:hover:not(:disabled) {
+      background: #ff0000;
+      box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+    }
     .act-btn:disabled {
-      opacity: 0.4;
+      opacity: 0.3;
       cursor: not-allowed;
       border-color: #444;
       background: rgba(30,30,30,0.4);
@@ -308,7 +298,7 @@
       top: 35%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 2.2rem;
+      font-size: 2.5rem;
       font-weight: 900;
       color: #ff0000;
       text-shadow: 0 0 20px #000;
@@ -340,15 +330,15 @@
 </head>
 <body>
 
-  <!-- 横画面推奨 -->
+  <!-- 横画面推奨警告 -->
   <div id="orient-warning">
     <div style="font-size: 3rem; margin-bottom: 10px;">🔄</div>
     <h2>画面を横向きにしてください</h2>
   </div>
 
-  <!-- 除細動器復活演出 -->
+  <!-- 除細動器・死亡オーバーレイ -->
   <div id="resus-overlay">
-    <div class="resus-text">⚡ CLEAR! ⚡</div>
+    <div id="resus-title" class="resus-text">⚡ CLEAR! ⚡</div>
     <div style="color: #aaa; margin-top: 15px; font-size: 1.1rem;" id="resus-sub">除細動器起動中...</div>
   </div>
 
@@ -366,7 +356,7 @@
       <div class="title-logo">
         <span class="lod-highlight">L</span>IVE <span class="lod-highlight">o</span>r <span class="lod-highlight">D</span>IE
       </div>
-      <div style="color:#666; margin-top:15px; letter-spacing:2px;">ver0.2 MULTIPLAYER</div>
+      <div style="color:#666; margin-top:15px; letter-spacing:2px;">ver0.3 MONSTER EDITION</div>
     </div>
     <div class="right-half">
       <div class="join-box">
@@ -383,14 +373,14 @@
   <div id="game-ui" style="display: none;">
     <div class="hud-top">
       <div class="player-card">
-        <div class="player-name">対戦相手 (OPPONENT)</div>
+        <div class="player-name">MONSTER (OPPONENT)</div>
         <div id="opp-hp" class="health-bar"></div>
       </div>
       <div class="shell-counter">
         残弾: <span id="live-count" style="color:#ff3333; font-weight:bold;">?</span> 実弾 / <span id="blank-count" style="color:#aaa; font-weight:bold;">?</span> 空砲
       </div>
       <div class="player-card">
-        <div class="player-name">あなた (YOU)</div>
+        <div class="player-name">YOU</div>
         <div id="my-hp" class="health-bar"></div>
       </div>
     </div>
@@ -398,9 +388,6 @@
     <div id="turn-banner" class="turn-banner">YOUR TURN</div>
 
     <div class="hud-bottom">
-      <!-- アイテム一覧 -->
-      <div id="items-panel" class="items-container"></div>
-
       <div class="action-controls">
         <button id="btn-shoot-opp" class="act-btn">相手を撃つ</button>
         <button id="btn-shoot-self" class="act-btn" style="border-color: #888; background: rgba(50,50,50,0.5);">自分を撃つ</button>
@@ -408,12 +395,11 @@
     </div>
   </div>
 
-  <!-- Three.js & PeerJS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
   <script>
-    // --- 1. SE Synthesizer (Web Audio API) ---
+    // --- 1. Sound Engine (Synthesizer & Unique Item SEs) ---
     class SoundEngine {
       constructor() {
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -423,12 +409,10 @@
         if (this.ctx.state === 'suspended') this.ctx.resume();
       }
 
-      // 「バン！」実弾発射音
+      // 「バン！」実弾音
       playBang() {
         this.resume();
         const now = this.ctx.currentTime;
-        
-        // 重低音ノイズ
         const bufSize = this.ctx.sampleRate * 0.5;
         const buffer = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
         const data = buffer.getChannelData(0);
@@ -436,14 +420,13 @@
         
         const noise = this.ctx.createBufferSource();
         noise.buffer = buffer;
-
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(1200, now);
-        filter.frequency.exponentialRampToValueAtTime(80, now + 0.45);
+        filter.frequency.setValueAtTime(1400, now);
+        filter.frequency.exponentialRampToValueAtTime(60, now + 0.45);
 
         const gain = this.ctx.createGain();
-        gain.gain.setValueAtTime(1.5, now);
+        gain.gain.setValueAtTime(1.8, now);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
 
         noise.connect(filter);
@@ -452,15 +435,15 @@
         noise.start(now);
       }
 
-      // 「かち」空砲クリック音
+      // 「かち」空砲音
       playKachi() {
         this.resume();
         const now = this.ctx.currentTime;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(1000, now);
-        osc.frequency.exponentialRampToValueAtTime(400, now + 0.04);
+        osc.frequency.setValueAtTime(900, now);
+        osc.frequency.exponentialRampToValueAtTime(350, now + 0.04);
         gain.gain.setValueAtTime(0.6, now);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.04);
         osc.connect(gain);
@@ -468,17 +451,15 @@
         osc.start(now);
       }
 
-      // 除細動器（ピー・チャージ音＆ドン！）
+      // 除細動器音
       playDefibrillator() {
         this.resume();
         const now = this.ctx.currentTime;
-        
-        // チャージ音 (昇音)
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(200, now);
-        osc.frequency.linearRampToValueAtTime(800, now + 1.2);
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.linearRampToValueAtTime(900, now + 1.2);
         gain.gain.setValueAtTime(0.1, now);
         gain.gain.linearRampToValueAtTime(0.3, now + 1.2);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 1.3);
@@ -486,15 +467,14 @@
         gain.connect(this.ctx.destination);
         osc.start(now);
 
-        // 放電ショック音 (1.2秒後)
         setTimeout(() => {
           const shock = this.ctx.createOscillator();
           const sgain = this.ctx.createGain();
           shock.type = 'square';
-          shock.frequency.setValueAtTime(100, this.ctx.currentTime);
-          shock.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.3);
-          sgain.gain.setValueAtTime(0.8, this.ctx.currentTime);
-          sgain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+          shock.frequency.setValueAtTime(120, this.ctx.currentTime);
+          shock.frequency.exponentialRampToValueAtTime(20, this.ctx.currentTime + 0.35);
+          sgain.gain.setValueAtTime(1.0, this.ctx.currentTime);
+          sgain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
           shock.connect(sgain);
           sgain.connect(this.ctx.destination);
           shock.start();
@@ -516,16 +496,78 @@
         osc.start(now);
       }
 
-      playItem() {
+      // アイテム専用SE群
+      playItemSaw() {
+        this.resume();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.linearRampToValueAtTime(800, now + 0.2);
+        osc.frequency.linearRampToValueAtTime(400, now + 0.4);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+      }
+
+      playItemMagnifier() {
+        this.resume();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.25);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+      }
+
+      playItemBeer() {
         this.resume();
         const now = this.ctx.currentTime;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(400, now);
-        osc.frequency.exponentialRampToValueAtTime(800, now + 0.12);
+        osc.frequency.setValueAtTime(250, now);
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+      }
+
+      playItemCigarette() {
+        this.resume();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.linearRampToValueAtTime(880, now + 0.3);
         gain.gain.setValueAtTime(0.3, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+      }
+
+      playItemHandcuffs() {
+        this.resume();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.setValueAtTime(400, now + 0.1);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start(now);
@@ -534,88 +576,119 @@
 
     const sound = new SoundEngine();
 
-    // --- 2. 3D Graphic Setup & Characters ---
+    // --- 2. 3D Graphics Setup ---
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x050505);
 
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 2.2, 3.2);
-    camera.lookAt(0, 0.8, -0.8);
+    camera.position.set(0, 2.3, 3.2);
+    camera.lookAt(0, 0.6, -0.6);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     container.appendChild(renderer.domElement);
 
-    // 照明
     scene.add(new THREE.AmbientLight(0x151515));
     const spotLight = new THREE.SpotLight(0xff3311, 3.5, 12, Math.PI / 3, 0.5);
     spotLight.position.set(0, 4.5, 0);
     spotLight.castShadow = true;
     scene.add(spotLight);
 
-    // テーブル
-    const tableGeo = new THREE.BoxGeometry(3.2, 0.1, 2.2);
+    // 自分側・相手側の分割テーブル
+    const myTableGeo = new THREE.BoxGeometry(2.8, 0.1, 1.0);
+    const oppTableGeo = new THREE.BoxGeometry(2.8, 0.1, 1.0);
     const tableMat = new THREE.MeshStandardMaterial({ color: 0x121212, roughness: 0.8 });
-    const table = new THREE.Mesh(tableGeo, tableMat);
-    table.position.set(0, 0, 0);
-    scene.add(table);
 
-    // 審判NPC (Dealer) - 正面奥
+    const myTable = new THREE.Mesh(myTableGeo, tableMat);
+    myTable.position.set(0, 0, 0.6);
+    scene.add(myTable);
+
+    const oppTable = new THREE.Mesh(oppTableGeo, tableMat);
+    oppTable.position.set(0, 0, -0.6);
+    scene.add(oppTable);
+
+    // 審判NPC
     const dealerGroup = new THREE.Group();
-    const dealerHead = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16), new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.5 }));
-    dealerHead.position.set(0, 1.4, -1.8);
-    // ディーラーの仮面・赤目
+    const dealerHead = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+    dealerHead.position.set(0, 1.5, -1.9);
     const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
     const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), eyeMat);
     const eyeR = eyeL.clone();
-    eyeL.position.set(-0.1, 1.45, -1.5);
-    eyeR.position.set(0.1, 1.45, -1.5);
+    eyeL.position.set(-0.1, 1.55, -1.6);
+    eyeR.position.set(0.1, 1.55, -1.6);
     dealerGroup.add(dealerHead, eyeL, eyeR);
     scene.add(dealerGroup);
 
-    // 相手プレイヤー（Character） - テーブル向かい
-    const oppGroup = new THREE.Group();
-    const headGeo = new THREE.SphereGeometry(0.3, 16, 16);
-    const headMat = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.7 });
-    const oppHead = new THREE.Mesh(headGeo, headMat);
-    oppHead.position.set(0, 1.2, -1.0);
+    // 👹 不気味なモンスター対戦相手（顔＋手）
+    const oppMonsterGroup = new THREE.Group();
 
-    // キャラクターの仮面風顔面
-    const maskGeo = new THREE.BoxGeometry(0.35, 0.35, 0.1);
-    const maskMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.2 });
-    const oppMask = new THREE.Mesh(maskGeo, maskMat);
-    oppMask.position.set(0, 1.2, -0.75);
+    // モンスターの頭部（長頭）
+    const headGeo = new THREE.ConeGeometry(0.4, 0.8, 8);
+    const monsterMat = new THREE.MeshStandardMaterial({ color: 0x1a241a, roughness: 0.9, metalness: 0.1 });
+    const monsterHead = new THREE.Mesh(headGeo, monsterMat);
+    monsterHead.rotation.x = Math.PI;
+    monsterHead.position.set(0, 1.3, -1.1);
 
-    const bodyGeo = new THREE.CylinderGeometry(0.3, 0.4, 0.8, 16);
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1a1a2e });
-    const oppBody = new THREE.Mesh(bodyGeo, bodyMat);
-    oppBody.position.set(0, 0.5, -1.0);
+    // 複数の不揃いな目
+    const mEyeMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    for (let i = 0; i < 5; i++) {
+      const me = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), mEyeMat);
+      me.position.set((Math.random() - 0.5) * 0.3, 1.2 + (Math.random() - 0.5) * 0.2, -0.88);
+      oppMonsterGroup.add(me);
+    }
 
-    oppGroup.add(oppHead, oppMask, oppBody);
-    scene.add(oppGroup);
+    // 長い下顎・角
+    const horn = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.05, 0.4), monsterMat);
+    horn.position.set(0, 1.6, -1.1);
+    oppMonsterGroup.add(horn);
 
-    // 血の噴出エフェクト用パーティクル
+    // モンスターの手（テーブルの上に乗っている）
+    const oppHandMat = new THREE.MeshStandardMaterial({ color: 0x111a11 });
+    const oppLeftHand = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.06, 0.3), oppHandMat);
+    const oppRightHand = oppLeftHand.clone();
+    oppLeftHand.position.set(-0.6, 0.12, -0.4);
+    oppRightHand.position.set(0.6, 0.12, -0.4);
+
+    oppMonsterGroup.add(monsterHead, oppLeftHand, oppRightHand);
+    scene.add(oppMonsterGroup);
+
+    // ✋ 自分側の手（画面手前左右から伸びている）
+    const myHandMat = new THREE.MeshStandardMaterial({ color: 0x3d281d });
+    const myLeftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.8), myHandMat);
+    const myRightArm = myLeftArm.clone();
+
+    myLeftArm.rotation.x = Math.PI / 3;
+    myLeftArm.rotation.z = -Math.PI / 6;
+    myLeftArm.position.set(-0.8, 0.3, 1.2);
+
+    myRightArm.rotation.x = Math.PI / 3;
+    myRightArm.rotation.z = Math.PI / 6;
+    myRightArm.position.set(0.8, 0.3, 1.2);
+
+    scene.add(myLeftArm, myRightArm);
+
+    // 血のパーティクル
     const bloodParticles = [];
     function spawnBlood() {
-      for (let i = 0; i < 30; i++) {
+      for (let i = 0; i < 40; i++) {
         const p = new THREE.Mesh(
           new THREE.SphereGeometry(0.03, 8, 8),
           new THREE.MeshBasicMaterial({ color: 0xaa0000 })
         );
         p.position.set(0, 1.2, -0.8);
         p.userData = {
-          vx: (Math.random() - 0.5) * 0.08,
-          vy: Math.random() * 0.08 + 0.02,
-          vz: (Math.random() - 0.5) * 0.08
+          vx: (Math.random() - 0.5) * 0.1,
+          vy: Math.random() * 0.1 + 0.02,
+          vz: (Math.random() - 0.5) * 0.1
         };
         scene.add(p);
         bloodParticles.push(p);
       }
     }
 
-    // ショットガン3Dモデル
+    // ショットガン
     const gunGroup = new THREE.Group();
     const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.2, 16), new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8 }));
     barrel.rotation.x = Math.PI / 2;
@@ -626,9 +699,13 @@
     gunGroup.position.set(0, 0.15, 0);
     scene.add(gunGroup);
 
-    // テーブル上のアイテム3D表現（簡略メッシュ）
-    const itemsGroup = new THREE.Group();
-    scene.add(itemsGroup);
+    // Raycaster (3Dアイテムクリック検知用)
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    // 3Dアイテム表示グループ
+    const item3DGroup = new THREE.Group();
+    scene.add(item3DGroup);
 
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -636,22 +713,18 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    let oppHeadBaseY = 1.2;
+    let oppHeadBaseY = 0;
     function renderAnim() {
       requestAnimationFrame(renderAnim);
+      monsterHead.position.y = 1.3 + Math.sin(Date.now() * 0.003) * 0.04 + oppHeadBaseY;
 
-      // キャラクターのアイドリング動作（息づかい・挙動）
-      oppHead.position.y = oppHeadBaseY + Math.sin(Date.now() * 0.003) * 0.03;
-      oppMask.position.y = oppHead.position.y;
-
-      // 血の物理アニメーション
       for (let i = bloodParticles.length - 1; i >= 0; i--) {
         const p = bloodParticles[i];
         p.position.x += p.userData.vx;
         p.position.y += p.userData.vy;
         p.position.z += p.userData.vz;
-        p.userData.vy -= 0.003; // 重力
-        if (p.position.y < 0.1) {
+        p.userData.vy -= 0.004;
+        if (p.position.y < 0.05) {
           scene.remove(p);
           bloodParticles.splice(i, 1);
         }
@@ -661,28 +734,29 @@
     }
     renderAnim();
 
-    // --- 3. Items Definitions (ゲーム8準拠5種) ---
+    // --- 3. Items Definitions ---
     const ITEMS_DEF = {
-      saw: { name: 'ノコギリ', desc: '銃身を切り落としダメージ2倍' },
-      magnifier: { name: '虫眼鏡', desc: '装填されている弾の種類を確認' },
-      beer: { name: 'ビール', desc: '薬室の弾を1発捨てる' },
-      cigarette: { name: 'タバコ', desc: 'HPを1回復' },
-      handcuffs: { name: '手錠', desc: '相手の次のターンをスキップ' }
+      saw: { name: 'ノコギリ', color: 0xff3333, se: () => sound.playItemSaw() },
+      magnifier: { name: '虫眼鏡', color: 0x33ffff, se: () => sound.playItemMagnifier() },
+      beer: { name: 'ビール', color: 0xffff33, se: () => sound.playItemBeer() },
+      cigarette: { name: 'タバコ', color: 0xffffff, se: () => sound.playItemCigarette() },
+      handcuffs: { name: '手錠', color: 0xaaaaaa, se: () => sound.playItemHandcuffs() }
     };
 
-    // --- 4. Game State & Network ---
+    // --- 4. Game Logic & P2P Network ---
     let peer = null;
     let conn = null;
     let isHost = false;
     let isAI = false;
-    const PREFIX = "lod-game-room-v2-";
+    const PREFIX = "lod-game-room-v3-";
 
     let gameState = {
-      myHp: 3,
-      oppHp: 3,
-      maxHp: 3,
+      myHp: 5,        // ハート5個
+      oppHp: 5,       // ハート5個
+      maxHp: 5,
       magazine: [],
-      currentTurn: 'host', // 'host' or 'guest'
+      currentTurn: 'host',
+      roundCount: 1,
       sawActive: false,
       handcuffed: false,
       myItems: [],
@@ -694,7 +768,31 @@
       iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
     }
 
-    // UI更新（ボタン活性状態など）
+    // テーブル上への3Dアイテムメッシュ配置
+    function rebuild3DItems() {
+      while(item3DGroup.children.length > 0) {
+        item3DGroup.remove(item3DGroup.children[0]);
+      }
+
+      // 自分側のテーブル（手前 z=0.6）
+      gameState.myItems.forEach((itemKey, i) => {
+        const def = ITEMS_DEF[itemKey];
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.12), new THREE.MeshStandardMaterial({ color: def.color }));
+        mesh.position.set(-0.9 + i * 0.25, 0.12, 0.6);
+        mesh.userData = { itemKey, index: i, owner: 'me' };
+        item3DGroup.add(mesh);
+      });
+
+      // 相手側のテーブル（奥 z=-0.6）
+      gameState.oppItems.forEach((itemKey, i) => {
+        const def = ITEMS_DEF[itemKey];
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.12), new THREE.MeshStandardMaterial({ color: def.color }));
+        mesh.position.set(-0.9 + i * 0.25, 0.12, -0.6);
+        mesh.userData = { itemKey, index: i, owner: 'opp' };
+        item3DGroup.add(mesh);
+      });
+    }
+
     function updateUI() {
       const myHpDiv = document.getElementById('my-hp');
       const oppHpDiv = document.getElementById('opp-hp');
@@ -713,40 +811,25 @@
 
       const isMyTurn = (isHost && gameState.currentTurn === 'host') || (!isHost && gameState.currentTurn === 'guest');
 
-      // ターン表示
       const banner = document.getElementById('turn-banner');
-      banner.innerText = isMyTurn ? "YOUR TURN" : "OPPONENT'S TURN";
+      banner.innerText = isMyTurn ? "YOUR TURN" : "MONSTER'S TURN";
       banner.style.opacity = '1';
       setTimeout(() => { banner.style.opacity = '0'; }, 1200);
 
-      // ターン終了時に完全にボタンを無効化
       document.getElementById('btn-shoot-opp').disabled = !isMyTurn;
       document.getElementById('btn-shoot-self').disabled = !isMyTurn;
 
-      // アイテム描画
-      const itemsPanel = document.getElementById('items-panel');
-      itemsPanel.innerHTML = '';
-      gameState.myItems.forEach((itemKey, idx) => {
-        const item = ITEMS_DEF[itemKey];
-        if (!item) return;
-        const btn = document.createElement('button');
-        btn.className = 'item-btn';
-        btn.disabled = !isMyTurn;
-        btn.innerHTML = `<span>${item.name}</span>`;
-        btn.onclick = () => useItem(itemKey, idx);
-        itemsPanel.appendChild(btn);
-      });
+      rebuild3DItems();
     }
 
-    // 審判NPCによるショットガン回転開始演出
+    // ラウンド進行＆アイテムランダム生成（ターン数に応じて複数支給）
     function startRoundSequence() {
       document.getElementById('btn-shoot-opp').disabled = true;
       document.getElementById('btn-shoot-self').disabled = true;
 
       sound.playRack();
       
-      // 弾丸生成
-      const total = Math.floor(Math.random() * 4) + 3; // 3〜6発
+      const total = Math.floor(Math.random() * 4) + 3;
       let live = Math.floor(Math.random() * (total - 1)) + 1;
       let blank = total - live;
 
@@ -759,15 +842,19 @@
       }
       gameState.magazine = mag;
 
-      // アイテム配布（各プレイヤー最大4個）
-      if (gameState.myItems.length < 4) gameState.myItems.push(getRandomItemKey());
-      if (gameState.oppItems.length < 4) gameState.oppItems.push(getRandomItemKey());
+      // ターン数（ラウンド）に応じた配布数（1〜3個）
+      const giveCount = Math.min(3, Math.floor(gameState.roundCount / 2) + 1);
+      for (let k = 0; k < giveCount; k++) {
+        if (gameState.myItems.length < 5) gameState.myItems.push(getRandomItemKey());
+        if (gameState.oppItems.length < 5) gameState.oppItems.push(getRandomItemKey());
+      }
+      gameState.roundCount++;
 
-      // 3Dショットガンの回転ルーレット演出
+      // ショットガンルーレット回転演出
       let startTime = Date.now();
       let duration = 2000;
       let initialRot = gunGroup.rotation.y;
-      let targetRot = initialRot + Math.PI * 6 + (Math.random() > 0.5 ? 0 : Math.PI); // ホストかゲストへ配分
+      let targetRot = initialRot + Math.PI * 6 + (Math.random() > 0.5 ? 0 : Math.PI);
 
       function spinAnim() {
         let elapsed = Date.now() - startTime;
@@ -778,14 +865,10 @@
         if (progress < 1) {
           requestAnimationFrame(spinAnim);
         } else {
-          // 回転結果決定
           const isFacingMe = Math.abs(gunGroup.rotation.y % (Math.PI * 2)) < 1;
           gameState.currentTurn = isFacingMe ? (isHost ? 'host' : 'guest') : (isHost ? 'guest' : 'host');
           updateUI();
-
-          if (isHost && conn) {
-            syncState();
-          }
+          syncState();
 
           if (isAI && gameState.currentTurn === 'guest') {
             setTimeout(aiTurn, 1500);
@@ -800,37 +883,76 @@
       return keys[Math.floor(Math.random() * keys.length)];
     }
 
-    // アイテム使用処理
-    function useItem(itemKey, index) {
+    // 3Dアイテム使用アニメーション ＆ SE
+    function trigger3DItemUse(mesh, itemKey, onComplete) {
+      const def = ITEMS_DEF[itemKey];
+      if (def && def.se) def.se();
+
+      let startY = mesh.position.y;
+      let startTime = Date.now();
+      
+      function itemAnim() {
+        let elapsed = Date.now() - startTime;
+        let progress = Math.min(elapsed / 600, 1);
+
+        mesh.position.y = startY + Math.sin(progress * Math.PI) * 0.4;
+        mesh.rotation.y += 0.1;
+
+        if (progress < 1) {
+          requestAnimationFrame(itemAnim);
+        } else {
+          if (onComplete) onComplete();
+        }
+      }
+      itemAnim();
+    }
+
+    // クリック（タップ）での3Dアイテム使用処理
+    window.addEventListener('click', (e) => {
       const isMyTurn = (isHost && gameState.currentTurn === 'host') || (!isHost && gameState.currentTurn === 'guest');
       if (!isMyTurn) return;
 
-      sound.playItem();
-      gameState.myItems.splice(index, 1);
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(item3DGroup.children);
+
+      if (intersects.length > 0) {
+        const clickedObj = intersects[0].object;
+        if (clickedObj.userData && clickedObj.userData.owner === 'me') {
+          const { itemKey, index } = clickedObj.userData;
+          
+          trigger3DItemUse(clickedObj, itemKey, () => {
+            gameState.myItems.splice(index, 1);
+            executeItemLogic(itemKey);
+            updateUI();
+            syncState();
+          });
+        }
+      }
+    });
+
+    function executeItemLogic(itemKey) {
       if (itemKey === 'saw') {
         gameState.sawActive = true;
-        alert("ノコギリ使用: 次の射撃のダメージが2倍になります！");
+        alert("ノコギリ: ダメージ2倍！");
       } else if (itemKey === 'magnifier') {
         const nextBullet = gameState.magazine[gameState.magazine.length - 1];
-        alert(`虫眼鏡使用: 次の弾薬は【 ${nextBullet ? '実弾 (LIVE)' : '空砲 (BLANK)'} 】です！`);
+        alert(`虫眼鏡: 次の弾薬は【 ${nextBullet ? '実弾' : '空砲'} 】`);
       } else if (itemKey === 'beer') {
         const ejected = gameState.magazine.pop();
         sound.playRack();
-        alert(`ビール使用: 薬室から【 ${ejected ? '実弾' : '空砲'} 】を排出しました！`);
+        alert(`ビール: 【 ${ejected ? '実弾' : '空砲'} 】を排除！`);
       } else if (itemKey === 'cigarette') {
         if (gameState.myHp < gameState.maxHp) gameState.myHp++;
-        alert("タバコ使用: HPが1回復しました！");
+        alert("タバコ: ハート(HP)が1回復！");
       } else if (itemKey === 'handcuffs') {
         gameState.handcuffed = true;
-        alert("手錠使用: 相手の次のターンをスキップします！");
+        alert("手錠: 相手の次のターンをスキップ！");
       }
-
-      updateUI();
-      syncState();
     }
 
-    // 銃を撃つロジック
     function shoot(target) {
       const isMyTurn = (isHost && gameState.currentTurn === 'host') || (!isHost && gameState.currentTurn === 'guest');
       if (!isMyTurn) return;
@@ -838,34 +960,33 @@
       document.getElementById('btn-shoot-opp').disabled = true;
       document.getElementById('btn-shoot-self').disabled = true;
 
-      // 相手キャラクターのアクション（身構える・動く）
-      oppGroup.position.z = -0.1;
-      setTimeout(() => { oppGroup.position.z = 0; }, 300);
+      // モンスターの前進アニメーション
+      oppMonsterGroup.position.z = 0.15;
+      setTimeout(() => { oppMonsterGroup.position.z = 0; }, 300);
 
       const isLive = gameState.magazine.pop();
       const damage = gameState.sawActive ? 2 : 1;
       gameState.sawActive = false;
 
       if (isLive) {
-        sound.playBang(); // 実弾：「バン！」
+        sound.playBang();
         spotLight.intensity = 10;
         setTimeout(() => { spotLight.intensity = 3.5; }, 120);
 
         if (target === 'opp') {
           gameState.oppHp = Math.max(0, gameState.oppHp - damage);
-          spawnBlood(); // 相手が血を噴き出す
+          spawnBlood();
         } else {
           gameState.myHp = Math.max(0, gameState.myHp - damage);
         }
 
-        // ターン交代ロジック (手錠判定)
         if (gameState.handcuffed) {
-          gameState.handcuffed = false; // スキップ発動
+          gameState.handcuffed = false;
         } else {
           gameState.currentTurn = gameState.currentTurn === 'host' ? 'guest' : 'host';
         }
       } else {
-        sound.playKachi(); // 空砲：「かち」
+        sound.playKachi();
         if (target === 'opp') {
           if (gameState.handcuffed) {
             gameState.handcuffed = false;
@@ -873,7 +994,6 @@
             gameState.currentTurn = gameState.currentTurn === 'host' ? 'guest' : 'host';
           }
         }
-        // 自分を撃って空砲ならターン継続
       }
 
       updateUI();
@@ -885,7 +1005,6 @@
         return;
       }
 
-      // 弾切れなら次ラウンド
       if (gameState.magazine.length === 0) {
         setTimeout(startRoundSequence, 1200);
       } else if (isAI && gameState.currentTurn === 'guest') {
@@ -893,63 +1012,89 @@
       }
     }
 
-    // 死亡＆除細動器復活演出
+    // ハートが残っていれば除細動器起動、0ならゲーム終了
     function handleDeathSequence(didIDie) {
-      sound.playDefibrillator();
+      const resus = document.getElementById('resus-overlay');
+      const resusTitle = document.getElementById('resus-title');
+      const resusSub = document.getElementById('resus-sub');
 
       if (didIDie) {
-        // 自分がやられたら画面暗転
-        const resus = document.getElementById('resus-overlay');
-        document.getElementById('resus-sub').innerText = "あなたの心臓が停止しました...";
-        resus.classList.add('active');
-
-        setTimeout(() => {
-          resus.classList.remove('active');
-          alert("除細動器により蘇生されました。ゲームをリセットします。");
-          location.reload();
-        }, 2200);
-      } else {
-        // 相手がやられたら血を吐き倒れる
-        oppHeadBaseY = 0.2; // 倒れる
-        spawnBlood();
-
-        setTimeout(() => {
-          const resus = document.getElementById('resus-overlay');
-          document.getElementById('resus-sub').innerText = "対戦相手の心肺蘇生中...";
+        if (gameState.myHp > 0) {
+          // ハートあり -> 除細動器復活
+          sound.playDefibrillator();
+          resusTitle.innerText = "⚡ CLEAR! ⚡";
+          resusTitle.className = "resus-text";
+          resusSub.innerText = "除細動器起動中...ハートが消費されました";
           resus.classList.add('active');
 
           setTimeout(() => {
             resus.classList.remove('active');
-            oppHeadBaseY = 1.2;
-            alert("対戦相手が除細動器で復活しました！");
+            updateUI();
+          }, 2200);
+        } else {
+          // ハート0 -> 死亡終了
+          resusTitle.innerText = "YOU DIED";
+          resusTitle.className = "death-text";
+          resusSub.innerText = "ハートがすべて失われました...";
+          resus.classList.add('active');
+
+          setTimeout(() => {
+            alert("GAME OVER - あなたは命を落としました");
             location.reload();
+          }, 2500);
+        }
+      } else {
+        if (gameState.oppHp > 0) {
+          sound.playDefibrillator();
+          oppHeadBaseY = -0.6;
+          spawnBlood();
+          resusTitle.innerText = "⚡ CLEAR! ⚡";
+          resusTitle.className = "resus-text";
+          resusSub.innerText = "モンスターが除細動器で蘇生中...";
+          resus.classList.add('active');
+
+          setTimeout(() => {
+            resus.classList.remove('active');
+            oppHeadBaseY = 0;
+            updateUI();
           }, 2000);
-        }, 800);
+        } else {
+          oppHeadBaseY = -0.8;
+          spawnBlood();
+          resusTitle.innerText = "VICTORY!";
+          resusTitle.className = "resus-text";
+          resusSub.innerText = "モンスターを完全に撃破しました！";
+          resus.classList.add('active');
+
+          setTimeout(() => {
+            alert("YOU SURVIVED! あなたの勝利です！");
+            location.reload();
+          }, 2500);
+        }
       }
     }
 
-    // AI思考
     function aiTurn() {
       if (gameState.currentTurn !== 'guest' || !isAI) return;
 
       const live = gameState.magazine.filter(b => b).length;
       const total = gameState.magazine.length;
 
-      // AIがアイテムを持っていれば使用
-      if (gameState.oppItems.length > 0 && Math.random() > 0.5) {
+      // AIのアイテム使用
+      if (gameState.oppItems.length > 0 && Math.random() > 0.4) {
         const itemKey = gameState.oppItems.pop();
-        if (itemKey === 'saw') gameState.sawActive = true;
-        if (itemKey === 'cigarette' && gameState.oppHp < gameState.maxHp) gameState.oppHp++;
+        const def = ITEMS_DEF[itemKey];
+        if (def && def.se) def.se();
+        executeItemLogic(itemKey);
       }
 
       if (live / total >= 0.5) {
-        shoot('my'); // プレイヤーを撃つ
+        shoot('my');
       } else {
-        shoot('opp'); // 自分を撃つ
+        shoot('opp');
       }
     }
 
-    // P2P通信データ同期
     function syncState() {
       if (!isAI && conn) {
         conn.send({ type: 'SYNC', state: gameState });
@@ -959,14 +1104,15 @@
     function setupNetwork() {
       conn.on('data', (data) => {
         if (data.type === 'SYNC') {
-          // 相手視点に合わせてターン・ステートを同期
           gameState = data.state;
           updateUI();
+          if (isAI && gameState.currentTurn === 'guest') {
+            setTimeout(aiTurn, 1500);
+          }
         }
       });
     }
 
-    // イベント登録
     document.getElementById('btn-join').addEventListener('click', () => {
       startBGM();
       sound.resume();
