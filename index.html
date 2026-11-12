@@ -78,7 +78,7 @@
     z-index: 500;
   }
 
-  /* 画面共通レイアウト */
+  /* 画面共通 */
   .screen {
     position: fixed;
     inset: 0;
@@ -90,7 +90,7 @@
   }
   .screen.active { display: flex; }
 
-  /* ターミナルヘッダー */
+  /* タイトル＆入室前ロビー */
   .term-header {
     display: flex;
     justify-content: space-between;
@@ -178,7 +178,7 @@
     pointer-events: none;
   }
 
-  /* 入室後ロビーレイアウト（参考画像準拠） */
+  /* 入室後ロビー */
   .room-layout {
     display: flex;
     flex-direction: column;
@@ -268,7 +268,7 @@
     display: block;
   }
 
-  /* ゲーム中HUDレイヤー */
+  /* ゲーム中HUD (極力文字を排除) */
   #hud-layer {
     position: fixed;
     inset: 0;
@@ -276,7 +276,7 @@
     z-index: 200;
   }
 
-  /* 右側の視点切り替えボタン */
+  /* 右側の視点切替ボタンのみ */
   .view-controls {
     position: absolute;
     right: 14px;
@@ -293,19 +293,18 @@
     color: var(--neon);
     font-family: inherit;
     font-size: 13px;
-    padding: 8px 12px;
+    padding: 10px 14px;
     cursor: pointer;
-    box-shadow: 0 0 8px rgba(57, 255, 20, 0.25);
   }
   .view-btn.active {
     background: var(--neon);
     color: #000;
   }
 
-  /* 中央通知バナー */
+  /* 中央通知バナー（最小限） */
   #center-banner {
     position: absolute;
-    top: 15%;
+    top: 14%;
     left: 50%;
     transform: translateX(-50%);
     background: rgba(0, 0, 0, 0.94);
@@ -331,9 +330,8 @@
     justify-content: center;
     background: rgba(0, 0, 0, 0.9);
     border: 1px solid var(--neon);
-    padding: 10px 14px;
+    padding: 10px 16px;
     pointer-events: auto;
-    max-width: 92vw;
   }
 
   /* アイテム配布ボックスモーダル */
@@ -422,7 +420,7 @@
     text-decoration: line-through;
   }
 
-  /* 画面フラッシュ演出 */
+  /* 画面フラッシュ */
   #flash-fx {
     position: fixed;
     inset: 0;
@@ -432,7 +430,7 @@
     transition: opacity 0.25s;
   }
 
-  /* 初回音声有効化＆BGM開始オーバーレイ */
+  /* 初回タッチでYouTube BGMと効果音を有効化するオーバーレイ */
   #audio-start-overlay {
     position: fixed;
     inset: 0;
@@ -449,14 +447,14 @@
 </head>
 <body class="scanlines">
 
-<!-- 初回タッチでBGM＆効果音を有効化するオーバーレイ -->
+<!-- 初回タッチオーバーレイ -->
 <div id="audio-start-overlay">
   <div style="font-size:26px; margin-bottom:12px; text-shadow:0 0 12px var(--neon);">[ LIFE TRADE ver 0.3 ]</div>
   <div style="font-size:15px; margin-bottom:24px; opacity:0.85;">画面をタッチしてBGM（YouTube耐久音源）と効果音を有効化してください</div>
   <button class="btn" style="font-size:18px; padding:12px 26px;" onclick="initializeAudioAndStart()">ゲームを開始する</button>
 </div>
 
-<!-- 隠しYouTube BGMプレーヤー (マグネサイトさん 30分耐久: lRjJk4xhHHE) -->
+<!-- 隠しYouTube BGMプレーヤー (ご指定の30分耐久音源: lRjJk4xhHHE) -->
 <div style="display:none;" id="youtube-bgm-container">
   <iframe width="200" height="100" src="https://www.youtube.com/embed/lRjJk4xhHHE?autoplay=1&loop=1&playlist=lRjJk4xhHHE" frameborder="0" allow="autoplay"></iframe>
 </div>
@@ -500,9 +498,9 @@
     <div class="box-panel">
       <div style="font-size:13px; line-height:1.6;">
         <div>&gt; STATUS: <span id="net-status">READY</span></div>
-        <div>&gt; 残機モニター: ⚡黄緑色LED仕様</div>
-        <div>&gt; アイテム: 3Dオブジェクト直タップで操作</div>
-        <div>&gt; ショットガン: タップで発砲 / スライドで次弾確認</div>
+        <div>&gt; 残機モニター: ⚡黄緑色LED仕様 (減少しっかり反映)</div>
+        <div>&gt; アイテム: 3Dオブジェクト直タップで使用</div>
+        <div>&gt; ショットガン: タップで構えて発砲 / 左右スライドで次弾確認</div>
         <div id="title-error" style="color:var(--danger); margin-top:6px;"></div>
       </div>
     </div>
@@ -542,6 +540,7 @@
   <div id="name-tags-container"></div>
 
   <div id="hud-layer">
+    <!-- 右側の視点切替ボタンのみ -->
     <div class="view-controls">
       <button class="view-btn active" id="cam-btn-front" onclick="setCameraMode('front')">対面</button>
       <button class="view-btn" id="cam-btn-down" onclick="setCameraMode('down')">手元</button>
@@ -608,17 +607,17 @@ function playShotSound(isLive) {
 }
 
 /* ==========================================================================
-   アイテム定義（全8種）
+   アイテム定義（視認性の高いカラーと3Dモデル）
    ========================================================================== */
 const ITEM_DEFS = {
-  saw: { id: 'saw', name: 'ノコギリ', desc: '実弾ダメージが2になる' },
-  magnifier: { id: 'magnifier', name: '虫眼鏡', desc: '次の弾を確認する' },
-  cigarette: { id: 'cigarette', name: 'タバコ', desc: 'ライフ+1回復' },
-  beer: { id: 'beer', name: 'ビール', desc: '弾を1発排莢する' },
-  medicine: { id: 'medicine', name: '期限切れ薬', desc: '50%で+2 / 50%で-1' },
-  adrenaline: { id: 'adrenaline', name: 'アドレナリン', desc: '相手のアイテムを奪う' },
-  inverter: { id: 'inverter', name: 'インバータ', desc: '弾の性質を反転' },
-  phone: { id: 'phone', name: '使い捨て携帯', desc: '何番目の弾か判明する' }
+  saw: { id: 'saw', name: 'ノコギリ', color: 0xff3333 },
+  magnifier: { id: 'magnifier', name: '虫眼鏡', color: 0x33ccff },
+  cigarette: { id: 'cigarette', name: 'タバコ', color: 0xffffff },
+  beer: { id: 'beer', name: 'ビール', color: 0xffcc00 },
+  medicine: { id: 'medicine', name: '期限切れ薬', color: 0x33ff66 },
+  adrenaline: { id: 'adrenaline', name: 'アドレナリン', color: 0xcc00cc },
+  inverter: { id: 'inverter', name: 'インバータ', color: 0x00ffcc },
+  phone: { id: 'phone', name: '使い捨て携帯', color: 0x777777 }
 };
 const ITEM_KEYS = Object.keys(ITEM_DEFS);
 
@@ -915,7 +914,7 @@ function executeItemUse(player, slotIndex) {
   player.handAction = 'item_' + itemId;
 
   let privateMsg = null;
-  let bannerText = `${player.name} が【${ITEM_DEFS[itemId].name}】を使用`;
+  let bannerText = `${player.name} : 【${ITEM_DEFS[itemId].name}】`;
 
   switch (itemId) {
     case 'saw':
@@ -923,7 +922,7 @@ function executeItemUse(player, slotIndex) {
       break;
     case 'magnifier': {
       const nextShell = gameState.shells[0];
-      privateMsg = nextShell ? '🔍 次の弾は【赤：実弾】だ！' : '🔍 次の弾は【青：空砲】だ！';
+      privateMsg = nextShell ? '🔍 次の弾は【赤：実弾】' : '🔍 次の弾は【青：空砲】';
       break;
     }
     case 'cigarette':
@@ -977,7 +976,7 @@ function executeShoot(shooter, targetId) {
   }
 
   const selfShot = (shooter.id === target.id);
-  let text = isLive ? `💥 実弾！！ ${target.name} に ${dmg} ダメージ` : `💧 空砲`;
+  let text = isLive ? `💥 実弾 (${dmg} DMG)` : `💧 空砲`;
 
   if (!(selfShot && !isLive)) advanceTurnIndex();
 
@@ -1032,7 +1031,7 @@ function applyStateUpdate(newState, event) {
 
   if (event) {
     if (event.kind === 'round_start') {
-      showBanner(`ROUND ${event.round} 装填完了 [ 実弾: ${event.live} / 空砲: ${event.blank} ]`, 4500);
+      showBanner(`ROUND ${event.round} : 実弾 ${event.live} / 空砲 ${event.blank}`, 4500);
       playTone(440, 'sine', 0.2, 0.2);
     } else if (event.kind === 'banner' || event.kind === 'item_fx') {
       showBanner(event.text, 2200);
@@ -1041,7 +1040,7 @@ function applyStateUpdate(newState, event) {
       showBanner(event.text, 2200);
       if (event.isLive) triggerFlash('rgba(255,20,20,0.55)');
     } else if (event.kind === 'gameover') {
-      showBanner(`🏆 勝者: ${event.winner}`, 8000);
+      showBanner(`WINNER: ${event.winner}`, 8000);
     }
   }
 
@@ -1124,19 +1123,20 @@ function finishLootPhase() {
   sendToHost({ type: 'loot_done', slots: tempSlots });
 }
 
+/* 黄緑色の残機モニター（⚡減少しっかり反映・鮮明なLED発光） */
 function createHpCanvasTexture(hp, maxHp = 5) {
   const c = document.createElement('canvas');
   c.width = 256; c.height = 64;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#031203';
+  ctx.fillStyle = '#010a01';
   ctx.fillRect(0, 0, 256, 64);
-  ctx.strokeStyle = '#76ff03'; // 黄緑色の残機モニター
-  ctx.lineWidth = 4;
-  ctx.strokeRect(2, 2, 252, 60);
+  ctx.strokeStyle = '#39ff14';
+  ctx.lineWidth = 5;
+  ctx.strokeRect(3, 3, 250, 58);
 
   for (let i = 0; i < maxHp; i++) {
-    const x = 28 + i * 48;
-    ctx.fillStyle = i < hp ? '#76ff03' : '#142b10';
+    const x = 32 + i * 44;
+    ctx.fillStyle = i < hp ? '#39ff14' : '#0d220d';
     ctx.font = 'bold 36px monospace';
     ctx.fillText('⚡', x - 12, 46);
   }
@@ -1167,52 +1167,67 @@ function buildHandMesh() {
   );
 }
 
+/* 視認性の高い3Dアイテムモデル */
 function buildItem3DMesh(itemId) {
-  const mat = new THREE.MeshStandardMaterial({ color: 0x76ff03, roughness: 0.4, metalness: 0.3 });
-  if (itemId === 'beer') return new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.15, 10), mat);
-  return new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 0.15), mat);
+  const def = ITEM_DEFS[itemId];
+  const mat = new THREE.MeshStandardMaterial({ color: def.color, roughness: 0.3, metalness: 0.4, emissive: def.color, emissiveIntensity: 0.2 });
+  if (itemId === 'beer') return new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.16, 12), mat);
+  if (itemId === 'magnifier') {
+    const g = new THREE.Group();
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.012, 8, 16), mat);
+    ring.rotation.x = Math.PI / 2;
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.1, 8), mat);
+    handle.rotation.z = Math.PI / 2; handle.position.x = 0.08;
+    g.add(ring, handle);
+    return g;
+  }
+  return new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.06, 0.16), mat);
 }
 
 function initThreeScene() {
   const canvas = document.getElementById('three-canvas');
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x050404);
-  scene.fog = new THREE.FogExp2(0x050404, 0.08);
+  scene.background = new THREE.Color(0x020202);
+  scene.fog = new THREE.FogExp2(0x020202, 0.07);
 
   camera = new THREE.PerspectiveCamera(56, window.innerWidth / window.innerHeight, 0.1, 50);
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-  scene.add(new THREE.AmbientLight(0x443a32, 1.4));
-  const spot = new THREE.SpotLight(0xffebd6, 2.5, 16, Math.PI / 3, 0.4);
-  spot.position.set(0, 5, 0);
+  scene.add(new THREE.AmbientLight(0x332a22, 1.5));
+  const spot = new THREE.SpotLight(0x39ff14, 2.0, 16, Math.PI / 3, 0.5);
+  spot.position.set(0, 5.5, 0);
   scene.add(spot);
 
   tableGroup = new THREE.Group();
   scene.add(tableGroup);
+
+  // カラオケショットガンが置かれているテーブル
   const tableMesh = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.5, 2.3, 0.26, 5),
-    new THREE.MeshStandardMaterial({ color: 0x222620, roughness: 0.8 })
+    new THREE.CylinderGeometry(2.6, 2.4, 0.26, 5),
+    new THREE.MeshStandardMaterial({ color: 0x1c221a, roughness: 0.75 })
   );
   tableMesh.position.y = 0.72;
   tableGroup.add(tableMesh);
 
+  // ショットガンモデル（中央配置）
   shotgunGroup = new THREE.Group();
   shotgunGroup.position.set(0, 0.96, 0);
   const receiver = new THREE.Mesh(
     new THREE.BoxGeometry(0.1, 0.12, 0.4),
-    new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8 })
+    new THREE.MeshStandardMaterial({ color: 0x1f1f1f, metalness: 0.8 })
   );
   barrelMesh = new THREE.Mesh(
     new THREE.CylinderGeometry(0.03, 0.03, 0.9, 12),
-    new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.85 })
+    new THREE.MeshStandardMaterial({ color: 0x555555, metalness: 0.9 })
   );
   barrelMesh.rotation.x = Math.PI / 2;
   barrelMesh.position.set(0, 0.02, 0.4);
   shotgunGroup.add(receiver, barrelMesh);
   tableGroup.add(shotgunGroup);
 
+  // スライド（虫眼鏡・次弾確認）＆ タップ（ショットガン発砲）の入力検知
   let pointerDownX = 0, pointerDownY = 0;
   canvas.addEventListener('pointerdown', (e) => {
     pointerDownX = e.clientX; pointerDownY = e.clientY;
@@ -1221,13 +1236,14 @@ function initThreeScene() {
     const dx = e.clientX - pointerDownX;
     const dy = e.clientY - pointerDownY;
 
-    if (Math.abs(dx) > 60 && Math.abs(dy) < 40) {
+    // 左右スライドで次弾確認
+    if (Math.abs(dx) > 55 && Math.abs(dy) < 40) {
       const me = gameState.players.find(p => p.id === myId);
       const isMyTurn = (gameState.phase === 'play' && gameState.players[gameState.turnIndex]?.id === myId);
       if (isMyTurn && gameState.shells.length > 0) {
         const next = gameState.shells[0];
-        showBanner(next ? '🔍 [次弾確認] 【赤：実弾】' : '🔍 [次弾確認] 【青：空砲】', 3000);
-        playTone(800, 'sine', 0.1, 0.1);
+        showBanner(next ? '🔍 次の弾：【赤：実弾】' : '🔍 次の弾：【青：空砲】', 3000);
+        playTone(850, 'sine', 0.1, 0.15);
         return;
       }
     }
@@ -1265,12 +1281,14 @@ function handleCanvasClick(hit) {
     obj = obj.parent;
   }
 
+  // 3Dオブジェクト直タップでアイテム使用
   if (clickedItem && clickedItem.ownerId === myId) {
     sendToHost({ type: 'use_item', slotIndex: clickedItem.slotIndex });
-    playTone(550, 'sine', 0.08, 0.15);
+    playTone(600, 'sine', 0.08, 0.15);
     return;
   }
 
+  // ショットガンタップでターゲット選択
   if (clickedShotgun) {
     openShootTargetModal();
   }
@@ -1321,12 +1339,13 @@ function update3DSceneFromState() {
       const group = new THREE.Group();
       scene.add(group);
 
+      // テーブル近くの残機画面（⚡黄緑色LED）
       const hpTex = createHpCanvasTexture(p.hp, p.maxHp);
       const screenMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.5, 0.12),
+        new THREE.PlaneGeometry(0.52, 0.13),
         new THREE.MeshBasicMaterial({ map: hpTex })
       );
-      screenMesh.position.set(0, 0.93, 1.76);
+      screenMesh.position.set(0, 0.94, 1.76);
       screenMesh.rotation.x = -0.3;
       screenMesh.rotation.y = Math.PI;
       group.add(screenMesh);
@@ -1336,10 +1355,8 @@ function update3DSceneFromState() {
       headGroup.rotation.y = Math.PI;
       group.add(headGroup);
 
-      const leftHand = buildHandMesh();
-      leftHand.position.set(-0.35, 1.05, 2.1);
-      const rightHand = buildHandMesh();
-      rightHand.position.set(0.35, 1.05, 2.1);
+      const leftHand = buildHandMesh(); leftHand.position.set(-0.35, 1.05, 2.1);
+      const rightHand = buildHandMesh(); rightHand.position.set(0.35, 1.05, 2.1);
       group.add(leftHand, rightHand);
 
       const nameTag = document.createElement('div');
@@ -1355,6 +1372,7 @@ function update3DSceneFromState() {
     vis.leftHand.visible = (p.id !== myId && p.alive);
     vis.rightHand.visible = (p.id !== myId && p.alive);
 
+    // HP更新を確実に反映
     vis.screenMesh.material.map = createHpCanvasTexture(p.hp, p.maxHp);
     vis.screenMesh.material.needsUpdate = true;
 
@@ -1403,13 +1421,17 @@ function animate3D() {
   camera.position.lerp(targetCamPos, 0.15);
   camera.lookAt(targetCamLook);
 
+  // ショットガンの持ち上げ＆向きモーション
   if (shotgunGroup) {
     let targetYaw = gameState.turnIndex * ((Math.PI * 2) / 5);
+    let targetYPos = 0.96;
     if (gameState.aimTargetId) {
       const tIdx = gameState.players.findIndex(p => p.id === gameState.aimTargetId);
       if (tIdx !== -1) targetYaw = tIdx * ((Math.PI * 2) / 5);
+      targetYPos = 1.12; // 構えた時に手元から持ち上げる
     }
     shotgunGroup.rotation.y += (targetYaw - shotgunGroup.rotation.y) * 0.12;
+    shotgunGroup.position.y += (targetYPos - shotgunGroup.position.y) * 0.15;
   }
 
   gameState.players.forEach((p, idx) => {
