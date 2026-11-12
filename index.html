@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Life Trade" />
 <meta name="theme-color" content="#000000" />
-<title>Life Trade ver 0.3</title>
+<title>Life Trade ver 0.5</title>
 
 <!-- Three.js & PeerJS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -22,6 +22,7 @@
     --neon-dark: #0a2205;
     --danger: #ff2a2a;
     --blank: #2a9df4;
+    --gold: #ffd700;
     --bg: #000000;
   }
 
@@ -310,7 +311,6 @@
     align-items: center;
     gap: 8px;
   }
-  /* 左上自分の残機⚡表示 */
   .my-hp-badge {
     background: rgba(0, 15, 0, 0.9);
     border: 1px solid var(--neon);
@@ -386,32 +386,32 @@
     white-space: nowrap;
   }
 
-  /* ラウンド開始時の弾配分オーバーレイ（上部に配置し3D装填アニメーションが見えるように） */
+  /* ラウンド開始時の弾配分オーバーレイ（自動進行カットシーン用） */
   #shell-visual-overlay {
     position: fixed;
-    top: 64px;
+    top: 56px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.92);
+    background: rgba(0, 0, 0, 0.94);
     border: 2px solid var(--neon);
-    padding: 10px 20px;
+    padding: 10px 24px;
     z-index: 320;
     display: none;
     flex-direction: column;
     align-items: center;
     gap: 8px;
-    box-shadow: 0 0 20px rgba(57, 255, 20, 0.4);
+    box-shadow: 0 0 24px rgba(57, 255, 20, 0.45);
     pointer-events: none;
   }
   .shell-icons-row {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     align-items: center;
     justify-content: center;
   }
   .shell-cartridge {
-    width: 18px;
-    height: 44px;
+    width: 20px;
+    height: 48px;
     border-radius: 3px 3px 1px 1px;
     position: relative;
     display: flex;
@@ -423,25 +423,25 @@
   .shell-cartridge::after {
     content: "";
     display: block;
-    height: 11px;
+    height: 12px;
     width: 100%;
     background: #d4af37;
     border-top: 1px solid #000;
   }
   .shell-cartridge.live {
     background: var(--danger);
-    box-shadow: 0 0 10px var(--danger);
+    box-shadow: 0 0 12px var(--danger);
   }
   .shell-cartridge.blank {
     background: var(--blank);
-    box-shadow: 0 0 10px var(--blank);
+    box-shadow: 0 0 12px var(--blank);
   }
   .shell-cartridge.loaded {
-    opacity: 0.25;
-    transform: translateY(-6px) scale(0.85);
+    opacity: 0.22;
+    transform: translateY(-8px) scale(0.82);
   }
 
-  /* 射撃構え中オーバーレイ（他プレイヤーは3D選択、自分撃ち＆キャンセルのみ表示） */
+  /* 射撃構え中オーバーレイ */
   #action-overlay {
     position: absolute;
     bottom: 14px;
@@ -543,6 +543,75 @@
     pointer-events: auto;
   }
 
+  /* 勝敗演出＆ランキング・再戦モーダル */
+  #result-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.86);
+    z-index: 380;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    pointer-events: auto;
+  }
+  .result-panel {
+    border: 2px solid var(--neon);
+    background: rgba(4, 14, 4, 0.96);
+    padding: 16px 22px;
+    width: min(680px, 95vw);
+    box-shadow: 0 0 30px rgba(57, 255, 20, 0.35);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .result-banner-title {
+    font-size: 26px;
+    letter-spacing: 3px;
+    text-align: center;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--neon);
+  }
+  .result-banner-title.win {
+    color: var(--gold);
+    border-color: var(--gold);
+    text-shadow: 0 0 14px rgba(255, 215, 0, 0.75);
+  }
+  .result-banner-title.lose {
+    color: var(--danger);
+    border-color: var(--danger);
+    text-shadow: 0 0 14px rgba(255, 42, 42, 0.75);
+  }
+  .ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .ranking-table th, .ranking-table td {
+    border: 1px solid var(--neon);
+    padding: 6px 10px;
+    text-align: center;
+  }
+  .ranking-table th {
+    background: rgba(57, 255, 20, 0.16);
+  }
+  .ranking-table tr.rank-1 {
+    color: var(--gold);
+    font-weight: bold;
+    background: rgba(255, 215, 0, 0.08);
+  }
+  .ranking-table tr.is-me {
+    box-shadow: inset 0 0 8px rgba(57, 255, 20, 0.45);
+  }
+  .result-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 4px;
+  }
+
   /* 3D頭上プレイヤー名ラベル */
   .name-tag {
     position: fixed;
@@ -613,7 +682,7 @@
   <div class="term-header">
     <div>
       <span class="game-title">Life Trade</span>
-      <span class="game-ver">ver 0.3</span>
+      <span class="game-ver">ver 0.5</span>
     </div>
     <div style="font-size:12px; display:flex; align-items:center;">
       <span>ONLINE 3D RUSSIAN ROULETTE [2-5 PLAYERS]</span>
@@ -643,8 +712,8 @@
       <div style="font-size:13px; line-height:1.5;">
         <div>&gt; TERMINAL STATUS: <span id="net-status">READY</span></div>
         <div>&gt; 初期ライフ: ⚡×5 (負け抜け制)</div>
+        <div>&gt; 初期弾数: 5発からラウンドごとに+1発 (赤・青 各40%以上)</div>
         <div>&gt; 毎ラウンド最大4個アイテム補充 (最大所持8枠)</div>
-        <div>&gt; 空砲を自分に撃つと連続ターン</div>
         <div id="title-error" style="color:var(--danger); margin-top:6px;"></div>
       </div>
       <div style="font-size:11px; opacity:0.75; border-top:1px dashed var(--neon); padding-top:6px;">
@@ -658,7 +727,7 @@
 <div id="lobby-screen" class="screen">
   <div class="room-layout">
     <div>
-      <div style="font-size:14px; margin-bottom:6px;">ハイローラー： <span style="float:right;">Life Trade ver 0.3 <button class="bgm-btn" id="bgm-btn-lobby" onclick="toggleBgm()">♪ BGM: ON</button></span></div>
+      <div style="font-size:14px; margin-bottom:6px;">ハイローラー： <span style="float:right;">Life Trade ver 0.5 <button class="bgm-btn" id="bgm-btn-lobby" onclick="toggleBgm()">♪ BGM: ON</button></span></div>
       <div class="player-table-wrap">
         <div class="player-list-box" id="lobby-player-list"></div>
         <div class="kick-col" id="lobby-kick-col"></div>
@@ -696,7 +765,6 @@
         <div class="hud-badge">
           <span id="hud-round">ROUND 1</span> | <span id="hud-turn-info">待機中...</span>
         </div>
-        <!-- 自分の残機⚡を左上に表示 -->
         <div class="my-hp-badge" id="hud-my-hp">
           ⚡⚡⚡⚡⚡
         </div>
@@ -722,12 +790,12 @@
 
     <!-- ラウンド開始時の視覚的弾装填表示 -->
     <div id="shell-visual-overlay">
-      <div id="shell-visual-title" style="font-size:14px; letter-spacing:1px;">CHAMBER LOADING...</div>
+      <div id="shell-visual-title" style="font-size:15px; letter-spacing:1px;">CHAMBER LOADING...</div>
       <div class="shell-icons-row" id="shell-visual-icons"></div>
-      <div id="shell-visual-legend" style="font-size:13px;"></div>
+      <div id="shell-visual-legend" style="font-size:14px;"></div>
     </div>
 
-    <!-- ショットガン構え中メニュー（相手は3Dモデルをタップ、自分はボタンで選択） -->
+    <!-- ショットガン構え中メニュー -->
     <div id="action-overlay"></div>
   </div>
 </div>
@@ -756,6 +824,32 @@
   <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:4px;">
     <button class="btn" onclick="closeItemModal()">キャンセル</button>
     <button class="btn" id="item-modal-use-btn">使用する</button>
+  </div>
+</div>
+
+<!-- 勝敗演出＆ランキング・再戦モーダル -->
+<div id="result-modal">
+  <div class="result-panel">
+    <div id="result-banner-title" class="result-banner-title">MATCH RESULT</div>
+    <div id="result-subtitle" style="text-align:center; font-size:15px;"></div>
+    <table class="ranking-table">
+      <thead>
+        <tr>
+          <th>順位</th>
+          <th>プレイヤー</th>
+          <th>残りライフ</th>
+          <th>与ダメージ</th>
+          <th>生存ラウンド</th>
+        </tr>
+      </thead>
+      <tbody id="ranking-tbody"></tbody>
+    </table>
+    <div class="result-actions">
+      <button class="btn" onclick="requestBackToLobby()">ロビーへ戻る</button>
+      <div id="rematch-area">
+        <button class="btn" id="rematch-btn" onclick="requestRematch()">▶ 再戦する（同じ部屋で再プレイ）</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -904,7 +998,7 @@ function toggleBgm() {
 })();
 
 /* ==========================================================================
-   1. アイテム定義（手錠を除いた全8種）
+   1. アイテム定義（全8種）
    ========================================================================== */
 const ITEM_DEFS = {
   saw: {
@@ -951,37 +1045,59 @@ const ITEM_DEFS = {
 const ITEM_KEYS = Object.keys(ITEM_DEFS);
 
 /* ==========================================================================
-   2. Web Audio 効果音シンセ
+   2. Web Audio 効果音シンセ（銃声・装填・勝敗ファンファーレ／敗北音）
    ========================================================================== */
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playTone(freq, type, dur, vol = 0.15) {
+function playTone(freq, type, dur, vol = 0.15, delay = 0) {
   if (audioCtx.state === 'suspended') audioCtx.resume();
+  const startTime = audioCtx.currentTime + delay;
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = type;
-  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-  gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+  osc.frequency.setValueAtTime(freq, startTime);
+  gain.gain.setValueAtTime(vol, startTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, startTime + dur);
   osc.connect(gain);
   gain.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + dur);
+  osc.start(startTime);
+  osc.stop(startTime + dur);
 }
+
 function playShotSound(isLive) {
   if (audioCtx.state === 'suspended') audioCtx.resume();
   if (isLive) {
-    playTone(90, 'sawtooth', 0.45, 0.35);
-    playTone(45, 'square', 0.5, 0.3);
+    playTone(90, 'sawtooth', 0.45, 0.35, 0);
+    playTone(45, 'square', 0.5, 0.3, 0);
   } else {
-    playTone(950, 'triangle', 0.08, 0.2);
-    setTimeout(() => playTone(600, 'square', 0.06, 0.15), 50);
+    playTone(950, 'triangle', 0.08, 0.2, 0);
+    playTone(600, 'square', 0.06, 0.15, 0.05);
+  }
+}
+
+function playMatchResultSound(isWinner) {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (isWinner) {
+    // 勝利ファンファーレ音（上昇アルペジオ＋和音）
+    playTone(523.25, 'triangle', 0.22, 0.22, 0.00); // C5
+    playTone(659.25, 'triangle', 0.22, 0.22, 0.14); // E5
+    playTone(783.99, 'triangle', 0.22, 0.22, 0.28); // G5
+    playTone(1046.50, 'triangle', 0.75, 0.28, 0.42); // C6
+    playTone(659.25, 'sine', 0.75, 0.18, 0.42);
+    playTone(783.99, 'sine', 0.75, 0.18, 0.42);
+  } else {
+    // 敗北重低音（下降ディミニッシュ）
+    playTone(220.00, 'sawtooth', 0.35, 0.22, 0.00); // A3
+    playTone(207.65, 'sawtooth', 0.35, 0.22, 0.26); // G#3
+    playTone(196.00, 'sawtooth', 0.35, 0.22, 0.52); // G3
+    playTone(138.59, 'sawtooth', 0.95, 0.28, 0.78); // C#3
+    playTone(69.30, 'square', 0.95, 0.22, 0.78);
   }
 }
 
 /* ==========================================================================
    3. ネットワーク＆ゲーム状態管理（PeerJS 3桁ルーム）
    ========================================================================== */
-const PEER_PREFIX = 'lifetrade-v03-room-';
+const PEER_PREFIX = 'lifetrade-v05-room-';
 let peer = null;
 let isHost = false;
 let myId = '';
@@ -991,7 +1107,7 @@ let connections = {};
 let hostConn = null;
 
 let gameState = {
-  phase: 'lobby',
+  phase: 'lobby', // 'lobby' | 'loading' | 'loot' | 'play' | 'gameover'
   maxPlayers: 5,
   round: 1,
   players: [],
@@ -1000,7 +1116,9 @@ let gameState = {
   initialShellCount: 0,
   sawActive: false,
   aimTargetId: null,
-  winnerName: ''
+  winnerId: '',
+  winnerName: '',
+  elimCounter: 0
 };
 
 const savedName = localStorage.getItem('lt_player_name');
@@ -1054,14 +1172,19 @@ function createRoom() {
         alive: true,
         lookYaw: 0,
         handAction: 'idle',
-        lootPending: []
+        lootPending: [],
+        damageDealt: 0,
+        survivedRound: 1,
+        elimOrder: 0
       }],
       turnIndex: 0,
       shells: [],
       initialShellCount: 0,
       sawActive: false,
       aimTargetId: null,
-      winnerName: ''
+      winnerId: '',
+      winnerName: '',
+      elimCounter: 0
     };
     enterLobbyUI();
   });
@@ -1224,31 +1347,82 @@ function leaveRoom() {
 
 function hostStartGame() {
   if (!isHost || gameState.players.length < 2) return;
+  resetMatchStats();
+  startNewRound();
+}
+
+function resetMatchStats() {
   gameState.round = 1;
+  gameState.elimCounter = 0;
+  gameState.winnerId = '';
+  gameState.winnerName = '';
   gameState.players.forEach(p => {
     p.hp = 5;
     p.alive = true;
     p.slots = Array(8).fill(null);
+    p.lootPending = [];
+    p.handAction = 'idle';
+    p.damageDealt = 0;
+    p.survivedRound = 1;
+    p.elimOrder = 0;
   });
   gameState.turnIndex = 0;
+}
+
+function requestRematch() {
+  if (!isHost) return;
+  resetMatchStats();
   startNewRound();
+}
+
+function requestBackToLobby() {
+  if (isHost) {
+    gameState.phase = 'lobby';
+    resetMatchStats();
+    broadcastState({ kind: 'back_to_lobby' });
+  } else {
+    leaveRoom();
+  }
 }
 
 /* ==========================================================================
    5. ホスト側ゲームロジック
+   （ラウンド1は5発スタート、以降ラウンドごとに+1発、赤・青それぞれ4割以上）
    ========================================================================== */
+let roundLoadingTimer = null;
+
 function startNewRound() {
+  clearTimeout(roundLoadingTimer);
   const alivePlayers = gameState.players.filter(p => p.alive);
   if (alivePlayers.length <= 1) {
+    const winner = alivePlayers[0] || null;
+    if (winner) {
+      winner.survivedRound = gameState.round;
+    }
     gameState.phase = 'gameover';
-    gameState.winnerName = alivePlayers[0] ? alivePlayers[0].name : 'DRAW';
-    broadcastState({ kind: 'gameover', winner: gameState.winnerName });
+    gameState.winnerId = winner ? winner.id : '';
+    gameState.winnerName = winner ? winner.name : 'DRAW';
+    broadcastState({
+      kind: 'gameover',
+      winnerId: gameState.winnerId,
+      winnerName: gameState.winnerName
+    });
     return;
   }
 
-  const total = Math.min(8, Math.max(3, alivePlayers.length + 2 + Math.floor(Math.random() * 3)));
-  const liveCount = Math.max(1, Math.min(total - 1, Math.round(total * (0.4 + Math.random() * 0.25))));
+  alivePlayers.forEach(p => {
+    p.survivedRound = gameState.round;
+  });
+
+  // ラウンド1: 5発スタート、ラウンド2: 6発、ラウンド3: 7発、ラウンド4以降: 最大8発
+  const total = Math.min(8, 5 + (gameState.round - 1));
+
+  // 赤（実弾）と青（空砲）の割合はそれぞれ40%以上（Math.ceil(total * 0.4) 〜 Math.floor(total * 0.6)）
+  const minRatioCount = Math.ceil(total * 0.4);
+  const maxRatioCount = total - minRatioCount;
+  const liveCount = minRatioCount + Math.floor(Math.random() * (maxRatioCount - minRatioCount + 1));
   const blankCount = total - liveCount;
+
   const shells = [];
   for (let i = 0; i < liveCount; i++) shells.push(true);
   for (let i = 0; i < blankCount; i++) shells.push(false);
@@ -1256,39 +1430,48 @@ function startNewRound() {
     const j = Math.floor(Math.random() * (i + 1));
     [shells[i], shells[j]] = [shells[j], shells[i]];
   }
+
   gameState.shells = shells;
   gameState.initialShellCount = total;
   gameState.sawActive = false;
   gameState.aimTargetId = null;
   gameState.players.forEach(p => { p.handAction = 'idle'; });
 
-  gameState.players.forEach(p => {
-    if (!p.alive) {
-      p.lootPending = [];
-      return;
-    }
-    const emptyCount = p.slots.filter(s => s === null).length;
-    const giveCount = Math.min(4, emptyCount);
-    const loot = [];
-    for (let i = 0; i < giveCount; i++) {
-      loot.push(ITEM_KEYS[Math.floor(Math.random() * ITEM_KEYS.length)]);
-    }
-    p.lootPending = loot;
-  });
-
-  const anyLoot = gameState.players.some(p => p.alive && p.lootPending.length > 0);
-  gameState.phase = anyLoot ? 'loot' : 'play';
-
   if (!gameState.players[gameState.turnIndex].alive) {
     advanceTurnIndex();
   }
 
+  // まず弾の配分を見せて薬室に込める自動進行カットシーンフェーズへ
+  gameState.phase = 'loading';
   broadcastState({
-    kind: 'round_start',
+    kind: 'round_load',
     round: gameState.round,
     live: liveCount,
     blank: blankCount
   });
+
+  const loadDurationMs = 1500 + total * 340;
+  roundLoadingTimer = setTimeout(() => {
+    if (gameState.phase !== 'loading') return;
+
+    gameState.players.forEach(p => {
+      if (!p.alive) {
+        p.lootPending = [];
+        return;
+      }
+      const emptyCount = p.slots.filter(s => s === null).length;
+      const giveCount = Math.min(4, emptyCount);
+      const loot = [];
+      for (let i = 0; i < giveCount; i++) {
+        loot.push(ITEM_KEYS[Math.floor(Math.random() * ITEM_KEYS.length)]);
+      }
+      p.lootPending = loot;
+    });
+
+    const anyLoot = gameState.players.some(p => p.alive && p.lootPending.length > 0);
+    gameState.phase = anyLoot ? 'loot' : 'play';
+    broadcastState();
+  }, loadDurationMs);
 }
 
 function advanceTurnIndex() {
@@ -1320,7 +1503,10 @@ function handleHostReceive(senderId, data) {
       alive: true,
       lookYaw: 0,
       handAction: 'idle',
-      lootPending: []
+      lootPending: [],
+      damageDealt: 0,
+      survivedRound: 1,
+      elimOrder: 0
     });
     broadcastState();
     return;
@@ -1424,7 +1610,12 @@ function executeItemUse(player, slotIndex, stealTargetId, stealSlotIndex) {
       } else {
         player.hp = Math.max(0, player.hp - 1);
         bannerText += ' → 腐っていた！ライフ -1！';
-        if (player.hp <= 0) player.alive = false;
+        if (player.hp <= 0 && player.alive) {
+          player.alive = false;
+          gameState.elimCounter++;
+          player.elimOrder = gameState.elimCounter;
+          player.survivedRound = gameState.round;
+        }
       }
       break;
     case 'inverter':
@@ -1435,7 +1626,6 @@ function executeItemUse(player, slotIndex, stealTargetId, stealSlotIndex) {
       break;
     case 'phone': {
       if (gameState.shells.length > 0) {
-        // 残弾からランダムに1発選び、「最初から何番目か」を計算して通知
         const remIdx = Math.floor(Math.random() * gameState.shells.length);
         const isLive = gameState.shells[remIdx];
         const consumedCount = Math.max(0, gameState.initialShellCount - gameState.shells.length);
@@ -1490,14 +1680,21 @@ function executeShoot(shooter, targetId) {
   gameState.aimTargetId = targetId;
   shooter.handAction = 'shoot';
 
+  const selfShot = (shooter.id === target.id);
+
   if (isLive) {
+    if (!selfShot) {
+      shooter.damageDealt = (shooter.damageDealt || 0) + dmg;
+    }
     target.hp = Math.max(0, target.hp - dmg);
-    if (target.hp <= 0) {
+    if (target.hp <= 0 && target.alive) {
       target.alive = false;
+      gameState.elimCounter++;
+      target.elimOrder = gameState.elimCounter;
+      target.survivedRound = gameState.round;
     }
   }
 
-  const selfShot = (shooter.id === target.id);
   let text = '';
   if (isLive) {
     text = `💥 ドォン！！【実弾(赤)】 ${target.name} に ${dmg} ダメージ！` + (!target.alive ? `（${target.name} 脱落！）` : '');
@@ -1548,18 +1745,26 @@ function handleClientReceive(data) {
    ========================================================================== */
 let threeInitialized = false;
 let cameraMode = 'front';
-let isAimingMode = false; // 自分がショットガンを構えてターゲット選択中か
+let isAimingMode = false;
+let isChamberCutscene = false;
 
 function applyStateUpdate(newState, event) {
   gameState = newState;
 
   if (gameState.phase === 'lobby') {
+    document.getElementById('result-modal').style.display = 'none';
+    document.getElementById('game-screen').classList.remove('active');
+    document.getElementById('lobby-screen').classList.add('active');
     renderLobby();
     return;
   }
 
   document.getElementById('lobby-screen').classList.remove('active');
   document.getElementById('game-screen').classList.add('active');
+
+  if (gameState.phase !== 'gameover') {
+    document.getElementById('result-modal').style.display = 'none';
+  }
 
   if (!threeInitialized) {
     initThreeScene();
@@ -1576,9 +1781,8 @@ function applyStateUpdate(newState, event) {
   updateGameHUD();
 
   if (event) {
-    if (event.kind === 'round_start') {
+    if (event.kind === 'round_load') {
       playChamberLoadAnimation(event.round, event.live, event.blank);
-      showBanner(`ROUND ${event.round} 開始！ [ 実弾(赤): ${event.live}発 / 空砲(青): ${event.blank}発 ]`, 4400);
     } else if (event.kind === 'banner' || event.kind === 'item_fx') {
       showBanner(event.text, 2400);
       if (event.item === 'cigarette' || event.item === 'medicine') triggerFlash('rgba(57,255,20,0.22)');
@@ -1591,7 +1795,7 @@ function applyStateUpdate(newState, event) {
         cameraShakeTime = 0.45;
       }
     } else if (event.kind === 'gameover') {
-      showBanner(`🏆 勝者: ${event.winner}！！`, 10000);
+      triggerMatchEndSequence(event.winnerId, event.winnerName);
     }
   }
 
@@ -1632,7 +1836,7 @@ function showSecretInspect(text, isLive) {
 }
 
 /* ==========================================================================
-   ラウンド開始時：実弾(赤)と空砲(青)を実際に3Dショットガンへ1発ずつ装填する描写
+   ラウンド開始時：込める球（実弾・空砲）をいったん見せて薬室へ込める自動進行シーン
    ========================================================================== */
 let loadingShellMeshes = [];
 
@@ -1642,7 +1846,9 @@ function playChamberLoadAnimation(round, liveCount, blankCount) {
   const icons = document.getElementById('shell-visual-icons');
   const legend = document.getElementById('shell-visual-legend');
 
-  title.textContent = `ROUND ${round} - CHAMBER LOADING`;
+  isChamberCutscene = true;
+
+  title.textContent = `ROUND ${round} - 装填される弾（計 ${liveCount + blankCount} 発）`;
   icons.innerHTML = '';
 
   const displayList = [];
@@ -1659,33 +1865,35 @@ function playChamberLoadAnimation(round, liveCount, blankCount) {
   legend.innerHTML = `<span style="color:var(--danger);">■ 実弾(赤): ${liveCount}発</span> ／ <span style="color:var(--blank);">■ 空砲(青): ${blankCount}発</span>`;
   overlay.style.display = 'flex';
 
-  // 3D空間上でも赤・青のシェルを並べて1発ずつショットガン薬室へ装填アニメーション
   loadingShellMeshes.forEach(m => scene.remove(m));
   loadingShellMeshes = [];
 
   displayList.forEach((isLive, idx) => {
     const shellGroup = new THREE.Group();
     const body = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.032, 0.032, 0.14, 12),
+      new THREE.CylinderGeometry(0.036, 0.036, 0.16, 14),
       new THREE.MeshStandardMaterial({
         color: isLive ? 0xff2a2a : 0x2a9df4,
-        emissive: isLive ? 0x660000 : 0x003366,
-        roughness: 0.35
+        emissive: isLive ? 0x770000 : 0x003b77,
+        roughness: 0.3
       })
     );
     const rim = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.034, 0.034, 0.035, 12),
+      new THREE.CylinderGeometry(0.039, 0.039, 0.038, 14),
       new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.85, roughness: 0.25 })
     );
-    rim.position.y = -0.075;
+    rim.position.y = -0.085;
     shellGroup.add(body, rim);
 
-    const offset = (idx - (displayList.length - 1) / 2) * 0.13;
-    shellGroup.position.set(offset, 1.58, 0);
+    // 自分の席向きに合わせて横一列に並べ、込める弾をしっかり見せる
+    const offset = (idx - (displayList.length - 1) / 2) * 0.14;
+    const localVec = new THREE.Vector3(offset, 1.46, -0.15);
+    localVec.applyAxisAngle(new THREE.Vector3(0, 1, 0), mySeatAngle);
+    shellGroup.position.copy(localVec);
     scene.add(shellGroup);
     loadingShellMeshes.push(shellGroup);
 
-    // 1発ずつ順番に薬室へ吸い込まれるアニメーション
+    // いったん見せたあと、1発ずつ順番にショットガン薬室へ装填
     setTimeout(() => {
       if (iconEls[idx]) iconEls[idx].classList.add('loaded');
       playTone(isLive ? 320 : 520, 'triangle', 0.09, 0.16);
@@ -1702,22 +1910,90 @@ function playChamberLoadAnimation(round, liveCount, blankCount) {
           shellGroup.rotation.x += 0.25;
         }
       }, 20);
-    }, 650 + idx * 320);
+    }, 950 + idx * 320);
   });
 
   clearTimeout(overlay._timer);
   overlay._timer = setTimeout(() => {
     overlay.style.display = 'none';
+    isChamberCutscene = false;
     loadingShellMeshes.forEach(m => scene.remove(m));
     loadingShellMeshes = [];
-  }, 900 + displayList.length * 320 + 900);
+  }, 1350 + displayList.length * 320);
+}
+
+/* ==========================================================================
+   勝敗決着演出＆ランキング表表示
+   ========================================================================== */
+function triggerMatchEndSequence(winnerId, winnerName) {
+  const isMeWinner = (winnerId && winnerId === myId);
+  playMatchResultSound(isMeWinner);
+
+  if (isMeWinner) {
+    triggerFlash('rgba(255, 215, 0, 0.42)');
+    showBanner(`🏆 YOU WIN!! 勝者: ${winnerName}`, 2400);
+  } else {
+    triggerFlash('rgba(255, 30, 30, 0.45)');
+    showBanner(`💀 YOU LOSE... 勝者: ${winnerName}`, 2400);
+  }
+
+  setTimeout(() => {
+    openResultModal(winnerId, winnerName);
+  }, 1500);
+}
+
+function openResultModal(winnerId, winnerName) {
+  const modal = document.getElementById('result-modal');
+  const titleEl = document.getElementById('result-banner-title');
+  const subEl = document.getElementById('result-subtitle');
+  const tbody = document.getElementById('ranking-tbody');
+  const rematchArea = document.getElementById('rematch-area');
+
+  const isMeWinner = (winnerId && winnerId === myId);
+  titleEl.textContent = isMeWinner ? '★ VICTORY — YOU WIN ★' : '✖ DEFEAT — YOU LOSE ✖';
+  titleEl.className = 'result-banner-title ' + (isMeWinner ? 'win' : 'lose');
+  subEl.textContent = `CHAMPION: ${winnerName}（最終ラウンド: ROUND ${gameState.round}）`;
+
+  // ランキング順位ソート（1位: 生存者 → 以降は脱落順が遅い順 → 残りHP → 与ダメージ）
+  const ranked = [...gameState.players].sort((a, b) => {
+    if (a.alive !== b.alive) return a.alive ? -1 : 1;
+    if ((b.elimOrder || 0) !== (a.elimOrder || 0)) return (b.elimOrder || 0) - (a.elimOrder || 0);
+    if (b.hp !== a.hp) return b.hp - a.hp;
+    return (b.damageDealt || 0) - (a.damageDealt || 0);
+  });
+
+  tbody.innerHTML = '';
+  ranked.forEach((p, idx) => {
+    const tr = document.createElement('tr');
+    if (idx === 0) tr.classList.add('rank-1');
+    if (p.id === myId) tr.classList.add('is-me');
+
+    const rankLabel = idx === 0 ? '👑 1位' : `${idx + 1}位`;
+    const hpStr = p.alive ? `⚡×${p.hp}` : '脱落 (⚡0)';
+    tr.innerHTML = `
+      <td>${rankLabel}</td>
+      <td>${p.name}${p.id === myId ? ' (あなた)' : ''}</td>
+      <td>${hpStr}</td>
+      <td>${p.damageDealt || 0}</td>
+      <td>ROUND ${p.survivedRound || 1}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  if (isHost) {
+    rematchArea.innerHTML = `<button class="btn" onclick="requestRematch()">▶ 再戦する（同じ部屋で再プレイ）</button>`;
+  } else {
+    rematchArea.innerHTML = `<span style="font-size:13px; opacity:0.85;">ホストの再戦操作を待機中...</span>`;
+  }
+
+  modal.style.display = 'flex';
 }
 
 function triggerFlash(color) {
   const fx = document.getElementById('flash-fx');
   fx.style.background = color;
   fx.style.opacity = '1';
-  setTimeout(() => { fx.style.opacity = '0'; }, 180);
+  setTimeout(() => { fx.style.opacity = '0'; }, 240);
 }
 
 function updateGameHUD() {
@@ -1726,6 +2002,7 @@ function updateGameHUD() {
   const isMyTurn = (gameState.phase === 'play' && turnPlayer && turnPlayer.id === myId);
 
   document.getElementById('hud-turn-info').textContent =
+    gameState.phase === 'loading' ? '弾薬装填中...' :
     gameState.phase === 'loot' ? 'アイテム配置中...' :
     gameState.phase === 'gameover' ? `決着！勝者: ${gameState.winnerName}` :
     isAimingMode ? '🎯 撃つ相手(3D)をタップ または 自分を撃つ' :
@@ -1733,7 +2010,6 @@ function updateGameHUD() {
 
   document.getElementById('hud-shells-badge').textContent = `残り弾数: ${gameState.shells.length}発` + (gameState.sawActive ? ' [威力2倍中]' : '');
 
-  // 左上に自分の残機⚡を表示
   const me = gameState.players.find(p => p.id === myId);
   const myHpEl = document.getElementById('hud-my-hp');
   if (me && myHpEl) {
@@ -1991,7 +2267,6 @@ function initThreeScene() {
   centerDisc.position.y = 0.89;
   tableGroup.add(centerDisc);
 
-  // ショットガンモデル（グリップ・フォアエンド・銃身・当たり判定）
   shotgunGroup = new THREE.Group();
   shotgunGroup.position.set(0, 0.98, 0);
 
@@ -2028,14 +2303,12 @@ function initThreeScene() {
   shotgunGroup.add(stock, receiver, pump, barrelMesh, shotgunHitbox);
   scene.add(shotgunGroup);
 
-  // 一人称視点で自分がショットガンを構えた時の両手メッシュ
   myLeftHand = buildHandMesh();
   myRightHand = buildHandMesh();
   myLeftHand.visible = false;
   myRightHand.visible = false;
   scene.add(myLeftHand, myRightHand);
 
-  // タッチ／マウス操作（ドラッグで視線移動 ＋ タップで3D直接選択）
   let dragging = false, movedDist = 0, prevX = 0, lastLookSend = 0;
 
   canvas.addEventListener('pointerdown', (e) => {
@@ -2100,7 +2373,6 @@ function handle3DDirectTap(clientX, clientY) {
 
   const info = hitObj.userData;
   if (isAimingMode) {
-    // 構え中は他プレイヤーの3Dオブジェクトタップで射撃実行
     if (info.interactType === 'target_player' && info.playerId !== myId) {
       playShotSound(false);
       confirmShootTarget(info.playerId);
@@ -2170,15 +2442,11 @@ function buildHandMesh() {
   return handGroup;
 }
 
-/* ==========================================================================
-   アイテムの見た目を名前通りに造形した3Dメッシュ群
-   ========================================================================== */
 function buildItem3DMesh(itemId) {
   const g = new THREE.Group();
 
   switch (itemId) {
     case 'saw': {
-      // ノコギリ：銀の刃＋ギザギザ歯＋木製ハンドル
       const blade = new THREE.Mesh(
         new THREE.BoxGeometry(0.24, 0.008, 0.055),
         new THREE.MeshStandardMaterial({ color: 0xc8d0d8, metalness: 0.88, roughness: 0.22 })
@@ -2193,7 +2461,6 @@ function buildItem3DMesh(itemId) {
       break;
     }
     case 'magnifier': {
-      // 虫眼鏡：透明レンズ＋銀フレーム＋黒い柄
       const rim = new THREE.Mesh(
         new THREE.TorusGeometry(0.065, 0.011, 10, 20),
         new THREE.MeshStandardMaterial({ color: 0xd0d0d0, metalness: 0.85, roughness: 0.2 })
@@ -2215,7 +2482,6 @@ function buildItem3DMesh(itemId) {
       break;
     }
     case 'cigarette': {
-      // タバコ：赤白の箱＋飛び出した白いタバコ
       const boxBottom = new THREE.Mesh(
         new THREE.BoxGeometry(0.09, 0.032, 0.13),
         new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 })
@@ -2236,7 +2502,6 @@ function buildItem3DMesh(itemId) {
       break;
     }
     case 'beer': {
-      // ビール：銀のアルミ缶＋ゴールドの縁＋プルタブ
       const can = new THREE.Mesh(
         new THREE.CylinderGeometry(0.045, 0.045, 0.155, 16),
         new THREE.MeshStandardMaterial({ color: 0xcfd6dc, metalness: 0.85, roughness: 0.25 })
@@ -2257,7 +2522,6 @@ function buildItem3DMesh(itemId) {
       break;
     }
     case 'medicine': {
-      // 期限切れ薬：薬瓶＋白いキャップ＋ラベル
       const bottle = new THREE.Mesh(
         new THREE.CylinderGeometry(0.042, 0.042, 0.125, 14),
         new THREE.MeshStandardMaterial({ color: 0xb87333, transparent: true, opacity: 0.85, roughness: 0.3 })
@@ -2277,7 +2541,6 @@ function buildItem3DMesh(itemId) {
       break;
     }
     case 'adrenaline': {
-      // アドレナリン：注射器（透明シリンジ＋緑の薬液＋プランジャー＋針）
       const barrel = new THREE.Mesh(
         new THREE.CylinderGeometry(0.02, 0.02, 0.14, 12),
         new THREE.MeshStandardMaterial({ color: 0xddeeff, transparent: true, opacity: 0.55, roughness: 0.1 })
@@ -2306,7 +2569,6 @@ function buildItem3DMesh(itemId) {
       break;
     }
     case 'inverter': {
-      // インバータ：電子基板ボックス＋赤端子＆青端子＋アンテナ
       const body = new THREE.Mesh(
         new THREE.BoxGeometry(0.13, 0.045, 0.15),
         new THREE.MeshStandardMaterial({ color: 0x263829, metalness: 0.5, roughness: 0.5 })
@@ -2331,7 +2593,6 @@ function buildItem3DMesh(itemId) {
       break;
     }
     case 'phone': {
-      // 使い捨て携帯：黒い端末＋光る緑液晶＋ボタン配列＋アンテナ
       const body = new THREE.Mesh(
         new THREE.BoxGeometry(0.085, 0.026, 0.17),
         new THREE.MeshStandardMaterial({ color: 0x1c1c1e, roughness: 0.5 })
@@ -2382,7 +2643,6 @@ function update3DSceneFromState() {
       const group = new THREE.Group();
       scene.add(group);
 
-      // 8枠の白いアイテムグリッド線（⚡残機モニターは撤去済）
       const slotCenters = [];
       const lineMat = new THREE.LineBasicMaterial({ color: 0xb8c4b0 });
       [-1, 1].forEach(side => {
@@ -2404,7 +2664,6 @@ function update3DSceneFromState() {
       headGroup.position.set(0, 1.52, 2.75);
       headGroup.rotation.y = Math.PI;
 
-      // 構え中に他プレイヤーの3Dモデルをタップして撃つための当たり判定
       const targetHitBox = new THREE.Mesh(
         new THREE.BoxGeometry(0.75, 0.9, 0.75),
         new THREE.MeshBasicMaterial({ visible: false })
@@ -2458,7 +2717,6 @@ function update3DSceneFromState() {
 
     vis.headGroup.rotation.y = Math.PI + (p.lookYaw || 0);
 
-    // テーブル上の8枠アイテムメッシュ同期
     vis.itemMeshes.forEach(m => vis.group.remove(m));
     vis.itemMeshes = [];
     p.slots.forEach((itemId, sIdx) => {
@@ -2482,7 +2740,6 @@ function update3DSceneFromState() {
       }
     });
 
-    // 頭上ネームタグ更新（構え中はターゲット選択可能表示）
     const isTurn = (gameState.phase === 'play' && gameState.players[gameState.turnIndex]?.id === p.id);
     vis.nameTag.textContent = (isAimingMode && !isMe && p.alive)
       ? `🎯 ${p.name} (⚡${p.hp})`
@@ -2506,20 +2763,35 @@ function animate3D() {
   requestAnimationFrame(animate3D);
   const t = performance.now() * 0.0025;
 
-  const dist = cameraMode === 'top' ? 0.4 : cameraMode === 'down' ? 2.45 : 2.95;
-  const height = cameraMode === 'top' ? 4.3 : cameraMode === 'down' ? 1.85 : 1.72;
-  const lookY = cameraMode === 'top' ? 0.85 : cameraMode === 'down' ? 0.86 : 1.22;
+  // カメラ制御（弾装填カットシーン中／決着勝者ズーム／通常視点）
+  if (isChamberCutscene) {
+    const camX = Math.sin(mySeatAngle) * 1.85;
+    const camZ = Math.cos(mySeatAngle) * 1.85;
+    targetCamPos.set(camX, 1.75, camZ);
+    targetCamLook.set(0, 1.18, 0);
+  } else if (gameState.phase === 'gameover' && gameState.winnerId && gameState.winnerId !== myId) {
+    const winIdx = gameState.players.findIndex(p => p.id === gameState.winnerId);
+    if (winIdx !== -1) {
+      const winAngle = winIdx * ((Math.PI * 2) / 5);
+      targetCamPos.set(Math.sin(winAngle) * 1.35, 1.55, Math.cos(winAngle) * 1.35);
+      targetCamLook.set(Math.sin(winAngle) * 2.75, 1.52, Math.cos(winAngle) * 2.75);
+    }
+  } else {
+    const dist = cameraMode === 'top' ? 0.4 : cameraMode === 'down' ? 2.45 : 2.95;
+    const height = cameraMode === 'top' ? 4.3 : cameraMode === 'down' ? 1.85 : 1.72;
+    const lookY = cameraMode === 'top' ? 0.85 : cameraMode === 'down' ? 0.86 : 1.22;
 
-  const camX = Math.sin(mySeatAngle) * dist;
-  const camZ = Math.cos(mySeatAngle) * dist;
-  targetCamPos.set(camX, height, camZ);
+    const camX = Math.sin(mySeatAngle) * dist;
+    const camZ = Math.cos(mySeatAngle) * dist;
+    targetCamPos.set(camX, height, camZ);
 
-  const lookYaw = mySeatAngle + Math.PI + userYawOffset;
-  targetCamLook.set(
-    camX + Math.sin(lookYaw) * 2.5,
-    lookY,
-    camZ + Math.cos(lookYaw) * 2.5
-  );
+    const lookYaw = mySeatAngle + Math.PI + userYawOffset;
+    targetCamLook.set(
+      camX + Math.sin(lookYaw) * 2.5,
+      lookY,
+      camZ + Math.cos(lookYaw) * 2.5
+    );
+  }
 
   camera.position.lerp(targetCamPos, 0.14);
   if (cameraShakeTime > 0) {
@@ -2533,7 +2805,7 @@ function animate3D() {
     shotgunRecoil = Math.max(0, shotgunRecoil - 0.018);
   }
 
-  // ショットガンを「プレイヤーが手にもって撃つ」位置・向き・両手追従アニメーション
+  // ショットガンをプレイヤーが手にもって撃つ演出
   const turnPlayer = gameState.players[gameState.turnIndex];
   const shooterIdx = gameState.turnIndex;
   const isHeld = turnPlayer && (turnPlayer.handAction === 'aim' || turnPlayer.handAction === 'shoot' || (turnPlayer.id === myId && isAimingMode));
@@ -2544,14 +2816,12 @@ function animate3D() {
       holdPos.y = 1.26;
       shotgunGroup.position.lerp(holdPos, 0.22);
 
-      // ターゲット方向を向く（自分自身を撃つ場合は自分側へ銃口を向ける）
       let aimPos = new THREE.Vector3(0, 1.26, 0);
       const effectiveTargetId = gameState.aimTargetId || (turnPlayer.id === myId && isAimingMode ? myId : null);
       if (effectiveTargetId) {
         const tIdx = gameState.players.findIndex(p => p.id === effectiveTargetId);
         if (tIdx !== -1) {
           if (tIdx === shooterIdx) {
-            // 自分を撃つ構え（銃口を自分側に向ける）
             const selfAngle = shooterIdx * ((Math.PI * 2) / 5);
             aimPos.set(Math.sin(selfAngle) * 3.2, 1.38, Math.cos(selfAngle) * 3.2);
           } else {
@@ -2566,13 +2836,11 @@ function animate3D() {
       dummy.lookAt(aimPos);
       shotgunGroup.quaternion.slerp(dummy.quaternion, 0.22);
 
-      // 発砲時の反動キックバック
       if (shotgunRecoil > 0) {
         shotgunGroup.translateZ(-shotgunRecoil * 0.5);
         shotgunGroup.rotateX(-shotgunRecoil * 0.45);
       }
 
-      // 構えているプレイヤーが「自分」なら一人称の両手で銃を握る
       if (turnPlayer.id === myId) {
         myLeftHand.visible = true;
         myRightHand.visible = true;
@@ -2587,7 +2855,6 @@ function animate3D() {
         myRightHand.visible = false;
       }
     } else {
-      // テーブル中央に置かれている状態
       myLeftHand.visible = false;
       myRightHand.visible = false;
       shotgunGroup.position.lerp(new THREE.Vector3(0, 0.98, 0), 0.18);
@@ -2597,7 +2864,6 @@ function animate3D() {
     }
   }
 
-  // 各プレイヤーの浮遊マスク＆手のモーション＆頭上名前投影
   gameState.players.forEach((p, idx) => {
     const vis = seatVisuals[p.id];
     if (!vis) return;
@@ -2605,7 +2871,6 @@ function animate3D() {
     vis.headGroup.position.y = 1.52 + Math.sin(t + idx) * 0.03;
 
     if (p.id !== myId && (p.handAction === 'aim' || p.handAction === 'shoot')) {
-      // 他プレイヤーがショットガンを手で持って撃つ時の両手位置
       const leftWorld = new THREE.Vector3(-0.06, -0.04, 0.34).applyMatrix4(shotgunGroup.matrixWorld);
       const rightWorld = new THREE.Vector3(0.06, -0.05, -0.18).applyMatrix4(shotgunGroup.matrixWorld);
       vis.group.worldToLocal(leftWorld);
