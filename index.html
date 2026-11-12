@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Life Trade" />
 <meta name="theme-color" content="#000000" />
-<title>Life Trade ver 0.2</title>
+<title>Life Trade ver 0.3</title>
 
 <!-- Three.js & PeerJS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -44,7 +44,6 @@
     touch-action: manipulation;
   }
 
-  /* 横画面推奨オーバーレイ（縦画面時のみ表示） */
   #rotate-warning {
     display: none;
     position: fixed;
@@ -63,7 +62,6 @@
     #rotate-warning { display: flex; }
   }
 
-  /* ターミナル風CRTスキャンライン演出 */
   .scanlines::after {
     content: "";
     position: fixed;
@@ -79,7 +77,6 @@
     z-index: 500;
   }
 
-  /* 画面共通 */
   .screen {
     position: fixed;
     inset: 0;
@@ -91,7 +88,6 @@
   }
   .screen.active { display: flex; }
 
-  /* タイトル＆入室前ロビー */
   .term-header {
     display: flex;
     justify-content: space-between;
@@ -179,7 +175,6 @@
     pointer-events: none;
   }
 
-  /* BGMコントロールボタン */
   .bgm-btn {
     background: #000;
     color: var(--neon);
@@ -195,7 +190,6 @@
     color: #000;
   }
 
-  /* 入室後ロビー */
   .room-layout {
     display: flex;
     flex-direction: column;
@@ -299,17 +293,38 @@
     right: 12px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     pointer-events: auto;
   }
+  .hud-left-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
   .hud-badge {
-    background: rgba(0, 0, 0, 0.82);
+    background: rgba(0, 0, 0, 0.85);
     border: 1px solid var(--neon);
     padding: 4px 10px;
     font-size: 13px;
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+  /* 左上自分の残機⚡表示 */
+  .my-hp-badge {
+    background: rgba(0, 15, 0, 0.9);
+    border: 1px solid var(--neon);
+    padding: 5px 12px;
+    font-size: 16px;
+    letter-spacing: 3px;
+    text-shadow: 0 0 8px var(--neon);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .hp-bolt-off {
+    opacity: 0.22;
+    filter: grayscale(1);
   }
 
   /* カメラ視点切替ボタン */
@@ -354,7 +369,7 @@
     white-space: nowrap;
   }
 
-  /* 虫眼鏡・携帯の専用シークレット通知（他バナーに上書きされない） */
+  /* 虫眼鏡・携帯の専用シークレット通知 */
   #secret-inspect-banner {
     position: absolute;
     top: 26%;
@@ -371,75 +386,79 @@
     white-space: nowrap;
   }
 
-  /* ラウンド開始時の視覚的弾倉表示（赤＝実弾、青＝空砲） */
+  /* ラウンド開始時の弾配分オーバーレイ（上部に配置し3D装填アニメーションが見えるように） */
   #shell-visual-overlay {
     position: fixed;
-    top: 50%;
+    top: 64px;
     left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.94);
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.92);
     border: 2px solid var(--neon);
-    padding: 16px 26px;
+    padding: 10px 20px;
     z-index: 320;
     display: none;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
-    box-shadow: 0 0 25px rgba(57, 255, 20, 0.45);
+    gap: 8px;
+    box-shadow: 0 0 20px rgba(57, 255, 20, 0.4);
     pointer-events: none;
   }
   .shell-icons-row {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     align-items: center;
     justify-content: center;
-    flex-wrap: wrap;
   }
   .shell-cartridge {
-    width: 26px;
-    height: 64px;
-    border-radius: 4px 4px 2px 2px;
+    width: 18px;
+    height: 44px;
+    border-radius: 3px 3px 1px 1px;
     position: relative;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
     border: 1px solid #fff;
+    transition: opacity 0.25s, transform 0.25s;
   }
   .shell-cartridge::after {
     content: "";
     display: block;
-    height: 16px;
+    height: 11px;
     width: 100%;
     background: #d4af37;
     border-top: 1px solid #000;
   }
   .shell-cartridge.live {
     background: var(--danger);
-    box-shadow: 0 0 12px var(--danger);
+    box-shadow: 0 0 10px var(--danger);
   }
   .shell-cartridge.blank {
     background: var(--blank);
-    box-shadow: 0 0 12px var(--blank);
+    box-shadow: 0 0 10px var(--blank);
+  }
+  .shell-cartridge.loaded {
+    opacity: 0.25;
+    transform: translateY(-6px) scale(0.85);
   }
 
-  /* 射撃ターゲット選択オーバーレイ（ショットガンを直接タップした際に表示） */
+  /* 射撃構え中オーバーレイ（他プレイヤーは3D選択、自分撃ち＆キャンセルのみ表示） */
   #action-overlay {
     position: absolute;
     bottom: 14px;
     left: 50%;
     transform: translateX(-50%);
     display: none;
-    gap: 8px;
-    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.88);
+    background: rgba(0, 0, 0, 0.9);
     border: 1px solid var(--neon);
-    padding: 8px 12px;
+    padding: 8px 14px;
     pointer-events: auto;
     max-width: 92vw;
   }
 
-  /* アイテム配布ボックス＆手元スロットUI（スマホドラッグ＆タップ両対応） */
+  /* アイテム配布ボックス＆手元スロットUI */
   #loot-modal {
     position: fixed;
     inset: 0;
@@ -535,6 +554,7 @@
     pointer-events: none;
     z-index: 150;
     white-space: nowrap;
+    padding: 2px 6px;
   }
   .name-tag.turn-active {
     color: var(--neon);
@@ -544,8 +564,15 @@
     color: #666;
     text-decoration: line-through;
   }
+  .name-tag.aimable {
+    pointer-events: auto;
+    cursor: pointer;
+    border: 1px solid var(--danger);
+    background: rgba(40, 0, 0, 0.85);
+    color: #ff6666;
+    box-shadow: 0 0 10px var(--danger);
+  }
 
-  /* 画面フラッシュ（ダメージ／回復） */
   #flash-fx {
     position: fixed;
     inset: 0;
@@ -555,7 +582,6 @@
     transition: opacity 0.25s;
   }
 
-  /* 非表示YouTube BGMプレイヤー */
   #yt-bgm-container {
     position: fixed;
     width: 1px;
@@ -582,12 +608,12 @@
 <!-- フラッシュ演出 -->
 <div id="flash-fx"></div>
 
-<!-- ① 部屋に入る前のロビー（タイトル＆マッチング） -->
+<!-- ① 部屋に入る前のロビー -->
 <div id="title-screen" class="screen active">
   <div class="term-header">
     <div>
       <span class="game-title">Life Trade</span>
-      <span class="game-ver">ver 0.2</span>
+      <span class="game-ver">ver 0.3</span>
     </div>
     <div style="font-size:12px; display:flex; align-items:center;">
       <span>ONLINE 3D RUSSIAN ROULETTE [2-5 PLAYERS]</span>
@@ -622,7 +648,7 @@
         <div id="title-error" style="color:var(--danger); margin-top:6px;"></div>
       </div>
       <div style="font-size:11px; opacity:0.75; border-top:1px dashed var(--neon); padding-top:6px;">
-        ※テーブル上のショットガンや自分のアイテムを直接タップして操作します
+        ※ショットガン・アイテム・撃つ相手は3D画面上で直接タップして操作します
       </div>
     </div>
   </div>
@@ -632,7 +658,7 @@
 <div id="lobby-screen" class="screen">
   <div class="room-layout">
     <div>
-      <div style="font-size:14px; margin-bottom:6px;">ハイローラー： <span style="float:right;">Life Trade ver 0.2 <button class="bgm-btn" id="bgm-btn-lobby" onclick="toggleBgm()">♪ BGM: ON</button></span></div>
+      <div style="font-size:14px; margin-bottom:6px;">ハイローラー： <span style="float:right;">Life Trade ver 0.3 <button class="bgm-btn" id="bgm-btn-lobby" onclick="toggleBgm()">♪ BGM: ON</button></span></div>
       <div class="player-table-wrap">
         <div class="player-list-box" id="lobby-player-list"></div>
         <div class="kick-col" id="lobby-kick-col"></div>
@@ -666,8 +692,14 @@
 
   <div id="hud-layer">
     <div class="hud-top-bar">
-      <div class="hud-badge">
-        <span id="hud-round">ROUND 1</span> | <span id="hud-turn-info">待機中...</span>
+      <div class="hud-left-stack">
+        <div class="hud-badge">
+          <span id="hud-round">ROUND 1</span> | <span id="hud-turn-info">待機中...</span>
+        </div>
+        <!-- 自分の残機⚡を左上に表示 -->
+        <div class="my-hp-badge" id="hud-my-hp">
+          ⚡⚡⚡⚡⚡
+        </div>
       </div>
       <div class="hud-badge">
         <span id="hud-shells-badge">弾倉: ?</span>
@@ -678,7 +710,7 @@
     <!-- 視点切り替え（正面・手元・俯瞰） -->
     <div class="view-controls">
       <button class="view-btn active" id="cam-btn-front" onclick="setCameraMode('front')">正面(相手)</button>
-      <button class="view-btn" id="cam-btn-down" onclick="setCameraMode('down')">手元(残機/枠)</button>
+      <button class="view-btn" id="cam-btn-down" onclick="setCameraMode('down')">手元(枠)</button>
       <button class="view-btn" id="cam-btn-top" onclick="setCameraMode('top')">俯瞰</button>
     </div>
 
@@ -688,19 +720,19 @@
     <!-- 虫眼鏡・携帯専用シークレット通知 -->
     <div id="secret-inspect-banner"></div>
 
-    <!-- ラウンド開始時の視覚的弾装填表示（赤＝実弾、青＝空砲） -->
+    <!-- ラウンド開始時の視覚的弾装填表示 -->
     <div id="shell-visual-overlay">
-      <div id="shell-visual-title" style="font-size:16px; letter-spacing:1px;">CHAMBER LOADING</div>
+      <div id="shell-visual-title" style="font-size:14px; letter-spacing:1px;">CHAMBER LOADING...</div>
       <div class="shell-icons-row" id="shell-visual-icons"></div>
-      <div id="shell-visual-legend" style="font-size:14px;"></div>
+      <div id="shell-visual-legend" style="font-size:13px;"></div>
     </div>
 
-    <!-- 撃つ相手を選ぶUI（3Dショットガンを直接タップした時に表示） -->
+    <!-- ショットガン構え中メニュー（相手は3Dモデルをタップ、自分はボタンで選択） -->
     <div id="action-overlay"></div>
   </div>
 </div>
 
-<!-- アイテム配布ボックスモーダル（ドラッグ＆タップ対応） -->
+<!-- アイテム配布ボックスモーダル -->
 <div id="loot-modal">
   <div class="loot-box-ui">
     <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -730,7 +762,6 @@
 <script>
 /* ==========================================================================
    YouTube BGM プレイヤー (https://youtu.be/lRjJk4xhHHE?si=7jc8cs46nJpsd-YU)
-   最初から自動再生を試行＋任意の初期インタラクションで即解除
    ========================================================================== */
 const BGM_VIDEO_ID = 'lRjJk4xhHHE';
 let ytPlayer = null;
@@ -879,50 +910,42 @@ const ITEM_DEFS = {
   saw: {
     id: 'saw',
     name: 'ノコギリ',
-    desc: '使用したターンのみ、実弾のダメージが2になる。',
-    color: 0x8b2626
+    desc: '使用したターンのみ、実弾のダメージが2になる。'
   },
   magnifier: {
     id: 'magnifier',
     name: '虫眼鏡',
-    desc: '次に装填されている弾（薬室の弾）が実弾(赤)か空砲(青)か自分だけ確認できる。',
-    color: 0x6b7b8c
+    desc: '次に装填されている弾（薬室の弾）が実弾(赤)か空砲(青)か自分だけ確認できる。'
   },
   cigarette: {
     id: 'cigarette',
     name: 'タバコ',
-    desc: '自分のライフを1回復する（最大5）。',
-    color: 0xb5382a
+    desc: '自分のライフを1回復する（最大5）。'
   },
   beer: {
     id: 'beer',
     name: 'ビール',
-    desc: 'ターン消費せずに現在薬室にある弾を1つ排莢して消費する。',
-    color: 0xaaaaaa
+    desc: 'ターン消費せずに現在薬室にある弾を1つ排莢して消費する。'
   },
   medicine: {
     id: 'medicine',
     name: '期限切れ薬',
-    desc: '50%でライフを2回復、50%でライフを1喪失する。',
-    color: 0xd9d2c5
+    desc: '50%でライフを2回復、50%でライフを1喪失する。'
   },
   adrenaline: {
     id: 'adrenaline',
     name: 'アドレナリン',
-    desc: '相手のアイテムを1つ盗み、即時使用する（アドレナリン自体は盗めない）。',
-    color: 0x222222
+    desc: '相手のアイテムを1つ盗み、即時使用する（アドレナリン自体は盗めない）。'
   },
   inverter: {
     id: 'inverter',
     name: 'インバータ',
-    desc: '現在薬室にある弾の空砲と実弾を入れ替える。',
-    color: 0x2e4a36
+    desc: '現在薬室にある弾の空砲と実弾を入れ替える。'
   },
   phone: {
     id: 'phone',
     name: '使い捨て携帯',
-    desc: '残弾の中からランダムで何発目かの弾が実弾(赤)か空砲(青)か教えてくれる。',
-    color: 0x1a1a1a
+    desc: '最初から何番目の弾が実弾(赤)か空砲(青)か教えてくれる。'
   }
 };
 const ITEM_KEYS = Object.keys(ITEM_DEFS);
@@ -958,7 +981,7 @@ function playShotSound(isLive) {
 /* ==========================================================================
    3. ネットワーク＆ゲーム状態管理（PeerJS 3桁ルーム）
    ========================================================================== */
-const PEER_PREFIX = 'lifetrade-v02-room-';
+const PEER_PREFIX = 'lifetrade-v03-room-';
 let peer = null;
 let isHost = false;
 let myId = '';
@@ -974,6 +997,7 @@ let gameState = {
   players: [],
   turnIndex: 0,
   shells: [],
+  initialShellCount: 0,
   sawActive: false,
   aimTargetId: null,
   winnerName: ''
@@ -1034,6 +1058,7 @@ function createRoom() {
       }],
       turnIndex: 0,
       shells: [],
+      initialShellCount: 0,
       sawActive: false,
       aimTargetId: null,
       winnerName: ''
@@ -1210,7 +1235,7 @@ function hostStartGame() {
 }
 
 /* ==========================================================================
-   5. ホスト側ゲームロジック（ラウンド・弾装填・アイテム・射撃判定）
+   5. ホスト側ゲームロジック
    ========================================================================== */
 function startNewRound() {
   const alivePlayers = gameState.players.filter(p => p.alive);
@@ -1232,8 +1257,10 @@ function startNewRound() {
     [shells[i], shells[j]] = [shells[j], shells[i]];
   }
   gameState.shells = shells;
+  gameState.initialShellCount = total;
   gameState.sawActive = false;
   gameState.aimTargetId = null;
+  gameState.players.forEach(p => { p.handAction = 'idle'; });
 
   gameState.players.forEach(p => {
     if (!p.alive) {
@@ -1323,7 +1350,7 @@ function handleHostReceive(senderId, data) {
 
   if (data.type === 'aim') {
     gameState.aimTargetId = data.targetId;
-    player.handAction = 'aim';
+    player.handAction = data.targetId ? 'aim' : 'idle';
     broadcastState();
     return;
   }
@@ -1408,10 +1435,13 @@ function executeItemUse(player, slotIndex, stealTargetId, stealSlotIndex) {
       break;
     case 'phone': {
       if (gameState.shells.length > 0) {
-        const idx = Math.floor(Math.random() * gameState.shells.length);
-        const isLive = gameState.shells[idx];
+        // 残弾からランダムに1発選び、「最初から何番目か」を計算して通知
+        const remIdx = Math.floor(Math.random() * gameState.shells.length);
+        const isLive = gameState.shells[remIdx];
+        const consumedCount = Math.max(0, gameState.initialShellCount - gameState.shells.length);
+        const fromStartNumber = consumedCount + remIdx + 1;
         privateIsLive = isLive;
-        privateMsg = `📱 着信:「${idx + 1}発目の弾は【${isLive ? '実弾(赤)' : '空砲(青)'}】だ…」`;
+        privateMsg = `📱 着信:「最初から${fromStartNumber}番目の弾は【${isLive ? '実弾(赤)' : '空砲(青)'}】だ…」`;
       }
       break;
     }
@@ -1433,6 +1463,12 @@ function executeItemUse(player, slotIndex, stealTargetId, stealSlotIndex) {
     setTimeout(() => startNewRound(), 1800);
   } else {
     broadcastState({ kind: 'item_fx', item: actualItem, actorId: player.id, text: bannerText });
+    setTimeout(() => {
+      if (player.handAction && player.handAction.startsWith('item_')) {
+        player.handAction = 'idle';
+        broadcastState();
+      }
+    }, 900);
   }
 
   if (privateMsg) {
@@ -1512,6 +1548,7 @@ function handleClientReceive(data) {
    ========================================================================== */
 let threeInitialized = false;
 let cameraMode = 'front';
+let isAimingMode = false; // 自分がショットガンを構えてターゲット選択中か
 
 function applyStateUpdate(newState, event) {
   gameState = newState;
@@ -1529,17 +1566,24 @@ function applyStateUpdate(newState, event) {
     threeInitialized = true;
   }
 
+  const turnPlayer = gameState.players[gameState.turnIndex];
+  const isMyTurn = (gameState.phase === 'play' && turnPlayer && turnPlayer.id === myId);
+  if (!isMyTurn) {
+    isAimingMode = false;
+  }
+
   update3DSceneFromState();
   updateGameHUD();
 
   if (event) {
     if (event.kind === 'round_start') {
-      showShellVisual(event.round, event.live, event.blank);
-      showBanner(`ROUND ${event.round} 開始！ [ 実弾(赤): ${event.live}発 / 空砲(青): ${event.blank}発 ]`, 4200);
+      playChamberLoadAnimation(event.round, event.live, event.blank);
+      showBanner(`ROUND ${event.round} 開始！ [ 実弾(赤): ${event.live}発 / 空砲(青): ${event.blank}発 ]`, 4400);
     } else if (event.kind === 'banner' || event.kind === 'item_fx') {
       showBanner(event.text, 2400);
       if (event.item === 'cigarette' || event.item === 'medicine') triggerFlash('rgba(57,255,20,0.22)');
     } else if (event.kind === 'shoot_fx') {
+      shotgunRecoil = 0.32;
       playShotSound(event.isLive);
       showBanner(event.text, 2200);
       if (event.isLive) {
@@ -1584,10 +1628,15 @@ function showSecretInspect(text, isLive) {
   }
   el.style.display = 'block';
   clearTimeout(el._timer);
-  el._timer = setTimeout(() => { el.style.display = 'none'; }, 4200);
+  el._timer = setTimeout(() => { el.style.display = 'none'; }, 4400);
 }
 
-function showShellVisual(round, liveCount, blankCount) {
+/* ==========================================================================
+   ラウンド開始時：実弾(赤)と空砲(青)を実際に3Dショットガンへ1発ずつ装填する描写
+   ========================================================================== */
+let loadingShellMeshes = [];
+
+function playChamberLoadAnimation(round, liveCount, blankCount) {
   const overlay = document.getElementById('shell-visual-overlay');
   const title = document.getElementById('shell-visual-title');
   const icons = document.getElementById('shell-visual-icons');
@@ -1596,23 +1645,72 @@ function showShellVisual(round, liveCount, blankCount) {
   title.textContent = `ROUND ${round} - CHAMBER LOADING`;
   icons.innerHTML = '';
 
-  for (let i = 0; i < liveCount; i++) {
+  const displayList = [];
+  for (let i = 0; i < liveCount; i++) displayList.push(true);
+  for (let i = 0; i < blankCount; i++) displayList.push(false);
+
+  const iconEls = displayList.map(isLive => {
     const s = document.createElement('div');
-    s.className = 'shell-cartridge live';
+    s.className = 'shell-cartridge ' + (isLive ? 'live' : 'blank');
     icons.appendChild(s);
-  }
-  for (let i = 0; i < blankCount; i++) {
-    const s = document.createElement('div');
-    s.className = 'shell-cartridge blank';
-    icons.appendChild(s);
-  }
+    return s;
+  });
 
   legend.innerHTML = `<span style="color:var(--danger);">■ 実弾(赤): ${liveCount}発</span> ／ <span style="color:var(--blank);">■ 空砲(青): ${blankCount}発</span>`;
   overlay.style.display = 'flex';
+
+  // 3D空間上でも赤・青のシェルを並べて1発ずつショットガン薬室へ装填アニメーション
+  loadingShellMeshes.forEach(m => scene.remove(m));
+  loadingShellMeshes = [];
+
+  displayList.forEach((isLive, idx) => {
+    const shellGroup = new THREE.Group();
+    const body = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.032, 0.032, 0.14, 12),
+      new THREE.MeshStandardMaterial({
+        color: isLive ? 0xff2a2a : 0x2a9df4,
+        emissive: isLive ? 0x660000 : 0x003366,
+        roughness: 0.35
+      })
+    );
+    const rim = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.034, 0.034, 0.035, 12),
+      new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.85, roughness: 0.25 })
+    );
+    rim.position.y = -0.075;
+    shellGroup.add(body, rim);
+
+    const offset = (idx - (displayList.length - 1) / 2) * 0.13;
+    shellGroup.position.set(offset, 1.58, 0);
+    scene.add(shellGroup);
+    loadingShellMeshes.push(shellGroup);
+
+    // 1発ずつ順番に薬室へ吸い込まれるアニメーション
+    setTimeout(() => {
+      if (iconEls[idx]) iconEls[idx].classList.add('loaded');
+      playTone(isLive ? 320 : 520, 'triangle', 0.09, 0.16);
+      const startPos = shellGroup.position.clone();
+      const targetPos = new THREE.Vector3(0, 1.02, 0);
+      let step = 0;
+      const animTimer = setInterval(() => {
+        step += 0.14;
+        if (step >= 1) {
+          clearInterval(animTimer);
+          scene.remove(shellGroup);
+        } else {
+          shellGroup.position.lerpVectors(startPos, targetPos, step);
+          shellGroup.rotation.x += 0.25;
+        }
+      }, 20);
+    }, 650 + idx * 320);
+  });
+
   clearTimeout(overlay._timer);
   overlay._timer = setTimeout(() => {
     overlay.style.display = 'none';
-  }, 4200);
+    loadingShellMeshes.forEach(m => scene.remove(m));
+    loadingShellMeshes = [];
+  }, 900 + displayList.length * 320 + 900);
 }
 
 function triggerFlash(color) {
@@ -1630,9 +1728,21 @@ function updateGameHUD() {
   document.getElementById('hud-turn-info').textContent =
     gameState.phase === 'loot' ? 'アイテム配置中...' :
     gameState.phase === 'gameover' ? `決着！勝者: ${gameState.winnerName}` :
+    isAimingMode ? '🎯 撃つ相手(3D)をタップ または 自分を撃つ' :
     isMyTurn ? '★ あなたのターン（銃や手元アイテムを直接タップ） ★' : `${turnPlayer ? turnPlayer.name : ''} のターン`;
 
   document.getElementById('hud-shells-badge').textContent = `残り弾数: ${gameState.shells.length}発` + (gameState.sawActive ? ' [威力2倍中]' : '');
+
+  // 左上に自分の残機⚡を表示
+  const me = gameState.players.find(p => p.id === myId);
+  const myHpEl = document.getElementById('hud-my-hp');
+  if (me && myHpEl) {
+    let boltsHtml = '';
+    for (let i = 0; i < me.maxHp; i++) {
+      boltsHtml += i < me.hp ? '<span>⚡</span>' : '<span class="hp-bolt-off">⚡</span>';
+    }
+    myHpEl.innerHTML = boltsHtml;
+  }
 
   if (!isMyTurn) {
     document.getElementById('action-overlay').style.display = 'none';
@@ -1710,7 +1820,7 @@ function finishLootPhase() {
 }
 
 /* ==========================================================================
-   8. アイテム使用＆射撃ターゲットUI
+   8. アイテム使用＆射撃ターゲットUI（他プレイヤーは3D選択）
    ========================================================================== */
 function openItemUseModal(slotIndex, itemId) {
   const def = ITEM_DEFS[itemId];
@@ -1764,42 +1874,66 @@ function closeItemModal() {
 }
 
 function openShootTargetMenu() {
+  isAimingMode = true;
+  if (cameraMode === 'down') {
+    setCameraMode('front');
+  }
+  sendToHost({ type: 'aim', targetId: myId });
+  updateGameHUD();
+  update3DSceneFromState();
+
   const overlay = document.getElementById('action-overlay');
   overlay.innerHTML = '';
   overlay.style.display = 'flex';
 
-  gameState.players.forEach(p => {
-    if (!p.alive) return;
-    const isMe = (p.id === myId);
-    const btn = document.createElement('button');
-    btn.className = isMe ? 'btn' : 'btn btn-danger';
-    btn.textContent = isMe ? `🔫 自分を撃つ (${p.name})` : `🎯 ${p.name} を撃つ`;
-    btn.onmouseenter = () => sendToHost({ type: 'aim', targetId: p.id });
-    btn.onclick = () => {
-      overlay.style.display = 'none';
-      sendToHost({ type: 'shoot', targetId: p.id });
-    };
-    overlay.appendChild(btn);
-  });
+  const hint = document.createElement('span');
+  hint.style.fontSize = '13px';
+  hint.textContent = '🎯 撃つ相手(3D)をタップ';
+  overlay.appendChild(hint);
+
+  const me = gameState.players.find(p => p.id === myId);
+  if (me && me.alive) {
+    const selfBtn = document.createElement('button');
+    selfBtn.className = 'btn';
+    selfBtn.textContent = `🔫 自分を撃つ`;
+    selfBtn.onclick = () => confirmShootTarget(myId);
+    overlay.appendChild(selfBtn);
+  }
 
   const cancel = document.createElement('button');
   cancel.className = 'btn';
-  cancel.textContent = '戻る';
-  cancel.onclick = () => { overlay.style.display = 'none'; };
+  cancel.textContent = '銃を置く';
+  cancel.onclick = () => cancelAimingMode();
   overlay.appendChild(cancel);
 }
 
+function cancelAimingMode() {
+  isAimingMode = false;
+  document.getElementById('action-overlay').style.display = 'none';
+  sendToHost({ type: 'aim', targetId: null });
+  updateGameHUD();
+  update3DSceneFromState();
+}
+
+function confirmShootTarget(targetId) {
+  isAimingMode = false;
+  document.getElementById('action-overlay').style.display = 'none';
+  sendToHost({ type: 'shoot', targetId });
+}
+
 /* ==========================================================================
-   9. Three.js 3D空間構築＆直接タップ操作（Raycaster）
+   9. Three.js 3D空間構築・リアルアイテム造形・手に持って撃つショットガン演出
    ========================================================================== */
 let scene, camera, renderer;
 let tableGroup, shotgunGroup, barrelMesh;
+let myLeftHand, myRightHand;
 let seatVisuals = {};
 let mySeatAngle = 0;
 let targetCamPos = new THREE.Vector3();
 let targetCamLook = new THREE.Vector3();
 let userYawOffset = 0;
 let cameraShakeTime = 0;
+let shotgunRecoil = 0;
 
 const raycaster = new THREE.Raycaster();
 const pointerNDC = new THREE.Vector2();
@@ -1816,14 +1950,14 @@ function initThreeScene() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-  const ambient = new THREE.AmbientLight(0x3a322e, 1.3);
+  const ambient = new THREE.AmbientLight(0x453d38, 1.45);
   scene.add(ambient);
 
-  const overheadSpot = new THREE.SpotLight(0xffebd6, 2.2, 18, Math.PI / 3.2, 0.5);
+  const overheadSpot = new THREE.SpotLight(0xffebd6, 2.3, 18, Math.PI / 3.2, 0.5);
   overheadSpot.position.set(0, 5.2, 0);
   scene.add(overheadSpot);
 
-  const greenRim = new THREE.PointLight(0x39ff14, 0.6, 8);
+  const greenRim = new THREE.PointLight(0x39ff14, 0.55, 8);
   greenRim.position.set(0, 1.5, 0);
   scene.add(greenRim);
 
@@ -1857,18 +1991,28 @@ function initThreeScene() {
   centerDisc.position.y = 0.89;
   tableGroup.add(centerDisc);
 
-  // 中央のショットガンモデル（直接タップ用当たり判定付き）
+  // ショットガンモデル（グリップ・フォアエンド・銃身・当たり判定）
   shotgunGroup = new THREE.Group();
   shotgunGroup.position.set(0, 0.98, 0);
+
   const stock = new THREE.Mesh(
-    new THREE.BoxGeometry(0.11, 0.14, 0.55),
+    new THREE.BoxGeometry(0.11, 0.14, 0.52),
     new THREE.MeshStandardMaterial({ color: 0x4a2518, roughness: 0.7 })
   );
-  stock.position.z = -0.45;
+  stock.position.set(0, -0.02, -0.44);
+
   const receiver = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1, 0.13, 0.45),
+    new THREE.BoxGeometry(0.1, 0.13, 0.44),
     new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8, roughness: 0.3 })
   );
+
+  const pump = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.048, 0.048, 0.26, 12),
+    new THREE.MeshStandardMaterial({ color: 0x3d2214, roughness: 0.75 })
+  );
+  pump.rotation.x = Math.PI / 2;
+  pump.position.set(0, -0.025, 0.34);
+
   barrelMesh = new THREE.Mesh(
     new THREE.CylinderGeometry(0.032, 0.032, 0.95, 12),
     new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.85, roughness: 0.25 })
@@ -1877,14 +2021,21 @@ function initThreeScene() {
   barrelMesh.position.set(0, 0.03, 0.45);
 
   const shotgunHitbox = new THREE.Mesh(
-    new THREE.BoxGeometry(0.45, 0.35, 1.45),
+    new THREE.BoxGeometry(0.5, 0.4, 1.5),
     new THREE.MeshBasicMaterial({ visible: false })
   );
   shotgunHitbox.userData = { interactType: 'shotgun' };
-  shotgunGroup.add(stock, receiver, barrelMesh, shotgunHitbox);
-  tableGroup.add(shotgunGroup);
+  shotgunGroup.add(stock, receiver, pump, barrelMesh, shotgunHitbox);
+  scene.add(shotgunGroup);
 
-  // タッチ／マウスドラッグで視線移動 ＋ タップで3Dショットガン／アイテム直接操作
+  // 一人称視点で自分がショットガンを構えた時の両手メッシュ
+  myLeftHand = buildHandMesh();
+  myRightHand = buildHandMesh();
+  myLeftHand.visible = false;
+  myRightHand.visible = false;
+  scene.add(myLeftHand, myRightHand);
+
+  // タッチ／マウス操作（ドラッグで視線移動 ＋ タップで3D直接選択）
   let dragging = false, movedDist = 0, prevX = 0, lastLookSend = 0;
 
   canvas.addEventListener('pointerdown', (e) => {
@@ -1948,6 +2099,15 @@ function handle3DDirectTap(clientX, clientY) {
   if (!hitObj) return;
 
   const info = hitObj.userData;
+  if (isAimingMode) {
+    // 構え中は他プレイヤーの3Dオブジェクトタップで射撃実行
+    if (info.interactType === 'target_player' && info.playerId !== myId) {
+      playShotSound(false);
+      confirmShootTarget(info.playerId);
+    }
+    return;
+  }
+
   if (info.interactType === 'shotgun') {
     playTone(440, 'triangle', 0.08, 0.15);
     openShootTargetMenu();
@@ -1962,26 +2122,6 @@ function setCameraMode(mode) {
   document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('cam-btn-' + mode).classList.add('active');
   userYawOffset = 0;
-}
-
-function createHpCanvasTexture(hp, maxHp = 5) {
-  const c = document.createElement('canvas');
-  c.width = 256; c.height = 64;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#041204';
-  ctx.fillRect(0, 0, 256, 64);
-  ctx.strokeStyle = '#39ff14';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(2, 2, 252, 60);
-
-  for (let i = 0; i < maxHp; i++) {
-    const x = 28 + i * 48;
-    ctx.fillStyle = i < hp ? '#39ff14' : '#122910';
-    ctx.font = 'bold 38px monospace';
-    ctx.fillText('⚡', x - 12, 46);
-  }
-  const tex = new THREE.CanvasTexture(c);
-  return tex;
 }
 
 function buildMaskMesh(seatIndex) {
@@ -2030,26 +2170,195 @@ function buildHandMesh() {
   return handGroup;
 }
 
+/* ==========================================================================
+   アイテムの見た目を名前通りに造形した3Dメッシュ群
+   ========================================================================== */
 function buildItem3DMesh(itemId) {
-  const def = ITEM_DEFS[itemId];
-  const mat = new THREE.MeshStandardMaterial({ color: def.color, roughness: 0.5, metalness: 0.4 });
-  if (itemId === 'beer') {
-    return new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.16, 12), mat);
-  } else if (itemId === 'magnifier') {
-    const g = new THREE.Group();
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.012, 8, 16), mat);
-    ring.rotation.x = Math.PI / 2;
-    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.12, 8), mat);
-    handle.rotation.z = Math.PI / 2;
-    handle.position.x = 0.1;
-    g.add(ring, handle);
-    return g;
-  } else if (itemId === 'adrenaline') {
-    const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.22, 10), mat);
-    cyl.rotation.z = Math.PI / 2;
-    return cyl;
+  const g = new THREE.Group();
+
+  switch (itemId) {
+    case 'saw': {
+      // ノコギリ：銀の刃＋ギザギザ歯＋木製ハンドル
+      const blade = new THREE.Mesh(
+        new THREE.BoxGeometry(0.24, 0.008, 0.055),
+        new THREE.MeshStandardMaterial({ color: 0xc8d0d8, metalness: 0.88, roughness: 0.22 })
+      );
+      blade.position.set(0.03, 0.025, 0);
+      const handle = new THREE.Mesh(
+        new THREE.BoxGeometry(0.08, 0.032, 0.07),
+        new THREE.MeshStandardMaterial({ color: 0x7a3b1e, roughness: 0.8 })
+      );
+      handle.position.set(-0.11, 0.028, 0);
+      g.add(blade, handle);
+      break;
+    }
+    case 'magnifier': {
+      // 虫眼鏡：透明レンズ＋銀フレーム＋黒い柄
+      const rim = new THREE.Mesh(
+        new THREE.TorusGeometry(0.065, 0.011, 10, 20),
+        new THREE.MeshStandardMaterial({ color: 0xd0d0d0, metalness: 0.85, roughness: 0.2 })
+      );
+      rim.rotation.x = Math.PI / 2;
+      rim.position.set(-0.03, 0.02, 0);
+      const lens = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.06, 0.06, 0.008, 18),
+        new THREE.MeshStandardMaterial({ color: 0xaaddff, transparent: true, opacity: 0.45, roughness: 0.1 })
+      );
+      lens.position.set(-0.03, 0.02, 0);
+      const handle = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.012, 0.015, 0.13, 10),
+        new THREE.MeshStandardMaterial({ color: 0x1e1e1e, roughness: 0.6 })
+      );
+      handle.rotation.z = Math.PI / 2;
+      handle.position.set(0.09, 0.02, 0);
+      g.add(rim, lens, handle);
+      break;
+    }
+    case 'cigarette': {
+      // タバコ：赤白の箱＋飛び出した白いタバコ
+      const boxBottom = new THREE.Mesh(
+        new THREE.BoxGeometry(0.09, 0.032, 0.13),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 })
+      );
+      boxBottom.position.y = 0.016;
+      const boxTop = new THREE.Mesh(
+        new THREE.BoxGeometry(0.092, 0.034, 0.055),
+        new THREE.MeshStandardMaterial({ color: 0xc82323, roughness: 0.5 })
+      );
+      boxTop.position.set(0, 0.017, -0.04);
+      const stick = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.008, 0.008, 0.11, 8),
+        new THREE.MeshStandardMaterial({ color: 0xf7f7f7, roughness: 0.7 })
+      );
+      stick.rotation.x = Math.PI / 2;
+      stick.position.set(0.02, 0.038, 0.03);
+      g.add(boxBottom, boxTop, stick);
+      break;
+    }
+    case 'beer': {
+      // ビール：銀のアルミ缶＋ゴールドの縁＋プルタブ
+      const can = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.045, 0.045, 0.155, 16),
+        new THREE.MeshStandardMaterial({ color: 0xcfd6dc, metalness: 0.85, roughness: 0.25 })
+      );
+      can.position.y = 0.078;
+      const band = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.046, 0.046, 0.05, 16),
+        new THREE.MeshStandardMaterial({ color: 0x246b35, roughness: 0.5 })
+      );
+      band.position.y = 0.08;
+      const topRim = new THREE.Mesh(
+        new THREE.TorusGeometry(0.04, 0.005, 8, 16),
+        new THREE.MeshStandardMaterial({ color: 0xe0e0e0, metalness: 0.9 })
+      );
+      topRim.rotation.x = Math.PI / 2;
+      topRim.position.y = 0.156;
+      g.add(can, band, topRim);
+      break;
+    }
+    case 'medicine': {
+      // 期限切れ薬：薬瓶＋白いキャップ＋ラベル
+      const bottle = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.042, 0.042, 0.125, 14),
+        new THREE.MeshStandardMaterial({ color: 0xb87333, transparent: true, opacity: 0.85, roughness: 0.3 })
+      );
+      bottle.position.y = 0.062;
+      const label = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.0435, 0.0435, 0.065, 14),
+        new THREE.MeshStandardMaterial({ color: 0xebe6d8, roughness: 0.8 })
+      );
+      label.position.y = 0.062;
+      const cap = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.045, 0.045, 0.028, 14),
+        new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.5 })
+      );
+      cap.position.y = 0.135;
+      g.add(bottle, label, cap);
+      break;
+    }
+    case 'adrenaline': {
+      // アドレナリン：注射器（透明シリンジ＋緑の薬液＋プランジャー＋針）
+      const barrel = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.02, 0.02, 0.14, 12),
+        new THREE.MeshStandardMaterial({ color: 0xddeeff, transparent: true, opacity: 0.55, roughness: 0.1 })
+      );
+      barrel.rotation.z = Math.PI / 2;
+      barrel.position.y = 0.025;
+      const liquid = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.016, 0.016, 0.09, 12),
+        new THREE.MeshStandardMaterial({ color: 0x39ff14, emissive: 0x1a8800, roughness: 0.3 })
+      );
+      liquid.rotation.z = Math.PI / 2;
+      liquid.position.set(0.015, 0.025, 0);
+      const plunger = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.008, 0.008, 0.08, 8),
+        new THREE.MeshStandardMaterial({ color: 0x333333 })
+      );
+      plunger.rotation.z = Math.PI / 2;
+      plunger.position.set(-0.09, 0.025, 0);
+      const needle = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.002, 0.002, 0.06, 6),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.95 })
+      );
+      needle.rotation.z = Math.PI / 2;
+      needle.position.set(0.095, 0.025, 0);
+      g.add(barrel, liquid, plunger, needle);
+      break;
+    }
+    case 'inverter': {
+      // インバータ：電子基板ボックス＋赤端子＆青端子＋アンテナ
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(0.13, 0.045, 0.15),
+        new THREE.MeshStandardMaterial({ color: 0x263829, metalness: 0.5, roughness: 0.5 })
+      );
+      body.position.y = 0.022;
+      const redNode = new THREE.Mesh(
+        new THREE.SphereGeometry(0.02, 10, 10),
+        new THREE.MeshStandardMaterial({ color: 0xff2a2a, emissive: 0x660000 })
+      );
+      redNode.position.set(-0.032, 0.048, 0.02);
+      const blueNode = new THREE.Mesh(
+        new THREE.SphereGeometry(0.02, 10, 10),
+        new THREE.MeshStandardMaterial({ color: 0x2a9df4, emissive: 0x003366 })
+      );
+      blueNode.position.set(0.032, 0.048, 0.02);
+      const ant = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.005, 0.005, 0.08, 6),
+        new THREE.MeshStandardMaterial({ color: 0xbbbbbb, metalness: 0.8 })
+      );
+      ant.position.set(0.045, 0.075, -0.05);
+      g.add(body, redNode, blueNode, ant);
+      break;
+    }
+    case 'phone': {
+      // 使い捨て携帯：黒い端末＋光る緑液晶＋ボタン配列＋アンテナ
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(0.085, 0.026, 0.17),
+        new THREE.MeshStandardMaterial({ color: 0x1c1c1e, roughness: 0.5 })
+      );
+      body.position.y = 0.013;
+      const screen = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.065, 0.055),
+        new THREE.MeshBasicMaterial({ color: 0x39ff14 })
+      );
+      screen.rotation.x = -Math.PI / 2;
+      screen.position.set(0, 0.027, -0.035);
+      const keypad = new THREE.Mesh(
+        new THREE.BoxGeometry(0.065, 0.006, 0.075),
+        new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.7 })
+      );
+      keypad.position.set(0, 0.027, 0.038);
+      const ant = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.006, 0.008, 0.045, 8),
+        new THREE.MeshStandardMaterial({ color: 0x111111 })
+      );
+      ant.rotation.x = Math.PI / 2;
+      ant.position.set(0.028, 0.015, -0.1);
+      g.add(body, screen, keypad, ant);
+      break;
+    }
   }
-  return new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.05, 0.18), mat);
+  return g;
 }
 
 function update3DSceneFromState() {
@@ -2073,31 +2382,7 @@ function update3DSceneFromState() {
       const group = new THREE.Group();
       scene.add(group);
 
-      const monBox = new THREE.Mesh(
-        new THREE.BoxGeometry(0.56, 0.16, 0.14),
-        new THREE.MeshStandardMaterial({ color: 0x181818, metalness: 0.6 })
-      );
-      monBox.position.set(0, 0.92, 1.82);
-      monBox.rotation.x = -0.35;
-
-      const hpTex = createHpCanvasTexture(p.hp, p.maxHp);
-      const screenMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.5, 0.12),
-        new THREE.MeshBasicMaterial({ map: hpTex })
-      );
-      screenMesh.position.set(0, 0.935, 1.745);
-      screenMesh.rotation.x = -0.35;
-      screenMesh.rotation.y = Math.PI;
-      group.add(monBox);
-
-      const frontScreen = screenMesh.clone();
-      frontScreen.position.set(0, 0.935, 1.74);
-      frontScreen.rotation.set(-0.3, Math.PI, 0);
-      const backScreen = screenMesh.clone();
-      backScreen.position.set(0, 0.935, 1.895);
-      backScreen.rotation.set(0.3, 0, 0);
-      group.add(frontScreen, backScreen);
-
+      // 8枠の白いアイテムグリッド線（⚡残機モニターは撤去済）
       const slotCenters = [];
       const lineMat = new THREE.LineBasicMaterial({ color: 0xb8c4b0 });
       [-1, 1].forEach(side => {
@@ -2119,6 +2404,15 @@ function update3DSceneFromState() {
       headGroup.position.set(0, 1.52, 2.75);
       headGroup.rotation.y = Math.PI;
 
+      // 構え中に他プレイヤーの3Dモデルをタップして撃つための当たり判定
+      const targetHitBox = new THREE.Mesh(
+        new THREE.BoxGeometry(0.75, 0.9, 0.75),
+        new THREE.MeshBasicMaterial({ visible: false })
+      );
+      targetHitBox.position.set(0, 1.45, 2.7);
+      targetHitBox.userData = { interactType: 'target_player', playerId: p.id };
+      group.add(targetHitBox);
+
       const leftHand = buildHandMesh();
       leftHand.position.set(-0.38, 1.05, 2.25);
       leftHand.rotation.y = Math.PI;
@@ -2131,15 +2425,19 @@ function update3DSceneFromState() {
 
       const nameTag = document.createElement('div');
       nameTag.className = 'name-tag';
+      nameTag.onclick = () => {
+        if (isAimingMode && p.alive && p.id !== myId) {
+          confirmShootTarget(p.id);
+        }
+      };
       tagsContainer.appendChild(nameTag);
 
       seatVisuals[p.id] = {
         group,
         headGroup,
+        targetHitBox,
         leftHand,
         rightHand,
-        frontScreen,
-        backScreen,
         slotCenters,
         itemMeshes: [],
         nameTag
@@ -2154,25 +2452,26 @@ function update3DSceneFromState() {
     vis.leftHand.visible = !isMe && p.alive;
     vis.rightHand.visible = !isMe && p.alive;
 
+    if (!isMe && p.alive) {
+      interactableMeshes.push(vis.targetHitBox);
+    }
+
     vis.headGroup.rotation.y = Math.PI + (p.lookYaw || 0);
 
-    const newTex = createHpCanvasTexture(p.hp, p.maxHp);
-    vis.frontScreen.material.map = newTex;
-    vis.backScreen.material.map = newTex;
-
+    // テーブル上の8枠アイテムメッシュ同期
     vis.itemMeshes.forEach(m => vis.group.remove(m));
     vis.itemMeshes = [];
     p.slots.forEach((itemId, sIdx) => {
       if (itemId && vis.slotCenters[sIdx]) {
         const m = buildItem3DMesh(itemId);
         m.position.copy(vis.slotCenters[sIdx]);
-        m.position.y += 0.04;
 
         if (isMe && p.alive) {
           const hitBox = new THREE.Mesh(
-            new THREE.BoxGeometry(0.24, 0.22, 0.24),
+            new THREE.BoxGeometry(0.25, 0.24, 0.25),
             new THREE.MeshBasicMaterial({ visible: false })
           );
+          hitBox.position.y = 0.08;
           hitBox.userData = { interactType: 'my_item', slotIndex: sIdx, itemId: itemId };
           m.add(hitBox);
           interactableMeshes.push(hitBox);
@@ -2183,13 +2482,24 @@ function update3DSceneFromState() {
       }
     });
 
+    // 頭上ネームタグ更新（構え中はターゲット選択可能表示）
     const isTurn = (gameState.phase === 'play' && gameState.players[gameState.turnIndex]?.id === p.id);
-    vis.nameTag.textContent = `${p.name} (⚡${p.hp})`;
-    vis.nameTag.className = 'name-tag' + (isTurn ? ' turn-active' : '') + (!p.alive ? ' dead' : '');
+    vis.nameTag.textContent = (isAimingMode && !isMe && p.alive)
+      ? `🎯 ${p.name} (⚡${p.hp})`
+      : `${p.name} (⚡${p.hp})`;
+    vis.nameTag.className = 'name-tag'
+      + (isTurn ? ' turn-active' : '')
+      + (!p.alive ? ' dead' : '')
+      + (isAimingMode && !isMe && p.alive ? ' aimable' : '');
     vis.nameTag.style.display = isMe ? 'none' : 'block';
   });
 
   barrelMesh.scale.y = gameState.sawActive ? 0.55 : 1.0;
+}
+
+function getSeatPosition(playerIndex, radius = 2.2) {
+  const angle = playerIndex * ((Math.PI * 2) / 5);
+  return new THREE.Vector3(Math.sin(angle) * radius, 1.28, Math.cos(angle) * radius);
 }
 
 function animate3D() {
@@ -2219,25 +2529,89 @@ function animate3D() {
   }
   camera.lookAt(targetCamLook);
 
-  if (shotgunGroup) {
-    let targetYaw = 0;
-    if (gameState.aimTargetId) {
-      const targetIdx = gameState.players.findIndex(p => p.id === gameState.aimTargetId);
-      if (targetIdx !== -1) targetYaw = targetIdx * ((Math.PI * 2) / 5);
-    } else {
-      targetYaw = gameState.turnIndex * ((Math.PI * 2) / 5);
-    }
-    shotgunGroup.rotation.y += (targetYaw - shotgunGroup.rotation.y) * 0.12;
+  if (shotgunRecoil > 0) {
+    shotgunRecoil = Math.max(0, shotgunRecoil - 0.018);
   }
 
+  // ショットガンを「プレイヤーが手にもって撃つ」位置・向き・両手追従アニメーション
+  const turnPlayer = gameState.players[gameState.turnIndex];
+  const shooterIdx = gameState.turnIndex;
+  const isHeld = turnPlayer && (turnPlayer.handAction === 'aim' || turnPlayer.handAction === 'shoot' || (turnPlayer.id === myId && isAimingMode));
+
+  if (shotgunGroup) {
+    if (isHeld && shooterIdx >= 0 && shooterIdx < gameState.players.length) {
+      const holdPos = getSeatPosition(shooterIdx, 1.95);
+      holdPos.y = 1.26;
+      shotgunGroup.position.lerp(holdPos, 0.22);
+
+      // ターゲット方向を向く（自分自身を撃つ場合は自分側へ銃口を向ける）
+      let aimPos = new THREE.Vector3(0, 1.26, 0);
+      const effectiveTargetId = gameState.aimTargetId || (turnPlayer.id === myId && isAimingMode ? myId : null);
+      if (effectiveTargetId) {
+        const tIdx = gameState.players.findIndex(p => p.id === effectiveTargetId);
+        if (tIdx !== -1) {
+          if (tIdx === shooterIdx) {
+            // 自分を撃つ構え（銃口を自分側に向ける）
+            const selfAngle = shooterIdx * ((Math.PI * 2) / 5);
+            aimPos.set(Math.sin(selfAngle) * 3.2, 1.38, Math.cos(selfAngle) * 3.2);
+          } else {
+            aimPos = getSeatPosition(tIdx, 2.5);
+            aimPos.y = 1.38;
+          }
+        }
+      }
+
+      const dummy = new THREE.Object3D();
+      dummy.position.copy(shotgunGroup.position);
+      dummy.lookAt(aimPos);
+      shotgunGroup.quaternion.slerp(dummy.quaternion, 0.22);
+
+      // 発砲時の反動キックバック
+      if (shotgunRecoil > 0) {
+        shotgunGroup.translateZ(-shotgunRecoil * 0.5);
+        shotgunGroup.rotateX(-shotgunRecoil * 0.45);
+      }
+
+      // 構えているプレイヤーが「自分」なら一人称の両手で銃を握る
+      if (turnPlayer.id === myId) {
+        myLeftHand.visible = true;
+        myRightHand.visible = true;
+        const leftGrip = new THREE.Vector3(-0.06, -0.04, 0.34).applyMatrix4(shotgunGroup.matrixWorld);
+        const rightGrip = new THREE.Vector3(0.06, -0.05, -0.18).applyMatrix4(shotgunGroup.matrixWorld);
+        myLeftHand.position.copy(leftGrip);
+        myRightHand.position.copy(rightGrip);
+        myLeftHand.quaternion.copy(shotgunGroup.quaternion);
+        myRightHand.quaternion.copy(shotgunGroup.quaternion);
+      } else {
+        myLeftHand.visible = false;
+        myRightHand.visible = false;
+      }
+    } else {
+      // テーブル中央に置かれている状態
+      myLeftHand.visible = false;
+      myRightHand.visible = false;
+      shotgunGroup.position.lerp(new THREE.Vector3(0, 0.98, 0), 0.18);
+      const restYaw = (shooterIdx >= 0 ? shooterIdx : 0) * ((Math.PI * 2) / 5);
+      const restQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), restYaw);
+      shotgunGroup.quaternion.slerp(restQuat, 0.15);
+    }
+  }
+
+  // 各プレイヤーの浮遊マスク＆手のモーション＆頭上名前投影
   gameState.players.forEach((p, idx) => {
     const vis = seatVisuals[p.id];
     if (!vis) return;
 
     vis.headGroup.position.y = 1.52 + Math.sin(t + idx) * 0.03;
-    if (p.handAction === 'aim' || p.handAction === 'shoot') {
-      vis.leftHand.position.set(-0.15, 1.18, 1.75);
-      vis.rightHand.position.set(0.15, 1.18, 1.85);
+
+    if (p.id !== myId && (p.handAction === 'aim' || p.handAction === 'shoot')) {
+      // 他プレイヤーがショットガンを手で持って撃つ時の両手位置
+      const leftWorld = new THREE.Vector3(-0.06, -0.04, 0.34).applyMatrix4(shotgunGroup.matrixWorld);
+      const rightWorld = new THREE.Vector3(0.06, -0.05, -0.18).applyMatrix4(shotgunGroup.matrixWorld);
+      vis.group.worldToLocal(leftWorld);
+      vis.group.worldToLocal(rightWorld);
+      vis.leftHand.position.lerp(leftWorld, 0.35);
+      vis.rightHand.position.lerp(rightWorld, 0.35);
     } else if (p.handAction && p.handAction.startsWith('item_')) {
       vis.rightHand.position.set(0.1, 1.25 + Math.sin(t * 6) * 0.08, 1.95);
     } else {
