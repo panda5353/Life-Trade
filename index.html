@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Life Trade" />
 <meta name="theme-color" content="#000000" />
-<title>Life Trade ver 0.1</title>
+<title>Life Trade ver 0.2</title>
 
 <!-- Three.js & PeerJS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -19,7 +19,6 @@
   :root {
     --neon: #39ff14;
     --neon-dim: rgba(57, 255, 20, 0.25);
-    --neon-dark: #0a2205;
     --danger: #ff2a2a;
     --bg: #000000;
   }
@@ -43,7 +42,6 @@
     touch-action: manipulation;
   }
 
-  /* 横画面推奨オーバーレイ（縦画面時のみ表示） */
   #rotate-warning {
     display: none;
     position: fixed;
@@ -62,7 +60,6 @@
     #rotate-warning { display: flex; }
   }
 
-  /* ターミナル風CRTスキャンライン演出 */
   .scanlines::after {
     content: "";
     position: fixed;
@@ -78,7 +75,6 @@
     z-index: 500;
   }
 
-  /* 画面共通 */
   .screen {
     position: fixed;
     inset: 0;
@@ -90,7 +86,6 @@
   }
   .screen.active { display: flex; }
 
-  /* タイトル＆入室前ロビー */
   .term-header {
     display: flex;
     justify-content: space-between;
@@ -99,16 +94,8 @@
     padding-bottom: 6px;
     margin-bottom: 12px;
   }
-  .game-title {
-    font-size: 26px;
-    letter-spacing: 2px;
-    text-shadow: 0 0 8px var(--neon);
-  }
-  .game-ver {
-    font-size: 14px;
-    opacity: 0.85;
-    margin-left: 10px;
-  }
+  .game-title { font-size: 26px; letter-spacing: 2px; text-shadow: 0 0 8px var(--neon); }
+  .game-ver { font-size: 14px; opacity: 0.85; margin-left: 10px; }
 
   .lobby-grid {
     display: grid;
@@ -127,15 +114,9 @@
     justify-content: space-between;
   }
 
-  .input-group {
-    margin-bottom: 10px;
-  }
-  .input-group label {
-    display: block;
-    font-size: 13px;
-    margin-bottom: 4px;
-  }
-  input[type="text"], input[type="tel"], select {
+  .input-group { margin-bottom: 10px; }
+  .input-group label { display: block; font-size: 13px; margin-bottom: 4px; }
+  input[type="text"], input[type="tel"] {
     width: 100%;
     background: #000;
     border: 1px solid var(--neon);
@@ -144,9 +125,6 @@
     font-size: 18px;
     padding: 6px 10px;
     outline: none;
-  }
-  input:focus {
-    box-shadow: 0 0 8px var(--neon);
   }
 
   .btn {
@@ -160,25 +138,10 @@
     text-align: left;
     transition: background 0.12s, color 0.12s;
   }
-  .btn:hover, .btn:active {
-    background: var(--neon);
-    color: #000;
-  }
+  .btn:hover, .btn:active { background: var(--neon); color: #000; }
   .btn-center { text-align: center; }
-  .btn-danger {
-    border-color: var(--danger);
-    color: var(--danger);
-  }
-  .btn-danger:hover, .btn-danger:active {
-    background: var(--danger);
-    color: #000;
-  }
-  .btn:disabled {
-    opacity: 0.35;
-    pointer-events: none;
-  }
 
-  /* 入室後ロビー（参考画像準拠） */
+  /* ロビー画面 */
   .room-layout {
     display: flex;
     flex-direction: column;
@@ -186,15 +149,8 @@
     height: 100%;
     padding: 6px 12px;
   }
-  .player-table-wrap {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-  }
-  .player-list-box {
-    width: 260px;
-    border: 1px solid var(--neon);
-  }
+  .player-table-wrap { display: flex; align-items: flex-start; gap: 8px; }
+  .player-list-box { width: 260px; border: 1px solid var(--neon); }
   .player-row {
     height: 30px;
     border-bottom: 1px solid var(--neon);
@@ -205,11 +161,7 @@
     font-size: 15px;
   }
   .player-row:last-child { border-bottom: none; }
-  .kick-col {
-    display: flex;
-    flex-direction: column;
-    margin-top: 30px;
-  }
+  .kick-col { display: flex; flex-direction: column; margin-top: 30px; }
   .kick-btn {
     height: 30px;
     border: 1px solid var(--neon);
@@ -222,114 +174,63 @@
     cursor: pointer;
   }
   .kick-btn:last-child { border-bottom: 1px solid var(--neon); }
-  .kick-btn:active { background: var(--neon); color: #000; }
 
-  .slot-indicators {
-    display: flex;
-    gap: 6px;
-    margin-top: 8px;
-  }
+  .slot-indicators { display: flex; gap: 6px; margin-top: 8px; }
   .slot-dot {
-    width: 22px;
-    height: 22px;
+    width: 22px; height: 22px;
     border: 1px solid var(--neon);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     font-size: 12px;
   }
-  .slot-dot.filled::after {
-    content: "■";
-    font-size: 11px;
-  }
-
-  .room-bottom {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    font-size: 14px;
-  }
-  .room-settings div {
-    margin-top: 4px;
-    cursor: pointer;
-  }
-  .room-status-right {
-    text-align: right;
-  }
+  .slot-dot.filled::after { content: "■"; font-size: 11px; }
 
   /* 3Dゲーム画面 */
-  #game-screen {
-    padding: 0;
-    background: #050505;
-  }
-  #three-canvas {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
+  #game-screen { padding: 0; background: #050505; }
+  #three-canvas { width: 100%; height: 100%; display: block; }
 
-  /* ゲーム中HUD */
   #hud-layer {
     position: fixed;
     inset: 0;
     pointer-events: none;
     z-index: 200;
   }
-  .hud-top-bar {
-    position: absolute;
-    top: 8px;
-    left: 12px;
-    right: 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    pointer-events: auto;
-  }
-  .hud-badge {
-    background: rgba(0, 0, 0, 0.82);
-    border: 1px solid var(--neon);
-    padding: 4px 10px;
-    font-size: 13px;
-  }
 
-  /* カメラ視点切替＆操作ボタン */
+  /* 右側の視点切替ボタンのみ */
   .view-controls {
     position: absolute;
-    right: 12px;
+    right: 14px;
     top: 50%;
     transform: translateY(-50%);
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
     pointer-events: auto;
   }
   .view-btn {
-    background: rgba(0, 0, 0, 0.85);
+    background: rgba(0, 0, 0, 0.88);
     border: 1px solid var(--neon);
     color: var(--neon);
     font-family: inherit;
-    font-size: 13px;
-    padding: 8px 10px;
+    font-size: 14px;
+    padding: 10px 14px;
     cursor: pointer;
+    box-shadow: 0 0 8px rgba(57, 255, 20, 0.3);
   }
-  .view-btn.active {
-    background: var(--neon);
-    color: #000;
-  }
+  .view-btn.active { background: var(--neon); color: #000; }
 
-  /* 弾数・通知バナー */
+  /* 画面中央／下部のミニマル通知バナー */
   #center-banner {
     position: absolute;
-    top: 16%;
+    bottom: 24px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.92);
-    border: 2px solid var(--neon);
-    padding: 10px 22px;
-    font-size: 18px;
+    background: rgba(0, 0, 0, 0.94);
+    border: 1px solid var(--neon);
+    padding: 8px 18px;
+    font-size: 15px;
     text-align: center;
     display: none;
-    box-shadow: 0 0 18px rgba(57, 255, 20, 0.4);
+    box-shadow: 0 0 14px rgba(57, 255, 20, 0.35);
     z-index: 260;
     white-space: nowrap;
   }
@@ -337,25 +238,24 @@
   /* 射撃ターゲット選択オーバーレイ */
   #action-overlay {
     position: absolute;
-    bottom: 14px;
+    bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
     display: none;
-    gap: 8px;
+    gap: 10px;
     flex-wrap: wrap;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.88);
+    background: rgba(0, 0, 0, 0.9);
     border: 1px solid var(--neon);
-    padding: 8px 12px;
+    padding: 10px 14px;
     pointer-events: auto;
-    max-width: 92vw;
   }
 
-  /* アイテム配布ボックス＆手元スロットUI（スマホドラッグ＆タップ両対応） */
+  /* アイテム配布ボックスモーダル */
   #loot-modal {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.78);
+    background: rgba(0, 0, 0, 0.82);
     z-index: 300;
     display: none;
     flex-direction: column;
@@ -367,34 +267,30 @@
   .loot-box-ui {
     border: 2px solid var(--neon);
     background: #030d03;
-    padding: 12px 16px;
-    width: min(640px, 94vw);
+    padding: 14px 18px;
+    width: min(600px, 94vw);
   }
   .loot-items-row {
     display: flex;
     gap: 10px;
     justify-content: center;
     margin: 10px 0;
-    min-height: 68px;
+    min-height: 72px;
   }
   .item-card {
     border: 1px solid var(--neon);
     background: #000;
-    padding: 6px 8px;
-    min-width: 96px;
+    padding: 8px 10px;
+    min-width: 90px;
     text-align: center;
-    cursor: grab;
-    font-size: 12px;
+    cursor: pointer;
+    font-size: 13px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
   }
-  .item-card.selected {
-    background: var(--neon);
-    color: #000;
-    box-shadow: 0 0 10px var(--neon);
-  }
+  .item-card.selected { background: var(--neon); color: #000; }
   .slots-8-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -403,7 +299,7 @@
   }
   .slot-cell {
     border: 1px dashed var(--neon);
-    height: 46px;
+    height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -411,66 +307,8 @@
     background: rgba(0, 25, 0, 0.5);
     cursor: pointer;
     text-align: center;
-    padding: 2px;
   }
-  .slot-cell.occupied {
-    border-style: solid;
-    background: rgba(57, 255, 20, 0.14);
-  }
-
-  /* 手元アイテム操作バー（自分のターン中） */
-  #hand-items-bar {
-    position: absolute;
-    bottom: 10px;
-    left: 12px;
-    right: 12px;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    pointer-events: auto;
-  }
-  .mini-slots-row {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .mini-slot-btn {
-    background: rgba(0, 0, 0, 0.9);
-    border: 1px solid var(--neon);
-    color: var(--neon);
-    font-family: inherit;
-    font-size: 12px;
-    padding: 5px 8px;
-    cursor: pointer;
-  }
-  .mini-slot-btn:active {
-    background: var(--neon);
-    color: #000;
-  }
-  .mini-slot-btn.empty {
-    opacity: 0.3;
-    pointer-events: none;
-  }
-
-  /* アイテム説明ツールチップ */
-  #item-confirm-modal {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #000;
-    border: 2px solid var(--neon);
-    padding: 14px 18px;
-    z-index: 350;
-    display: none;
-    flex-direction: column;
-    gap: 10px;
-    min-width: 280px;
-    max-width: 90vw;
-    pointer-events: auto;
-  }
+  .slot-cell.occupied { border-style: solid; background: rgba(57, 255, 20, 0.15); }
 
   /* 3D頭上プレイヤー名ラベル */
   .name-tag {
@@ -484,16 +322,9 @@
     z-index: 150;
     white-space: nowrap;
   }
-  .name-tag.turn-active {
-    color: var(--neon);
-    text-shadow: 0 0 8px var(--neon);
-  }
-  .name-tag.dead {
-    color: #666;
-    text-decoration: line-through;
-  }
+  .name-tag.turn-active { color: var(--neon); text-shadow: 0 0 8px var(--neon); }
+  .name-tag.dead { color: #666; text-decoration: line-through; }
 
-  /* 画面フラッシュ（ダメージ／回復） */
   #flash-fx {
     position: fixed;
     inset: 0;
@@ -502,89 +333,88 @@
     opacity: 0;
     transition: opacity 0.25s;
   }
+
+  /* BGM用非表示YouTube iframe */
+  #bgm-container { display: none; }
 </style>
 </head>
 <body class="scanlines">
 
-<!-- 縦画面警告 -->
+<!-- バックショットルーレットBGM (YouTube: lRjJk4xhHHE) -->
+<div id="bgm-container">
+  <iframe width="560" height="315" src="https://www.youtube.com/embed/lRjJk4xhHHE?autoplay=1&loop=1&playlist=lRjJk4xhHHE" title="BGM" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div>
+
 <div id="rotate-warning">
   <div style="font-size:22px; margin-bottom:10px;">[ SYSTEM NOTICE ]</div>
   <div>スマホを横画面（ランドスケープ）にしてプレイしてください</div>
 </div>
 
-<!-- フラッシュ演出 -->
 <div id="flash-fx"></div>
 
-<!-- ① 部屋に入る前のロビー（タイトル＆マッチング） -->
+<!-- ① タイトル・マッチング画面 -->
 <div id="title-screen" class="screen active">
   <div class="term-header">
     <div>
       <span class="game-title">Life Trade</span>
-      <span class="game-ver">ver 0.1</span>
+      <span class="game-ver">ver 0.2</span>
     </div>
-    <div style="font-size:12px;">ONLINE 3D RUSSIAN ROULETTE [2-5 PLAYERS]</div>
+    <div style="font-size:12px;">3D RUSSIAN ROULETTE [ONLINE]</div>
   </div>
 
   <div class="lobby-grid">
     <div class="box-panel">
       <div>
         <div class="input-group">
-          <label>&gt; プレイヤー名 (NAME)</label>
+          <label>&gt; プレイヤー名</label>
           <input type="text" id="player-name-input" maxlength="10" placeholder="PLAYER" />
         </div>
         <div class="input-group">
-          <label>&gt; 3桁の部屋番号 (3-DIGIT ROOM ID)</label>
+          <label>&gt; 3桁の部屋番号 (ROOM ID)</label>
           <input type="tel" id="room-id-input" maxlength="3" pattern="[0-9]*" placeholder="例: 777" />
         </div>
       </div>
       <div style="display:flex; gap:10px;">
-        <button class="btn btn-center" style="flex:1;" onclick="createRoom()">[ 部屋を作成 ]</button>
-        <button class="btn btn-center" style="flex:1;" onclick="joinRoom()">[ 部屋に参加 ]</button>
+        <button class="btn btn-center" style="flex:1;" onclick="createRoom()">[ 部屋作成 ]</button>
+        <button class="btn btn-center" style="flex:1;" onclick="joinRoom()">[ 部屋参加 ]</button>
       </div>
     </div>
 
     <div class="box-panel">
-      <div style="font-size:13px; line-height:1.5;">
-        <div>&gt; TERMINAL STATUS: <span id="net-status">READY</span></div>
-        <div>&gt; 初期ライフ: ⚡×5 (負け抜け制)</div>
-        <div>&gt; 毎ラウンド最大4個アイテム補充 (最大所持8枠)</div>
-        <div>&gt; 空砲を自分に撃つと連続ターン</div>
+      <div style="font-size:13px; line-height:1.6;">
+        <div>&gt; STATUS: <span id="net-status">READY</span></div>
+        <div>&gt; 初期ライフ: ⚡×5 (黄緑色モニター)</div>
+        <div>&gt; アイテム: 3Dオブジェクト直タップで操作</div>
+        <div>&gt; ショットガン: タップして撃つ / スライドで確認</div>
         <div id="title-error" style="color:var(--danger); margin-top:6px;"></div>
-      </div>
-      <div style="font-size:11px; opacity:0.75; border-top:1px dashed var(--neon); padding-top:6px;">
-        ※スマホの「共有 → ホーム画面に追加」でアプリアイコン化対応
       </div>
     </div>
   </div>
 </div>
 
-<!-- ② 部屋に入った後のロビー（添付画像準拠） -->
+<!-- ② 部屋に入った後のロビー -->
 <div id="lobby-screen" class="screen">
   <div class="room-layout">
     <div>
-      <div style="font-size:14px; margin-bottom:6px;">ハイローラー： <span style="float:right;">Life Trade ver 0.1</span></div>
+      <div style="font-size:14px; margin-bottom:6px;">ハイローラー： <span style="float:right;">Life Trade ver 0.2</span></div>
       <div class="player-table-wrap">
         <div class="player-list-box" id="lobby-player-list"></div>
         <div class="kick-col" id="lobby-kick-col"></div>
       </div>
       <div class="slot-indicators" id="lobby-slot-dots"></div>
 
-      <div style="margin-top:16px; display:flex; flex-direction:column; gap:8px; align-items:flex-start;">
+      <div style="margin-top:16px; display:flex; gap:10px;">
         <button class="btn" onclick="leaveRoom()">テーブルを離脱</button>
         <button class="btn" id="start-game-btn" onclick="hostStartGame()">ゲーム開始</button>
       </div>
     </div>
 
-    <div class="room-bottom">
-      <div class="room-settings">
-        <div style="opacity:0.8; margin-bottom:4px;">マッチ設定カスタマイズ</div>
-        <div onclick="copyRoomId()">📋 ロビーIDコピー: <strong id="display-room-id">---</strong> <span id="copy-toast" style="font-size:12px;"></span></div>
-        <div onclick="cycleMaxPlayers()">🚪 PLAYER LIMIT: <strong id="display-max-players">5</strong> (タップで2〜5変更)</div>
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; font-size:14px;">
+      <div>
+        <div style="cursor:pointer;" onclick="copyRoomId()">📋 ロビーIDコピー: <strong id="display-room-id">---</strong> <span id="copy-toast" style="font-size:12px;"></span></div>
+        <div style="cursor:pointer; margin-top:4px;" onclick="cycleMaxPlayers()">🚪 PLAYER LIMIT: <strong id="display-max-players">5</strong> (2〜5)</div>
       </div>
-      <div class="room-status-right">
-        <div style="font-size:16px; margin-bottom:4px;" id="lobby-wait-msg">まもなくゲーム開始！</div>
-        <div style="font-size:12px; opacity:0.8;">3桁の番号を仲間に共有してください</div>
-      </div>
+      <div style="text-align:right;" id="lobby-wait-msg">まもなくゲーム開始！</div>
     </div>
   </div>
 </div>
@@ -595,48 +425,26 @@
   <div id="name-tags-container"></div>
 
   <div id="hud-layer">
-    <div class="hud-top-bar">
-      <div class="hud-badge">
-        <span id="hud-round">ROUND 1</span> | <span id="hud-turn-info">待機中...</span>
-      </div>
-      <div class="hud-badge" id="hud-shells-badge">
-        弾倉: ?
-      </div>
-    </div>
-
-    <!-- 視点切り替え（対面・全体・手元確認） -->
+    <!-- 右側の視点切替ボタンのみ -->
     <div class="view-controls">
-      <button class="view-btn active" id="cam-btn-front" onclick="setCameraMode('front')">正面(相手)</button>
-      <button class="view-btn" id="cam-btn-down" onclick="setCameraMode('down')">手元(残機/枠)</button>
-      <button class="view-btn" id="cam-btn-top" onclick="setCameraMode('top')">俯瞰</button>
+      <button class="view-btn active" id="cam-btn-front" onclick="setCameraMode('front')">対面</button>
+      <button class="view-btn" id="cam-btn-down" onclick="setCameraMode('down')">手元</button>
     </div>
 
-    <!-- 中央通知バナー -->
     <div id="center-banner"></div>
-
-    <!-- 手元アイテム＆ショットガン構えバー -->
-    <div id="hand-items-bar">
-      <div class="mini-slots-row" id="my-mini-slots"></div>
-      <div style="display:flex; gap:10px;">
-        <button class="btn" style="background:#000; font-size:15px;" onclick="openShootTargetMenu()">🔫 ショットガンを構える</button>
-        <button class="btn" style="background:#000; font-size:13px;" onclick="setCameraMode(cameraMode==='down'?'front':'down')">👁 視点切替</button>
-      </div>
-    </div>
-
-    <!-- 撃つ相手を選ぶUI -->
     <div id="action-overlay"></div>
   </div>
 </div>
 
-<!-- アイテム配布ボックスモーダル（ドラッグ＆タップ対応） -->
+<!-- アイテム配布ボックスモーダル -->
 <div id="loot-modal">
   <div class="loot-box-ui">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-      <span>[ SUPPLY BOX ] 枠にドラッグまたはタップで配置</span>
+      <span>[ SUPPLY BOX ] アイテムをタップして枠に配置</span>
       <span id="loot-count-label">残り: 0</span>
     </div>
     <div class="loot-items-row" id="loot-box-items"></div>
-    <div style="font-size:12px; opacity:0.85;">▼ あなたのアイテム枠（最大8枠 / 現在の空き枠分まで取得可能）</div>
+    <div style="font-size:12px; opacity:0.85;">▼ あなたの手元アイテム枠（最大8枠）</div>
     <div class="slots-8-grid" id="loot-slots-grid"></div>
     <div style="margin-top:10px; text-align:right;">
       <button class="btn" id="loot-done-btn" onclick="finishLootPhase()">配置完了</button>
@@ -644,129 +452,24 @@
   </div>
 </div>
 
-<!-- アイテム使用確認＆アドレナリン奪取モーダル -->
-<div id="item-confirm-modal">
-  <div id="item-modal-title" style="font-size:16px; border-bottom:1px solid var(--neon); padding-bottom:4px;"></div>
-  <div id="item-modal-desc" style="font-size:13px; line-height:1.4;"></div>
-  <div id="item-modal-extra" style="display:flex; flex-direction:column; gap:6px;"></div>
-  <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:4px;">
-    <button class="btn" onclick="closeItemModal()">キャンセル</button>
-    <button class="btn" id="item-modal-use-btn">使用する</button>
-  </div>
-</div>
-
 <script>
 /* ==========================================================================
-   0. ホーム画面追加用アイコン＆PWAマニフェスト動的生成
-   ========================================================================== */
-(function generateAppIcon() {
-  const c = document.createElement('canvas');
-  c.width = 512; c.height = 512;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#000000';
-  ctx.fillRect(0, 0, 512, 512);
-  ctx.strokeStyle = '#39ff14';
-  ctx.lineWidth = 18;
-  ctx.strokeRect(24, 24, 464, 464);
-
-  // イナズマ＋ショットガンシェル風シンボル
-  ctx.fillStyle = '#39ff14';
-  ctx.font = 'bold 54px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('LIFE', 256, 130);
-  ctx.fillText('TRADE', 256, 190);
-
-  // ⚡マーク
-  ctx.beginPath();
-  ctx.moveTo(280, 225);
-  ctx.lineTo(205, 340);
-  ctx.lineTo(260, 340);
-  ctx.lineTo(230, 445);
-  ctx.lineTo(315, 315);
-  ctx.lineTo(258, 315);
-  ctx.closePath();
-  ctx.fill();
-
-  const iconUrl = c.toDataURL('image/png');
-  const appleIcon = document.createElement('link');
-  appleIcon.rel = 'apple-touch-icon';
-  appleIcon.href = iconUrl;
-  document.head.appendChild(appleIcon);
-
-  const manifest = {
-    name: 'Life Trade',
-    short_name: 'Life Trade',
-    start_url: '.',
-    display: 'standalone',
-    orientation: 'landscape',
-    background_color: '#000000',
-    theme_color: '#000000',
-    icons: [{ src: iconUrl, sizes: '512x512', type: 'image/png' }]
-  };
-  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-  const manLink = document.createElement('link');
-  manLink.rel = 'manifest';
-  manLink.href = URL.createObjectURL(blob);
-  document.head.appendChild(manLink);
-})();
-
-/* ==========================================================================
-   1. アイテム定義（手錠を除いた全8種）
+   1. アイテム定義（より直感的な見た目）
    ========================================================================== */
 const ITEM_DEFS = {
-  saw: {
-    id: 'saw',
-    name: 'ノコギリ',
-    desc: '使用したターンのみ、実弾のダメージが2になる。',
-    color: 0x8b2626
-  },
-  magnifier: {
-    id: 'magnifier',
-    name: '虫眼鏡',
-    desc: '次に装填されている弾（薬室の弾）が実弾か空砲か自分だけ確認できる。',
-    color: 0x6b7b8c
-  },
-  cigarette: {
-    id: 'cigarette',
-    name: 'タバコ',
-    desc: '自分のライフを1回復する（最大5）。',
-    color: 0xb5382a
-  },
-  beer: {
-    id: 'beer',
-    name: 'ビール',
-    desc: 'ターン消費せずに現在薬室にある弾を1つ排莢して消費する。',
-    color: 0xaaaaaa
-  },
-  medicine: {
-    id: 'medicine',
-    name: '期限切れ薬',
-    desc: '50%でライフを2回復、50%でライフを1喪失する。',
-    color: 0xd9d2c5
-  },
-  adrenaline: {
-    id: 'adrenaline',
-    name: 'アドレナリン',
-    desc: '相手のアイテムを1つ盗み、即時使用する（アドレナリン自体は盗めない）。',
-    color: 0x222222
-  },
-  inverter: {
-    id: 'inverter',
-    name: 'インバータ',
-    desc: '現在薬室にある弾の空砲と実弾を入れ替える。',
-    color: 0x2e4a36
-  },
-  phone: {
-    id: 'phone',
-    name: '使い捨て携帯',
-    desc: '残弾の中からランダムで何発目かの弾が実弾か空砲か教えてくれる。',
-    color: 0x1a1a1a
-  }
+  saw: { id: 'saw', name: 'ノコギリ', desc: '実弾ダメージが2になる' },
+  magnifier: { id: 'magnifier', name: '虫眼鏡', desc: '次の弾を確認する' },
+  cigarette: { id: 'cigarette', name: 'タバコ', desc: 'ライフ+1回復' },
+  beer: { id: 'beer', name: 'ビール', desc: '弾を1発排莢する' },
+  medicine: { id: 'medicine', name: '期限切れ薬', desc: '50%で+2 / 50%で-1' },
+  adrenaline: { id: 'adrenaline', name: 'アドレナリン', desc: '相手のアイテムを奪う' },
+  inverter: { id: 'inverter', name: 'インバータ', desc: '弾の性質を反転' },
+  phone: { id: 'phone', name: '使い捨て携帯', desc: '何番目の弾か判明する' }
 };
 const ITEM_KEYS = Object.keys(ITEM_DEFS);
 
 /* ==========================================================================
-   2. Web Audio 効果音シンセ（外部音声ファイル不要）
+   2. Web Audio 効果音
    ========================================================================== */
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playTone(freq, type, dur, vol = 0.15) {
@@ -785,59 +488,51 @@ function playTone(freq, type, dur, vol = 0.15) {
 function playShotSound(isLive) {
   if (audioCtx.state === 'suspended') audioCtx.resume();
   if (isLive) {
-    // 重低音＋ノイズ破裂音
-    playTone(90, 'sawtooth', 0.45, 0.35);
-    playTone(45, 'square', 0.5, 0.3);
+    playTone(80, 'sawtooth', 0.45, 0.4);
+    playTone(40, 'square', 0.5, 0.35);
   } else {
-    // カチッという空砲音
-    playTone(950, 'triangle', 0.08, 0.2);
-    setTimeout(() => playTone(600, 'square', 0.06, 0.15), 50);
+    playTone(900, 'triangle', 0.08, 0.2);
   }
 }
 
 /* ==========================================================================
-   3. ネットワーク＆ゲーム状態管理（PeerJS 3桁ルーム）
+   3. 通信＆状態管理
    ========================================================================== */
-const PEER_PREFIX = 'lifetrade-v01-room-';
+const PEER_PREFIX = 'lifetrade-v02-room-';
 let peer = null;
 let isHost = false;
 let myId = '';
 let myName = 'PLAYER';
 let roomCode = '';
-let connections = {}; // host: peerId -> DataConnection
-let hostConn = null;    // client: DataConnection to host
+let connections = {};
+let hostConn = null;
 
 let gameState = {
-  phase: 'lobby', // lobby | loot | play | gameover
+  phase: 'lobby',
   maxPlayers: 5,
   round: 1,
-  players: [], // { id, name, hp, maxHp:5, slots: Array(8).fill(null), alive:true, lookYaw:0, handAction:'idle', lootPending:[] }
+  players: [],
   turnIndex: 0,
-  shells: [], // true = 実弾, false = 空砲
+  shells: [],
   sawActive: false,
-  aimTargetId: null, // 誰に銃を向けているか
+  aimTargetId: null,
   winnerName: ''
 };
 
-// 保存された名前を復元
 const savedName = localStorage.getItem('lt_player_name');
 if (savedName) document.getElementById('player-name-input').value = savedName;
 
-function setError(msg) {
-  document.getElementById('title-error').textContent = msg;
-}
-
+function setError(msg) { document.getElementById('title-error').textContent = msg; }
 function getCleanName() {
   const raw = document.getElementById('player-name-input').value.trim();
   const name = raw || ('NO.' + Math.floor(100 + Math.random() * 900));
   localStorage.setItem('lt_player_name', name);
   return name;
 }
-
 function getCleanCode() {
   const code = document.getElementById('room-id-input').value.trim();
   if (!/^\d{3}$/.test(code)) {
-    setError('エラー: 部屋番号は3桁の半角数字で入力してください');
+    setError('3桁の半角数字で部屋番号を入力してください');
     return null;
   }
   return code;
@@ -850,7 +545,7 @@ function createRoom() {
   if (!code) return;
   roomCode = code;
   isHost = true;
-  document.getElementById('net-status').textContent = 'CREATING ROOM...';
+  document.getElementById('net-status').textContent = 'CREATING...';
 
   if (peer) peer.destroy();
   peer = new Peer(PEER_PREFIX + roomCode);
@@ -862,29 +557,16 @@ function createRoom() {
       maxPlayers: 5,
       round: 1,
       players: [{
-        id: myId,
-        name: myName,
-        hp: 5,
-        maxHp: 5,
-        slots: Array(8).fill(null),
-        alive: true,
-        lookYaw: 0,
-        handAction: 'idle',
-        lootPending: []
+        id: myId, name: myName, hp: 5, maxHp: 5,
+        slots: Array(8).fill(null), alive: true, lookYaw: 0, handAction: 'idle', lootPending: []
       }],
-      turnIndex: 0,
-      shells: [],
-      sawActive: false,
-      aimTargetId: null,
-      winnerName: ''
+      turnIndex: 0, shells: [], sawActive: false, aimTargetId: null, winnerName: ''
     };
     enterLobbyUI();
   });
 
   peer.on('connection', (conn) => {
-    conn.on('open', () => {
-      connections[conn.peer] = conn;
-    });
+    conn.on('open', () => { connections[conn.peer] = conn; });
     conn.on('data', (data) => handleHostReceive(conn.peer, data));
     conn.on('close', () => {
       delete connections[conn.peer];
@@ -892,14 +574,9 @@ function createRoom() {
       broadcastState();
     });
   });
-
   peer.on('error', (err) => {
     document.getElementById('net-status').textContent = 'ERROR';
-    if (err.type === 'unavailable-id') {
-      setError(`部屋番号 ${roomCode} は既に使用中です。「部屋に参加」を押すか別の番号にしてください。`);
-    } else {
-      setError('通信エラー: ' + err.type);
-    }
+    setError(err.type === 'unavailable-id' ? '既に使われている部屋番号です' : '通信エラー');
   });
 }
 
@@ -923,38 +600,23 @@ function joinRoom() {
       enterLobbyUI();
     });
     hostConn.on('data', (data) => handleClientReceive(data));
-    hostConn.on('close', () => {
-      alert('ホストとの接続が切断されました。');
-      location.reload();
-    });
+    hostConn.on('close', () => { alert('ホストとの接続が切れました'); location.reload(); });
   });
-
-  peer.on('error', (err) => {
-    document.getElementById('net-status').textContent = 'ERROR';
-    setError('接続失敗: 部屋が存在しないか通信エラーです (' + err.type + ')');
-  });
+  peer.on('error', () => { setError('部屋が見つかりません'); });
 }
 
 function sendToHost(payload) {
-  if (isHost) {
-    handleHostReceive(myId, payload);
-  } else if (hostConn && hostConn.open) {
-    hostConn.send(payload);
-  }
+  if (isHost) handleHostReceive(myId, payload);
+  else if (hostConn && hostConn.open) hostConn.send(payload);
 }
 
 function broadcastState(extraEvent = null) {
   if (!isHost) return;
   const packet = { type: 'state', state: gameState, event: extraEvent };
-  Object.values(connections).forEach(c => {
-    if (c.open) c.send(packet);
-  });
+  Object.values(connections).forEach(c => { if (c.open) c.send(packet); });
   applyStateUpdate(gameState, extraEvent);
 }
 
-/* ==========================================================================
-   4. ロビーUI制御
-   ========================================================================== */
 function enterLobbyUI() {
   document.getElementById('title-screen').classList.remove('active');
   document.getElementById('lobby-screen').classList.add('active');
@@ -966,21 +628,22 @@ function renderLobby() {
   const listEl = document.getElementById('lobby-player-list');
   const kickEl = document.getElementById('lobby-kick-col');
   const dotsEl = document.getElementById('lobby-slot-dots');
-  listEl.innerHTML = '';
-  kickEl.innerHTML = '';
-  dotsEl.innerHTML = '';
+  listEl.innerHTML = ''; kickEl.innerHTML = ''; dotsEl.innerHTML = '';
 
   gameState.players.forEach((p, idx) => {
     const row = document.createElement('div');
     row.className = 'player-row';
     row.textContent = p.name + (idx === 0 ? ' [HOST]' : '');
     listEl.appendChild(row);
-
     if (isHost && idx > 0) {
       const kb = document.createElement('button');
       kb.className = 'kick-btn';
       kb.textContent = 'キック';
-      kb.onclick = () => kickPlayer(p.id);
+      kb.onclick = () => {
+        if (connections[p.id]) { connections[p.id].send({ type: 'kicked' }); connections[p.id].close(); }
+        gameState.players = gameState.players.filter(pl => pl.id !== p.id);
+        broadcastState();
+      };
       kickEl.appendChild(kb);
     }
   });
@@ -996,11 +659,8 @@ function renderLobby() {
   if (isHost) {
     startBtn.style.display = 'inline-block';
     startBtn.disabled = gameState.players.length < 2;
-    document.getElementById('lobby-wait-msg').textContent =
-      gameState.players.length < 2 ? '2人以上で開始可能' : 'まもなくゲーム開始！';
   } else {
     startBtn.style.display = 'none';
-    document.getElementById('lobby-wait-msg').textContent = 'ホストの開始を待機中...';
   }
 }
 
@@ -1014,45 +674,23 @@ function copyRoomId() {
 function cycleMaxPlayers() {
   if (!isHost) return;
   gameState.maxPlayers = gameState.maxPlayers >= 5 ? 2 : gameState.maxPlayers + 1;
-  while (gameState.players.length > gameState.maxPlayers) {
-    const kicked = gameState.players.pop();
-    if (connections[kicked.id]) connections[kicked.id].close();
-  }
   broadcastState();
 }
 
-function kickPlayer(targetId) {
-  if (!isHost) return;
-  if (connections[targetId]) {
-    connections[targetId].send({ type: 'kicked' });
-    connections[targetId].close();
-  }
-  gameState.players = gameState.players.filter(p => p.id !== targetId);
-  broadcastState();
-}
-
-function leaveRoom() {
-  if (peer) peer.destroy();
-  location.reload();
-}
+function leaveRoom() { if (peer) peer.destroy(); location.reload(); }
 
 function hostStartGame() {
   if (!isHost || gameState.players.length < 2) return;
   gameState.round = 1;
-  gameState.players.forEach(p => {
-    p.hp = 5;
-    p.alive = true;
-    p.slots = Array(8).fill(null);
-  });
+  gameState.players.forEach(p => { p.hp = 5; p.alive = true; p.slots = Array(8).fill(null); });
   gameState.turnIndex = 0;
   startNewRound();
 }
 
 /* ==========================================================================
-   5. ホスト側ゲームロジック（ラウンド・弾装填・アイテム・射撃判定）
+   4. ゲームロジック
    ========================================================================== */
 function startNewRound() {
-  // 生存者確認
   const alivePlayers = gameState.players.filter(p => p.alive);
   if (alivePlayers.length <= 1) {
     gameState.phase = 'gameover';
@@ -1061,14 +699,12 @@ function startNewRound() {
     return;
   }
 
-  // 弾の生成（プレイヤー人数に応じて3〜8発、実弾と空砲が必ず1発以上入る）
   const total = Math.min(8, Math.max(3, alivePlayers.length + 2 + Math.floor(Math.random() * 3)));
   const liveCount = Math.max(1, Math.min(total - 1, Math.round(total * (0.4 + Math.random() * 0.25))));
   const blankCount = total - liveCount;
   const shells = [];
   for (let i = 0; i < liveCount; i++) shells.push(true);
   for (let i = 0; i < blankCount; i++) shells.push(false);
-  // シャッフル
   for (let i = shells.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [shells[i], shells[j]] = [shells[j], shells[i]];
@@ -1077,29 +713,19 @@ function startNewRound() {
   gameState.sawActive = false;
   gameState.aimTargetId = null;
 
-  // 毎ラウンド開始時のアイテム配布（基本4個、8枠の空き数まで）
   gameState.players.forEach(p => {
-    if (!p.alive) {
-      p.lootPending = [];
-      return;
-    }
+    if (!p.alive) { p.lootPending = []; return; }
     const emptyCount = p.slots.filter(s => s === null).length;
     const giveCount = Math.min(4, emptyCount);
     const loot = [];
-    for (let i = 0; i < giveCount; i++) {
-      loot.push(ITEM_KEYS[Math.floor(Math.random() * ITEM_KEYS.length)]);
-    }
+    for (let i = 0; i < giveCount; i++) loot.push(ITEM_KEYS[Math.floor(Math.random() * ITEM_KEYS.length)]);
     p.lootPending = loot;
   });
 
-  // 誰も配布アイテムがない場合は即プレイへ
   const anyLoot = gameState.players.some(p => p.alive && p.lootPending.length > 0);
   gameState.phase = anyLoot ? 'loot' : 'play';
 
-  // 現在のターンプレイヤーが死亡していたら次へ進める
-  if (!gameState.players[gameState.turnIndex].alive) {
-    advanceTurnIndex();
-  }
+  if (!gameState.players[gameState.turnIndex].alive) advanceTurnIndex();
 
   broadcastState({
     kind: 'round_start',
@@ -1113,32 +739,19 @@ function advanceTurnIndex() {
   const n = gameState.players.length;
   for (let i = 1; i <= n; i++) {
     const idx = (gameState.turnIndex + i) % n;
-    if (gameState.players[idx].alive) {
-      gameState.turnIndex = idx;
-      return;
-    }
+    if (gameState.players[idx].alive) { gameState.turnIndex = idx; return; }
   }
 }
 
 function handleHostReceive(senderId, data) {
   if (data.type === 'join') {
     if (gameState.phase !== 'lobby' || gameState.players.length >= gameState.maxPlayers) {
-      if (connections[senderId]) {
-        connections[senderId].send({ type: 'kicked' });
-        connections[senderId].close();
-      }
+      if (connections[senderId]) { connections[senderId].send({ type: 'kicked' }); connections[senderId].close(); }
       return;
     }
     gameState.players.push({
-      id: senderId,
-      name: data.name,
-      hp: 5,
-      maxHp: 5,
-      slots: Array(8).fill(null),
-      alive: true,
-      lookYaw: 0,
-      handAction: 'idle',
-      lootPending: []
+      id: senderId, name: data.name, hp: 5, maxHp: 5,
+      slots: Array(8).fill(null), alive: true, lookYaw: 0, handAction: 'idle', lootPending: []
     });
     broadcastState();
     return;
@@ -1148,35 +761,19 @@ function handleHostReceive(senderId, data) {
   if (pIndex === -1) return;
   const player = gameState.players[pIndex];
 
-  if (data.type === 'look') {
-    player.lookYaw = data.yaw;
-    broadcastState();
-    return;
-  }
-
+  if (data.type === 'look') { player.lookYaw = data.yaw; broadcastState(); return; }
   if (data.type === 'loot_done') {
-    // 検証しながらスロット更新
     player.slots = data.slots.slice(0, 8);
     player.lootPending = [];
-    if (gameState.players.every(p => !p.alive || p.lootPending.length === 0)) {
-      gameState.phase = 'play';
-    }
+    if (gameState.players.every(p => !p.alive || p.lootPending.length === 0)) gameState.phase = 'play';
     broadcastState();
     return;
   }
 
-  // 以降は現在のターンプレイヤーのみ操作可能
   if (gameState.phase !== 'play' || gameState.turnIndex !== pIndex) return;
 
-  if (data.type === 'aim') {
-    gameState.aimTargetId = data.targetId;
-    player.handAction = 'aim';
-    broadcastState();
-    return;
-  }
-
   if (data.type === 'use_item') {
-    executeItemUse(player, data.slotIndex, data.stealTargetId, data.stealSlotIndex);
+    executeItemUse(player, data.slotIndex);
     return;
   }
 
@@ -1186,107 +783,56 @@ function handleHostReceive(senderId, data) {
   }
 }
 
-function executeItemUse(player, slotIndex, stealTargetId, stealSlotIndex) {
+function executeItemUse(player, slotIndex) {
   const itemId = player.slots[slotIndex];
   if (!itemId) return;
-
-  // スロットから消費
   player.slots[slotIndex] = null;
-  player.handAction = 'item_' + itemId;
-
-  let actualItem = itemId;
-  let stealInfo = null;
-
-  // アドレナリン処理：相手のアイテムを盗んで即発動
-  if (itemId === 'adrenaline') {
-    const victim = gameState.players.find(p => p.id === stealTargetId);
-    if (victim && victim.slots[stealSlotIndex] && victim.slots[stealSlotIndex] !== 'adrenaline') {
-      actualItem = victim.slots[stealSlotIndex];
-      victim.slots[stealSlotIndex] = null;
-      stealInfo = { from: victim.name, item: actualItem };
-    } else {
-      broadcastState({ kind: 'banner', text: `${player.name} のアドレナリンは不発に終わった` });
-      return;
-    }
-  }
 
   let privateMsg = null;
-  let bannerText = `${player.name} が【${ITEM_DEFS[actualItem].name}】を使用！`;
-  if (stealInfo) {
-    bannerText = `${player.name} が ${stealInfo.from} から【${ITEM_DEFS[actualItem].name}】を奪って使用！`;
-  }
+  let bannerText = `${player.name} が【${ITEM_DEFS[itemId].name}】を使用`;
 
-  switch (actualItem) {
+  switch (itemId) {
     case 'saw':
       gameState.sawActive = true;
-      bannerText += '（このターン実弾ダメージ2倍！）';
       break;
     case 'magnifier': {
       const nextShell = gameState.shells[0];
-      privateMsg = nextShell ? '🔍 次の弾は【実弾 (RED)】だ！' : '🔍 次の弾は【空砲 (BLANK)】だ！';
+      privateMsg = nextShell ? '🔍 次の弾は【赤：実弾】だ！' : '🔍 次の弾は【青：空砲】だ！';
       break;
     }
     case 'cigarette':
       player.hp = Math.min(player.maxHp, player.hp + 1);
-      bannerText += '（ライフ +1）';
       break;
-    case 'beer': {
-      const ejected = gameState.shells.shift();
-      bannerText += ejected ? ' → 排莢された弾は【実弾】だった！' : ' → 排莢された弾は【空砲】だった！';
+    case 'beer':
+      gameState.shells.shift();
       break;
-    }
     case 'medicine':
-      if (Math.random() < 0.5) {
-        player.hp = Math.min(player.maxHp, player.hp + 2);
-        bannerText += ' → 成功！ライフ +2！';
-      } else {
-        player.hp = Math.max(0, player.hp - 1);
-        bannerText += ' → 腐っていた！ライフ -1！';
-        if (player.hp <= 0) player.alive = false;
-      }
+      if (Math.random() < 0.5) player.hp = Math.min(player.maxHp, player.hp + 2);
+      else { player.hp = Math.max(0, player.hp - 1); if (player.hp <= 0) player.alive = false; }
       break;
     case 'inverter':
-      if (gameState.shells.length > 0) {
-        gameState.shells[0] = !gameState.shells[0];
-      }
-      bannerText += '（現在の弾性が反転した！）';
+      if (gameState.shells.length > 0) gameState.shells[0] = !gameState.shells[0];
       break;
     case 'phone': {
       if (gameState.shells.length > 0) {
         const idx = Math.floor(Math.random() * gameState.shells.length);
         const isLive = gameState.shells[idx];
-        privateMsg = `📱 着信:「${idx + 1}発目の弾は【${isLive ? '実弾' : '空砲'}】だ…」`;
+        privateMsg = `、、、、、${idx + 1}番目の弾、、、${isLive ? '実弾' : '空砲'}、、`;
       }
       break;
     }
   }
 
-  // プライベートメッセージ（虫眼鏡・携帯）は使用者にだけ送る
   if (privateMsg) {
-    if (player.id === myId) {
-      showBanner(privateMsg, 3600);
-    } else if (connections[player.id]) {
-      connections[player.id].send({ type: 'private_msg', text: privateMsg });
-    }
-  }
-
-  // ビール等で弾が0発になった、または薬で死亡した場合のチェック
-  const aliveCount = gameState.players.filter(p => p.alive).length;
-  if (aliveCount <= 1) {
-    startNewRound();
-    return;
-  }
-
-  if (!player.alive) {
-    advanceTurnIndex();
+    if (player.id === myId) showBanner(privateMsg, 4000);
+    else if (connections[player.id]) connections[player.id].send({ type: 'private_msg', text: privateMsg });
   }
 
   if (gameState.shells.length === 0) {
     gameState.round++;
-    broadcastState({ kind: 'banner', text: bannerText });
-    setTimeout(() => startNewRound(), 1800);
+    setTimeout(() => startNewRound(), 1500);
   } else {
-    broadcastState({ kind: 'item_fx', item: actualItem, actorId: player.id, text: bannerText });
+    broadcastState({ kind: 'banner', text: bannerText });
   }
 }
 
@@ -1297,28 +843,16 @@ function executeShoot(shooter, targetId) {
   const isLive = gameState.shells.shift();
   const dmg = isLive ? (gameState.sawActive ? 2 : 1) : 0;
   gameState.sawActive = false;
-  gameState.aimTargetId = targetId;
-  shooter.handAction = 'shoot';
 
   if (isLive) {
     target.hp = Math.max(0, target.hp - dmg);
-    if (target.hp <= 0) {
-      target.alive = false;
-    }
+    if (target.hp <= 0) target.alive = false;
   }
 
   const selfShot = (shooter.id === target.id);
-  let text = '';
-  if (isLive) {
-    text = `💥 ドォン！！【実弾】 ${target.name} に ${dmg} ダメージ！` + (!target.alive ? `（${target.name} 脱落！）` : '');
-  } else {
-    text = `カチッ…【空砲】` + (selfShot ? `（${shooter.name} はもう一度自分のターン！）` : '');
-  }
+  let text = isLive ? `💥 実弾！ ${target.name} に ${dmg} ダメージ` : `💧 空砲`;
 
-  // ターン移行判定（空砲を自分に撃った場合のみターン継続、それ以外は次へ）
-  if (!(selfShot && !isLive)) {
-    advanceTurnIndex();
-  }
+  if (!(selfShot && !isLive)) advanceTurnIndex();
 
   broadcastState({
     kind: 'shoot_fx',
@@ -1328,78 +862,60 @@ function executeShoot(shooter, targetId) {
     text
   });
 
-  // 勝敗 or ラウンド終了判定
   setTimeout(() => {
-    gameState.aimTargetId = null;
-    shooter.handAction = 'idle';
     const alivePlayers = gameState.players.filter(p => p.alive);
-    if (alivePlayers.length <= 1) {
-      startNewRound();
-    } else if (gameState.shells.length === 0) {
-      gameState.round++;
+    if (alivePlayers.length <= 1 || gameState.shells.length === 0) {
+      if (gameState.shells.length === 0) gameState.round++;
       startNewRound();
     } else {
       broadcastState();
     }
-  }, 1900);
+  }, 1600);
 }
 
 function handleClientReceive(data) {
-  if (data.type === 'kicked') {
-    alert('部屋からキックされたか、満員のため入室できませんでした。');
-    location.reload();
-  } else if (data.type === 'state') {
-    applyStateUpdate(data.state, data.event);
-  } else if (data.type === 'private_msg') {
-    showBanner(data.text, 3800);
-  }
+  if (data.type === 'kicked') { alert('キックされました'); location.reload(); }
+  else if (data.type === 'state') applyStateUpdate(data.state, data.event);
+  else if (data.type === 'private_msg') showBanner(data.text, 4000);
 }
 
 /* ==========================================================================
-   6. クライアント側UI＆3Dシーン同期
+   5. 3Dシーン＆インタラクション
    ========================================================================== */
 let threeInitialized = false;
-let cameraMode = 'front'; // front | down | top
+let cameraMode = 'front';
+let scene, camera, renderer;
+let tableGroup, shotgunGroup, barrelMesh;
+let seatVisuals = {};
+let mySeatAngle = 0;
+let targetCamPos = new THREE.Vector3(), targetCamLook = new THREE.Vector3();
+let userYawOffset = 0;
+let raycaster = new THREE.Raycaster(), mouse = new THREE.Vector2();
 
 function applyStateUpdate(newState, event) {
   gameState = newState;
+  if (gameState.phase === 'lobby') { renderLobby(); return; }
 
-  if (gameState.phase === 'lobby') {
-    renderLobby();
-    return;
-  }
-
-  // ゲーム画面へ切り替え
   document.getElementById('lobby-screen').classList.remove('active');
   document.getElementById('game-screen').classList.add('active');
 
-  if (!threeInitialized) {
-    initThreeScene();
-    threeInitialized = true;
-  }
-
+  if (!threeInitialized) { initThreeScene(); threeInitialized = true; }
   update3DSceneFromState();
-  updateGameHUD();
 
   if (event) {
     if (event.kind === 'round_start') {
-      showBanner(`ROUND ${event.round} 開始！ [ 実弾: ${event.live}発 / 空砲: ${event.blank}発 ]`, 3200);
-    } else if (event.kind === 'banner' || event.kind === 'item_fx') {
-      showBanner(event.text, 2400);
-      if (event.item === 'cigarette' || event.item === 'medicine') triggerFlash('rgba(57,255,20,0.22)');
+      showBanner(`ROUND ${event.round} [ 実弾: ${event.live} / 空砲: ${event.blank} ]`, 3500);
+    } else if (event.kind === 'banner') {
+      showBanner(event.text, 2200);
     } else if (event.kind === 'shoot_fx') {
       playShotSound(event.isLive);
-      showBanner(event.text, 2200);
-      if (event.isLive) {
-        triggerFlash('rgba(255, 20, 20, 0.55)');
-        cameraShakeTime = 0.45;
-      }
+      showBanner(event.text, 2000);
+      if (event.isLive) triggerFlash('rgba(255,20,20,0.5)');
     } else if (event.kind === 'gameover') {
-      showBanner(`🏆 勝者: ${event.winner}！！`, 10000);
+      showBanner(`勝者: ${event.winner}`, 8000);
     }
   }
 
-  // アイテム配布フェーズのモーダル制御
   const me = gameState.players.find(p => p.id === myId);
   if (gameState.phase === 'loot' && me && me.alive && me.lootPending.length > 0) {
     openLootModal(me);
@@ -1408,12 +924,12 @@ function applyStateUpdate(newState, event) {
   }
 }
 
-function showBanner(text, duration = 2200) {
+function showBanner(text, dur = 2000) {
   const el = document.getElementById('center-banner');
   el.textContent = text;
   el.style.display = 'block';
   clearTimeout(el._timer);
-  el._timer = setTimeout(() => { el.style.display = 'none'; }, duration);
+  el._timer = setTimeout(() => { el.style.display = 'none'; }, dur);
 }
 
 function triggerFlash(color) {
@@ -1423,46 +939,17 @@ function triggerFlash(color) {
   setTimeout(() => { fx.style.opacity = '0'; }, 180);
 }
 
-function updateGameHUD() {
-  document.getElementById('hud-round').textContent = `ROUND ${gameState.round}`;
-  const turnPlayer = gameState.players[gameState.turnIndex];
-  const isMyTurn = (gameState.phase === 'play' && turnPlayer && turnPlayer.id === myId);
-
-  document.getElementById('hud-turn-info').textContent =
-    gameState.phase === 'loot' ? 'アイテム配置中...' :
-    gameState.phase === 'gameover' ? `決着！勝者: ${gameState.winnerName}` :
-    isMyTurn ? '★ あなたのターン ★' : `${turnPlayer ? turnPlayer.name : ''} のターン`;
-
-  document.getElementById('hud-shells-badge').textContent = `残り弾数: ${gameState.shells.length}発` + (gameState.sawActive ? ' [威力2倍中]' : '');
-
-  const handBar = document.getElementById('hand-items-bar');
-  const miniSlots = document.getElementById('my-mini-slots');
-  const me = gameState.players.find(p => p.id === myId);
-
-  if (isMyTurn && me && me.alive) {
-    handBar.style.display = 'flex';
-    miniSlots.innerHTML = '';
-    me.slots.forEach((itemId, idx) => {
-      const btn = document.createElement('button');
-      btn.className = 'mini-slot-btn' + (itemId ? '' : ' empty');
-      btn.textContent = itemId ? `[${idx + 1}] ${ITEM_DEFS[itemId].name}` : `[${idx + 1}] 空`;
-      if (itemId) {
-        btn.onclick = () => openItemUseModal(idx, itemId);
-      }
-      miniSlots.appendChild(btn);
-    });
-  } else {
-    handBar.style.display = 'none';
-    document.getElementById('action-overlay').style.display = 'none';
-  }
+function setCameraMode(mode) {
+  cameraMode = mode;
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('cam-btn-' + mode).classList.add('active');
+  userYawOffset = 0;
 }
 
 /* ==========================================================================
-   7. アイテム配布ボックス（ドラッグ＆ドロップ + タップ両対応）
+   アイテム配置モーダル
    ========================================================================== */
-let tempLootItems = [];
-let tempSlots = [];
-let selectedLootIdx = null;
+let tempLootItems = [], tempSlots = [], selectedLootIdx = null;
 
 function openLootModal(me) {
   const modal = document.getElementById('loot-modal');
@@ -1477,21 +964,14 @@ function openLootModal(me) {
 function renderLootModal() {
   const boxRow = document.getElementById('loot-box-items');
   const grid = document.getElementById('loot-slots-grid');
-  boxRow.innerHTML = '';
-  grid.innerHTML = '';
-
-  document.getElementById('loot-count-label').textContent = `未配置: ${tempLootItems.length}個`;
+  boxRow.innerHTML = ''; grid.innerHTML = '';
+  document.getElementById('loot-count-label').textContent = `残り: ${tempLootItems.length}`;
 
   tempLootItems.forEach((itemId, idx) => {
     const card = document.createElement('div');
     card.className = 'item-card' + (selectedLootIdx === idx ? ' selected' : '');
-    card.draggable = true;
-    card.innerHTML = `<strong>${ITEM_DEFS[itemId].name}</strong><span style="font-size:10px;">ドラッグ/選択</span>`;
+    card.innerHTML = `<strong>${ITEM_DEFS[itemId].name}</strong>`;
     card.onclick = () => { selectedLootIdx = idx; renderLootModal(); };
-    card.ondragstart = (e) => {
-      selectedLootIdx = idx;
-      e.dataTransfer.setData('text/plain', String(idx));
-    };
     boxRow.appendChild(card);
   });
 
@@ -1499,26 +979,16 @@ function renderLootModal() {
     const cell = document.createElement('div');
     cell.className = 'slot-cell' + (slotItem ? ' occupied' : '');
     cell.textContent = slotItem ? ITEM_DEFS[slotItem].name : `枠 ${sIdx + 1}`;
-    cell.ondragover = (e) => e.preventDefault();
-    cell.ondrop = (e) => {
-      e.preventDefault();
-      placeLootToSlot(sIdx);
+    cell.onclick = () => {
+      if (selectedLootIdx !== null && !tempSlots[sIdx]) {
+        tempSlots[sIdx] = tempLootItems.splice(selectedLootIdx, 1)[0];
+        selectedLootIdx = tempLootItems.length > 0 ? 0 : null;
+        renderLootModal();
+      }
     };
-    cell.onclick = () => placeLootToSlot(sIdx);
     grid.appendChild(cell);
   });
-
   document.getElementById('loot-done-btn').disabled = tempLootItems.length > 0;
-}
-
-function placeLootToSlot(slotIdx) {
-  if (selectedLootIdx === null || !tempLootItems[selectedLootIdx]) return;
-  if (tempSlots[slotIdx] !== null) return; // 既に埋まっている枠には置けない
-  const [picked] = tempLootItems.splice(selectedLootIdx, 1);
-  tempSlots[slotIdx] = picked;
-  selectedLootIdx = tempLootItems.length > 0 ? 0 : null;
-  playTone(520, 'sine', 0.08, 0.12);
-  renderLootModal();
 }
 
 function finishLootPhase() {
@@ -1528,188 +998,79 @@ function finishLootPhase() {
 }
 
 /* ==========================================================================
-   8. アイテム使用＆射撃ターゲットUI
+   Three.js 3D構築
    ========================================================================== */
-function openItemUseModal(slotIndex, itemId) {
-  const def = ITEM_DEFS[itemId];
-  const modal = document.getElementById('item-confirm-modal');
-  document.getElementById('item-modal-title').textContent = `【${def.name}】を使用しますか？`;
-  document.getElementById('item-modal-desc').textContent = def.desc;
-  const extra = document.getElementById('item-modal-extra');
-  const useBtn = document.getElementById('item-modal-use-btn');
-  extra.innerHTML = '';
-
-  if (itemId === 'adrenaline') {
-    useBtn.style.display = 'none';
-    const others = gameState.players.filter(p => p.id !== myId && p.alive);
-    let foundAny = false;
-    others.forEach(op => {
-      op.slots.forEach((opItem, opSlotIdx) => {
-        if (opItem && opItem !== 'adrenaline') {
-          foundAny = true;
-          const b = document.createElement('button');
-          b.className = 'btn';
-          b.textContent = `${op.name} の【${ITEM_DEFS[opItem].name}】を奪って使う`;
-          b.onclick = () => {
-            closeItemModal();
-            sendToHost({
-              type: 'use_item',
-              slotIndex,
-              stealTargetId: op.id,
-              stealSlotIndex: opSlotIdx
-            });
-          };
-          extra.appendChild(b);
-        }
-      });
-    });
-    if (!foundAny) {
-      extra.innerHTML = '<div style="color:var(--danger); font-size:12px;">奪えるアイテムを持っている相手がいません</div>';
-    }
-  } else {
-    useBtn.style.display = 'inline-block';
-    useBtn.onclick = () => {
-      closeItemModal();
-      sendToHost({ type: 'use_item', slotIndex });
-    };
-  }
-
-  modal.style.display = 'flex';
-}
-
-function closeItemModal() {
-  document.getElementById('item-confirm-modal').style.display = 'none';
-}
-
-function openShootTargetMenu() {
-  const overlay = document.getElementById('action-overlay');
-  overlay.innerHTML = '';
-  overlay.style.display = 'flex';
-
-  gameState.players.forEach(p => {
-    if (!p.alive) return;
-    const isMe = (p.id === myId);
-    const btn = document.createElement('button');
-    btn.className = isMe ? 'btn' : 'btn btn-danger';
-    btn.textContent = isMe ? `🔫 自分を撃つ (${p.name})` : `🎯 ${p.name} を撃つ`;
-    btn.onmouseenter = () => sendToHost({ type: 'aim', targetId: p.id });
-    btn.onclick = () => {
-      overlay.style.display = 'none';
-      sendToHost({ type: 'shoot', targetId: p.id });
-    };
-    overlay.appendChild(btn);
-  });
-
-  const cancel = document.createElement('button');
-  cancel.className = 'btn';
-  cancel.textContent = '戻る';
-  cancel.onclick = () => { overlay.style.display = 'none'; };
-  overlay.appendChild(cancel);
-}
-
-/* ==========================================================================
-   9. Three.js 3D空間構築（五角形テーブル・マスク＆浮遊手・⚡モニター・ショットガン）
-   ========================================================================== */
-let scene, camera, renderer;
-let tableGroup, shotgunGroup, barrelMesh;
-let seatVisuals = {}; // playerId -> { group, headGroup, leftHand, rightHand, hpTextures, itemMeshes, nameTag }
-let mySeatAngle = 0;
-let targetCamPos = new THREE.Vector3();
-let targetCamLook = new THREE.Vector3();
-let userYawOffset = 0;
-let cameraShakeTime = 0;
-
 function initThreeScene() {
   const canvas = document.getElementById('three-canvas');
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x070606);
-  scene.fog = new THREE.FogExp2(0x070606, 0.085);
+  scene.background = new THREE.Color(0x050404);
+  scene.fog = new THREE.FogExp2(0x050404, 0.08);
 
-  camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 50);
+  camera = new THREE.PerspectiveCamera(56, window.innerWidth / window.innerHeight, 0.1, 50);
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-  // 薄暗いインダストリアル照明
-  const ambient = new THREE.AmbientLight(0x3a322e, 1.3);
-  scene.add(ambient);
+  scene.add(new THREE.AmbientLight(0x443a32, 1.4));
+  const spot = new THREE.SpotLight(0xffebd6, 2.5, 16, Math.PI / 3, 0.4);
+  spot.position.set(0, 5, 0);
+  scene.add(spot);
 
-  const overheadSpot = new THREE.SpotLight(0xffebd6, 2.2, 18, Math.PI / 3.2, 0.5);
-  overheadSpot.position.set(0, 5.2, 0);
-  scene.add(overheadSpot);
-
-  const greenRim = new THREE.PointLight(0x39ff14, 0.6, 8);
-  greenRim.position.set(0, 1.5, 0);
-  scene.add(greenRim);
-
-  // 背景の工場・パイプ風部屋壁
-  const roomGeo = new THREE.CylinderGeometry(8.5, 8.5, 7, 12, 1, true);
-  const roomMat = new THREE.MeshStandardMaterial({ color: 0x1a1210, side: THREE.BackSide, roughness: 0.9 });
-  const roomMesh = new THREE.Mesh(roomGeo, roomMat);
-  roomMesh.position.y = 2.5;
-  scene.add(roomMesh);
-
-  // 五角形テーブル構築
+  // 五角形テーブル
   tableGroup = new THREE.Group();
   scene.add(tableGroup);
-
-  const tableRadius = 2.55;
-  const tableGeo = new THREE.CylinderGeometry(tableRadius, tableRadius * 0.92, 0.28, 5);
-  const tableMat = new THREE.MeshStandardMaterial({ color: 0x2a2e25, roughness: 0.85, metalness: 0.25 });
-  const tableMesh = new THREE.Mesh(tableGeo, tableMat);
+  const tableMesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.5, 2.3, 0.26, 5),
+    new THREE.MeshStandardMaterial({ color: 0x222620, roughness: 0.8 })
+  );
   tableMesh.position.y = 0.72;
   tableGroup.add(tableMesh);
 
-  // テーブルの縁（五角形フレーム）
-  const rimGeo = new THREE.CylinderGeometry(tableRadius + 0.06, tableRadius + 0.06, 0.31, 5);
-  const rimMat = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.7, metalness: 0.6 });
-  const rimMesh = new THREE.Mesh(rimGeo, rimMat);
-  rimMesh.position.y = 0.715;
-  rimMesh.scale.set(1.01, 0.96, 1.01);
-  tableGroup.add(rimMesh);
-
-  // 中央の回転台（ターンテーブル）
-  const centerDisc = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.95, 1.02, 0.08, 24),
-    new THREE.MeshStandardMaterial({ color: 0x3b3830, roughness: 0.7, metalness: 0.5 })
-  );
-  centerDisc.position.y = 0.89;
-  tableGroup.add(centerDisc);
-
-  // 中央のショットガンモデル
+  // ショットガン
   shotgunGroup = new THREE.Group();
-  shotgunGroup.position.set(0, 0.98, 0);
-  const stock = new THREE.Mesh(
-    new THREE.BoxGeometry(0.11, 0.14, 0.55),
-    new THREE.MeshStandardMaterial({ color: 0x4a2518, roughness: 0.7 })
-  );
-  stock.position.z = -0.45;
+  shotgunGroup.position.set(0, 0.96, 0);
   const receiver = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1, 0.13, 0.45),
-    new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8, roughness: 0.3 })
+    new THREE.BoxGeometry(0.1, 0.12, 0.4),
+    new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8 })
   );
   barrelMesh = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.032, 0.032, 0.95, 12),
-    new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.85, roughness: 0.25 })
+    new THREE.CylinderGeometry(0.03, 0.03, 0.9, 12),
+    new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.85 })
   );
   barrelMesh.rotation.x = Math.PI / 2;
-  barrelMesh.position.set(0, 0.03, 0.45);
-  shotgunGroup.add(stock, receiver, barrelMesh);
+  barrelMesh.position.set(0, 0.02, 0.4);
+  shotgunGroup.add(receiver, barrelMesh);
   tableGroup.add(shotgunGroup);
 
-  // タッチ／マウスドラッグで左右を見渡す（自分の視線角度も他プレイヤーへ同期）
-  let dragging = false, prevX = 0, lastLookSend = 0;
-  canvas.addEventListener('pointerdown', (e) => { dragging = true; prevX = e.clientX; });
-  window.addEventListener('pointerup', () => { dragging = false; });
-  window.addEventListener('pointermove', (e) => {
-    if (!dragging) return;
-    const dx = e.clientX - prevX;
-    prevX = e.clientX;
-    userYawOffset = Math.max(-1.15, Math.min(1.15, userYawOffset - dx * 0.005));
-    const now = Date.now();
-    if (now - lastLookSend > 120) {
-      lastLookSend = now;
-      sendToHost({ type: 'look', yaw: userYawOffset });
+  // タップ＆スライド操作判定
+  let pointerDownX = 0, pointerDownY = 0, isDragging = false;
+  canvas.addEventListener('pointerdown', (e) => {
+    pointerDownX = e.clientX; pointerDownY = e.clientY;
+    isDragging = true;
+  });
+  canvas.addEventListener('pointerup', (e) => {
+    isDragging = false;
+    const dx = e.clientX - pointerDownX;
+    const dy = e.clientY - pointerDownY;
+
+    // スライド操作（虫眼鏡・携帯代わり）
+    if (Math.abs(dx) > 60 && Math.abs(dy) < 30) {
+      const me = gameState.players.find(p => p.id === myId);
+      const isMyTurn = (gameState.phase === 'play' && gameState.players[gameState.turnIndex]?.id === myId);
+      if (isMyTurn && gameState.shells.length > 0) {
+        const next = gameState.shells[0];
+        showBanner(next ? '🔍 [スライド確認] 次は【赤：実弾】' : '🔍 [スライド確認] 次は【青：空砲】', 3000);
+        return;
+      }
+    }
+
+    // タップ判定
+    if (Math.hypot(dx, dy) < 10) {
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(scene.children, true);
+      if (intersects.length > 0) handleCanvasClick(intersects[0]);
     }
   });
 
@@ -1722,110 +1083,99 @@ function initThreeScene() {
   animate3D();
 }
 
-function setCameraMode(mode) {
-  cameraMode = mode;
-  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('cam-btn-' + mode).classList.add('active');
-  userYawOffset = 0;
+function handleCanvasClick(hit) {
+  const me = gameState.players.find(p => p.id === myId);
+  const isMyTurn = (gameState.phase === 'play' && gameState.players[gameState.turnIndex]?.id === myId);
+  if (!isMyTurn || !me || !me.alive) return;
+
+  // ショットガンをタップした場合
+  let obj = hit.object;
+  let isShotgun = false;
+  while (obj) {
+    if (obj === shotgunGroup) { isShotgun = true; break; }
+    obj = obj.parent;
+  }
+
+  if (isShotgun) {
+    openShootTargetModal();
+    return;
+  }
 }
 
-// ⚡マーク残機モニター用の動的テクスチャ生成
+function openShootTargetModal() {
+  const overlay = document.getElementById('action-overlay');
+  overlay.innerHTML = '';
+  overlay.style.display = 'flex';
+
+  gameState.players.forEach(p => {
+    if (!p.alive) return;
+    const isMe = (p.id === myId);
+    const btn = document.createElement('button');
+    btn.className = isMe ? 'btn' : 'btn';
+    btn.style.borderColor = isMe ? 'var(--neon)' : 'var(--danger)';
+    btn.style.color = isMe ? 'var(--neon)' : 'var(--danger)';
+    btn.textContent = isMe ? `自分に撃つ (${p.name})` : `${p.name} を撃つ`;
+    btn.onclick = () => {
+      overlay.style.display = 'none';
+      sendToHost({ type: 'shoot', targetId: p.id });
+    };
+    overlay.appendChild(btn);
+  });
+
+  const cancel = document.createElement('button');
+  cancel.className = 'btn';
+  cancel.textContent = 'キャンセル';
+  cancel.onclick = () => { overlay.style.display = 'none'; };
+  overlay.appendChild(cancel);
+}
+
+/* 黃緑色の⚡残機モニターテクスチャ */
 function createHpCanvasTexture(hp, maxHp = 5) {
   const c = document.createElement('canvas');
   c.width = 256; c.height = 64;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#041204';
+  ctx.fillStyle = '#031203';
   ctx.fillRect(0, 0, 256, 64);
-  ctx.strokeStyle = '#39ff14';
+  ctx.strokeStyle = '#76ff03'; // 黄緑色
   ctx.lineWidth = 4;
   ctx.strokeRect(2, 2, 252, 60);
 
   for (let i = 0; i < maxHp; i++) {
     const x = 28 + i * 48;
-    ctx.fillStyle = i < hp ? '#39ff14' : '#122910';
-    ctx.font = 'bold 38px monospace';
+    ctx.fillStyle = i < hp ? '#76ff03' : '#142b10';
+    ctx.font = 'bold 36px monospace';
     ctx.fillText('⚡', x - 12, 46);
   }
-  const tex = new THREE.CanvasTexture(c);
-  return tex;
+  return new THREE.CanvasTexture(c);
 }
 
 function buildMaskMesh(seatIndex) {
   const group = new THREE.Group();
-  const baseMat = new THREE.MeshStandardMaterial({
-    color: [0x6e685f, 0x4b5348, 0x70584c, 0x525663, 0x665e48][seatIndex % 5],
-    roughness: 0.65,
-    metalness: 0.4
+  const mat = new THREE.MeshStandardMaterial({
+    color: [0x5f6e5f, 0x4b5348, 0x6e5c4b, 0x525b63][seatIndex % 4],
+    roughness: 0.6
   });
-
-  // 特徴的なマスク頭部
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.48, 0.38), baseMat);
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.46, 0.36), mat);
   group.add(head);
-
-  // 目のゴーグルレンズ（2つ）
-  const eyeMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
-  const rimMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8 });
   [-0.1, 0.1].forEach(ex => {
-    const eye = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.06, 12), eyeMat);
+    const eye = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.05, 12), new THREE.MeshBasicMaterial({ color: 0x111111 }));
     eye.rotation.x = Math.PI / 2;
-    eye.position.set(ex, 0.06, 0.19);
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.068, 0.015, 8, 16), rimMat);
-    rim.position.set(ex, 0.06, 0.21);
-    group.add(eye, rim);
+    eye.position.set(ex, 0.05, 0.18);
+    group.add(eye);
   });
-
-  // ガスマスク風フィルター（座席ごとに位置変え）
-  const filter = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.075, 0.085, 0.14, 12),
-    new THREE.MeshStandardMaterial({ color: 0x1d1d1d, roughness: 0.5 })
-  );
-  filter.rotation.x = Math.PI / 2;
-  filter.position.set(seatIndex % 2 === 0 ? 0 : 0.09, -0.1, 0.22);
-  group.add(filter);
-
   return group;
 }
 
-function buildHandMesh() {
-  const handGroup = new THREE.Group();
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0x8f7a6c, roughness: 0.8 });
-  const palm = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.06, 0.18), skinMat);
-  handGroup.add(palm);
-  for (let f = -1.5; f <= 1.5; f += 1) {
-    const finger = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.04, 0.11), skinMat);
-    finger.position.set(f * 0.032, -0.01, 0.12);
-    handGroup.add(finger);
-  }
-  return handGroup;
-}
-
 function buildItem3DMesh(itemId) {
-  const def = ITEM_DEFS[itemId];
-  const mat = new THREE.MeshStandardMaterial({ color: def.color, roughness: 0.5, metalness: 0.4 });
-  if (itemId === 'beer') {
-    return new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.16, 12), mat);
-  } else if (itemId === 'magnifier') {
-    const g = new THREE.Group();
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.012, 8, 16), mat);
-    ring.rotation.x = Math.PI / 2;
-    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.12, 8), mat);
-    handle.rotation.z = Math.PI / 2;
-    handle.position.x = 0.1;
-    g.add(ring, handle);
-    return g;
-  } else if (itemId === 'adrenaline') {
-    const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.22, 10), mat);
-    cyl.rotation.z = Math.PI / 2;
-    return cyl;
-  }
-  return new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.05, 0.18), mat);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x76ff03, roughness: 0.4 });
+  if (itemId === 'beer') return new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.15, 10), mat);
+  return new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 0.16), mat);
 }
 
 function update3DSceneFromState() {
   const tagsContainer = document.getElementById('name-tags-container');
-  const stepAngle = (Math.PI * 2) / 5; // 五角形の5辺
+  const stepAngle = (Math.PI * 2) / 5;
 
-  // 既存Seatのクリーンアップ
   Object.keys(seatVisuals).forEach(pid => {
     if (!gameState.players.find(p => p.id === pid)) {
       scene.remove(seatVisuals[pid].group);
@@ -1835,7 +1185,6 @@ function update3DSceneFromState() {
   });
 
   gameState.players.forEach((p, idx) => {
-    // 五角形の各辺の法線角度（辺の正面に座る）
     const angle = idx * stepAngle;
     if (p.id === myId) mySeatAngle = angle;
 
@@ -1843,132 +1192,67 @@ function update3DSceneFromState() {
       const group = new THREE.Group();
       scene.add(group);
 
-      // ⚡残機モニター（テーブル手前中央）
-      const monBox = new THREE.Mesh(
-        new THREE.BoxGeometry(0.56, 0.16, 0.14),
-        new THREE.MeshStandardMaterial({ color: 0x181818, metalness: 0.6 })
-      );
-      monBox.position.set(0, 0.92, 1.82);
-      monBox.rotation.x = -0.35;
-
+      // 残機モニター
       const hpTex = createHpCanvasTexture(p.hp, p.maxHp);
       const screenMesh = new THREE.Mesh(
         new THREE.PlaneGeometry(0.5, 0.12),
         new THREE.MeshBasicMaterial({ map: hpTex })
       );
-      screenMesh.position.set(0, 0.935, 1.745);
-      screenMesh.rotation.x = -0.35;
-      screenMesh.rotation.y = Math.PI; // 座席側および対面向き調整
-      group.add(monBox);
+      screenMesh.position.set(0, 0.93, 1.76);
+      screenMesh.rotation.x = -0.3;
+      screenMesh.rotation.y = Math.PI;
+      group.add(screenMesh);
 
-      // モニターは「自分が見下ろした時」と「対面から見た時」両方見えるよう両面配置
-      const frontScreen = screenMesh.clone();
-      frontScreen.position.set(0, 0.935, 1.74);
-      frontScreen.rotation.set(-0.3, Math.PI, 0);
-      const backScreen = screenMesh.clone();
-      backScreen.position.set(0, 0.935, 1.895);
-      backScreen.rotation.set(0.3, 0, 0);
-      group.add(frontScreen, backScreen);
-
-      // 8枠の白いアイテムグリッド線（左4枠・右4枠）
-      const slotCenters = [];
-      const lineMat = new THREE.LineBasicMaterial({ color: 0xb8c4b0 });
-      [-1, 1].forEach(side => {
-        for (let r = 0; r < 2; r++) {
-          for (let c = 0; c < 2; c++) {
-            const cx = side * (0.58 + c * 0.28);
-            const cz = 1.48 + r * 0.28;
-            slotCenters.push(new THREE.Vector3(cx, 0.87, cz));
-            const rectGeo = new THREE.EdgesGeometry(new THREE.PlaneGeometry(0.25, 0.25));
-            const rect = new THREE.LineSegments(rectGeo, lineMat);
-            rect.rotation.x = -Math.PI / 2;
-            rect.position.set(cx, 0.865, cz);
-            group.add(rect);
-          }
-        }
-      });
-
-      // マスク＆宙に浮く両手（自分自身の視点では視界を遮らないよう非表示）
       const headGroup = buildMaskMesh(idx);
-      headGroup.position.set(0, 1.52, 2.75);
-      headGroup.rotation.y = Math.PI; // テーブル中央向き
-
-      const leftHand = buildHandMesh();
-      leftHand.position.set(-0.38, 1.05, 2.25);
-      leftHand.rotation.y = Math.PI;
-
-      const rightHand = buildHandMesh();
-      rightHand.position.set(0.38, 1.05, 2.25);
-      rightHand.rotation.y = Math.PI;
-
-      group.add(headGroup, leftHand, rightHand);
+      headGroup.position.set(0, 1.5, 2.6);
+      headGroup.rotation.y = Math.PI;
+      group.add(headGroup);
 
       const nameTag = document.createElement('div');
       nameTag.className = 'name-tag';
       tagsContainer.appendChild(nameTag);
 
-      seatVisuals[p.id] = {
-        group,
-        headGroup,
-        leftHand,
-        rightHand,
-        frontScreen,
-        backScreen,
-        slotCenters,
-        itemMeshes: [],
-        nameTag
-      };
+      seatVisuals[p.id] = { group, headGroup, screenMesh, itemMeshes: [], nameTag };
     }
 
     const vis = seatVisuals[p.id];
     vis.group.rotation.y = angle;
+    vis.headGroup.visible = (p.id !== myId && p.alive);
 
-    // 自分自身のマスクは一人称視点なので非表示、他人は表示
-    const isMe = (p.id === myId);
-    vis.headGroup.visible = !isMe && p.alive;
-    vis.leftHand.visible = !isMe && p.alive;
-    vis.rightHand.visible = !isMe && p.alive;
+    vis.screenMesh.material.map = createHpCanvasTexture(p.hp, p.maxHp);
+    vis.screenMesh.material.needsUpdate = true;
 
-    // 視線方向（誰を見ているか）の同期反映
-    vis.headGroup.rotation.y = Math.PI + (p.lookYaw || 0);
-
-    // 残機モニターテクスチャ更新
-    const newTex = createHpCanvasTexture(p.hp, p.maxHp);
-    vis.frontScreen.material.map = newTex;
-    vis.backScreen.material.map = newTex;
-
-    // テーブル上の8枠アイテムメッシュ同期
+    // アイテム3Dメッシュ描画（直接タッチ可能）
     vis.itemMeshes.forEach(m => vis.group.remove(m));
     vis.itemMeshes = [];
     p.slots.forEach((itemId, sIdx) => {
-      if (itemId && vis.slotCenters[sIdx]) {
+      if (itemId) {
         const m = buildItem3DMesh(itemId);
-        m.position.copy(vis.slotCenters[sIdx]);
-        m.position.y += 0.04;
+        const side = sIdx < 4 ? -1 : 1;
+        const cx = side * (0.6 + (sIdx % 4) * 0.22);
+        const cz = 1.4 + Math.floor(sIdx / 4) * 0.25;
+        m.position.set(cx, 0.9, cz);
+        m.userData = { ownerId: p.id, slotIndex: sIdx, itemId };
         vis.group.add(m);
         vis.itemMeshes.push(m);
       }
     });
 
-    // 頭上ネームタグ更新
     const isTurn = (gameState.phase === 'play' && gameState.players[gameState.turnIndex]?.id === p.id);
     vis.nameTag.textContent = `${p.name} (⚡${p.hp})`;
     vis.nameTag.className = 'name-tag' + (isTurn ? ' turn-active' : '') + (!p.alive ? ' dead' : '');
-    vis.nameTag.style.display = isMe ? 'none' : 'block';
+    vis.nameTag.style.display = (p.id === myId) ? 'none' : 'block';
   });
 
-  // ノコギリ使用中は銃身を短くする
   barrelMesh.scale.y = gameState.sawActive ? 0.55 : 1.0;
 }
 
 function animate3D() {
   requestAnimationFrame(animate3D);
-  const t = performance.now() * 0.0025;
 
-  // カメラ位置補間（自分の座席基準）
-  const dist = cameraMode === 'top' ? 0.4 : cameraMode === 'down' ? 2.45 : 2.95;
-  const height = cameraMode === 'top' ? 4.3 : cameraMode === 'down' ? 1.85 : 1.72;
-  const lookY = cameraMode === 'top' ? 0.85 : cameraMode === 'down' ? 0.86 : 1.22;
+  const dist = cameraMode === 'down' ? 2.3 : 2.8;
+  const height = cameraMode === 'down' ? 1.8 : 1.7;
+  const lookY = cameraMode === 'down' ? 0.85 : 1.15;
 
   const camX = Math.sin(mySeatAngle) * dist;
   const camZ = Math.cos(mySeatAngle) * dist;
@@ -1981,58 +1265,27 @@ function animate3D() {
     camZ + Math.cos(lookYaw) * 2.5
   );
 
-  camera.position.lerp(targetCamPos, 0.14);
-  if (cameraShakeTime > 0) {
-    cameraShakeTime -= 0.016;
-    camera.position.x += (Math.random() - 0.5) * 0.16;
-    camera.position.y += (Math.random() - 0.5) * 0.16;
-  }
+  camera.position.lerp(targetCamPos, 0.15);
   camera.lookAt(targetCamLook);
 
-  // ショットガンの向き（ターンプレイヤーや狙っている相手の方へ回転）
   if (shotgunGroup) {
-    let targetYaw = 0;
-    if (gameState.aimTargetId) {
-      const targetIdx = gameState.players.findIndex(p => p.id === gameState.aimTargetId);
-      if (targetIdx !== -1) targetYaw = targetIdx * ((Math.PI * 2) / 5);
-    } else {
-      targetYaw = gameState.turnIndex * ((Math.PI * 2) / 5);
-    }
-    shotgunGroup.rotation.y += (targetYaw - shotgunGroup.rotation.y) * 0.12;
+    let targetYaw = gameState.turnIndex * ((Math.PI * 2) / 5);
+    shotgunGroup.rotation.y += (targetYaw - shotgunGroup.rotation.y) * 0.1;
   }
 
-  // 各プレイヤーの浮遊マスク＆手のモーション＆頭上名前投影
+  // ネームタグ投影
   gameState.players.forEach((p, idx) => {
     const vis = seatVisuals[p.id];
-    if (!vis) return;
-
-    // 浮遊＆手のモーション
-    vis.headGroup.position.y = 1.52 + Math.sin(t + idx) * 0.03;
-    if (p.handAction === 'aim' || p.handAction === 'shoot') {
-      vis.leftHand.position.set(-0.15, 1.18, 1.75);
-      vis.rightHand.position.set(0.15, 1.18, 1.85);
-    } else if (p.handAction && p.handAction.startsWith('item_')) {
-      vis.rightHand.position.set(0.1, 1.25 + Math.sin(t * 6) * 0.08, 1.95);
+    if (!vis || p.id === myId) return;
+    const pos = new THREE.Vector3(0, 1.9, 2.6);
+    pos.applyAxisAngle(new THREE.Vector3(0, 1, 0), idx * ((Math.PI * 2) / 5));
+    pos.project(camera);
+    if (pos.z < 1) {
+      vis.nameTag.style.left = ((pos.x * 0.5 + 0.5) * window.innerWidth) + 'px';
+      vis.nameTag.style.top = ((-pos.y * 0.5 + 0.5) * window.innerHeight) + 'px';
+      vis.nameTag.style.display = 'block';
     } else {
-      vis.leftHand.position.set(-0.38, 1.05 + Math.sin(t + idx) * 0.025, 2.25);
-      vis.rightHand.position.set(0.38, 1.05 + Math.cos(t + idx) * 0.025, 2.25);
-    }
-
-    // 頭上ネームタグの2Dスクリーン座標投影
-    if (p.id !== myId) {
-      const worldHeadPos = new THREE.Vector3(0, 1.92, 2.75);
-      worldHeadPos.applyAxisAngle(new THREE.Vector3(0, 1, 0), idx * ((Math.PI * 2) / 5));
-      worldHeadPos.project(camera);
-
-      if (worldHeadPos.z < 1) {
-        const sx = (worldHeadPos.x * 0.5 + 0.5) * window.innerWidth;
-        const sy = (-worldHeadPos.y * 0.5 + 0.5) * window.innerHeight;
-        vis.nameTag.style.left = sx + 'px';
-        vis.nameTag.style.top = sy + 'px';
-        vis.nameTag.style.display = 'block';
-      } else {
-        vis.nameTag.style.display = 'none';
-      }
+      vis.nameTag.style.display = 'none';
     }
   });
 
