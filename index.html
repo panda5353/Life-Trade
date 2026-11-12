@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Life Trade" />
 <meta name="theme-color" content="#000000" />
-<title>Life Trade ver 0.2</title>
+<title>Life Trade ver 0.3</title>
 
 <!-- Three.js & PeerJS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -19,6 +19,7 @@
   :root {
     --neon: #39ff14;
     --neon-dim: rgba(57, 255, 20, 0.25);
+    --neon-dark: #0a2205;
     --danger: #ff2a2a;
     --bg: #000000;
   }
@@ -42,6 +43,7 @@
     touch-action: manipulation;
   }
 
+  /* 横画面推奨オーバーレイ */
   #rotate-warning {
     display: none;
     position: fixed;
@@ -60,6 +62,7 @@
     #rotate-warning { display: flex; }
   }
 
+  /* ターミナル風CRTスキャンライン演出 */
   .scanlines::after {
     content: "";
     position: fixed;
@@ -75,6 +78,7 @@
     z-index: 500;
   }
 
+  /* 画面共通レイアウト */
   .screen {
     position: fixed;
     inset: 0;
@@ -86,6 +90,7 @@
   }
   .screen.active { display: flex; }
 
+  /* ターミナルヘッダー */
   .term-header {
     display: flex;
     justify-content: space-between;
@@ -94,8 +99,16 @@
     padding-bottom: 6px;
     margin-bottom: 12px;
   }
-  .game-title { font-size: 26px; letter-spacing: 2px; text-shadow: 0 0 8px var(--neon); }
-  .game-ver { font-size: 14px; opacity: 0.85; margin-left: 10px; }
+  .game-title {
+    font-size: 26px;
+    letter-spacing: 2px;
+    text-shadow: 0 0 8px var(--neon);
+  }
+  .game-ver {
+    font-size: 14px;
+    opacity: 0.85;
+    margin-left: 10px;
+  }
 
   .lobby-grid {
     display: grid;
@@ -114,9 +127,15 @@
     justify-content: space-between;
   }
 
-  .input-group { margin-bottom: 10px; }
-  .input-group label { display: block; font-size: 13px; margin-bottom: 4px; }
-  input[type="text"], input[type="tel"] {
+  .input-group {
+    margin-bottom: 10px;
+  }
+  .input-group label {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+  input[type="text"], input[type="tel"], select {
     width: 100%;
     background: #000;
     border: 1px solid var(--neon);
@@ -125,6 +144,9 @@
     font-size: 18px;
     padding: 6px 10px;
     outline: none;
+  }
+  input:focus {
+    box-shadow: 0 0 8px var(--neon);
   }
 
   .btn {
@@ -138,10 +160,25 @@
     text-align: left;
     transition: background 0.12s, color 0.12s;
   }
-  .btn:hover, .btn:active { background: var(--neon); color: #000; }
+  .btn:hover, .btn:active {
+    background: var(--neon);
+    color: #000;
+  }
   .btn-center { text-align: center; }
+  .btn-danger {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+  .btn-danger:hover, .btn-danger:active {
+    background: var(--danger);
+    color: #000;
+  }
+  .btn:disabled {
+    opacity: 0.35;
+    pointer-events: none;
+  }
 
-  /* ロビー画面 */
+  /* 入室後ロビーレイアウト（参考画像準拠） */
   .room-layout {
     display: flex;
     flex-direction: column;
@@ -149,8 +186,15 @@
     height: 100%;
     padding: 6px 12px;
   }
-  .player-table-wrap { display: flex; align-items: flex-start; gap: 8px; }
-  .player-list-box { width: 260px; border: 1px solid var(--neon); }
+  .player-table-wrap {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .player-list-box {
+    width: 260px;
+    border: 1px solid var(--neon);
+  }
   .player-row {
     height: 30px;
     border-bottom: 1px solid var(--neon);
@@ -161,7 +205,11 @@
     font-size: 15px;
   }
   .player-row:last-child { border-bottom: none; }
-  .kick-col { display: flex; flex-direction: column; margin-top: 30px; }
+  .kick-col {
+    display: flex;
+    flex-direction: column;
+    margin-top: 30px;
+  }
   .kick-btn {
     height: 30px;
     border: 1px solid var(--neon);
@@ -174,20 +222,53 @@
     cursor: pointer;
   }
   .kick-btn:last-child { border-bottom: 1px solid var(--neon); }
+  .kick-btn:active { background: var(--neon); color: #000; }
 
-  .slot-indicators { display: flex; gap: 6px; margin-top: 8px; }
+  .slot-indicators {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+  }
   .slot-dot {
-    width: 22px; height: 22px;
+    width: 22px;
+    height: 22px;
     border: 1px solid var(--neon);
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 12px;
   }
-  .slot-dot.filled::after { content: "■"; font-size: 11px; }
+  .slot-dot.filled::after {
+    content: "■";
+    font-size: 11px;
+  }
+
+  .room-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    font-size: 14px;
+  }
+  .room-settings div {
+    margin-top: 4px;
+    cursor: pointer;
+  }
+  .room-status-right {
+    text-align: right;
+  }
 
   /* 3Dゲーム画面 */
-  #game-screen { padding: 0; background: #050505; }
-  #three-canvas { width: 100%; height: 100%; display: block; }
+  #game-screen {
+    padding: 0;
+    background: #050505;
+  }
+  #three-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
 
+  /* ゲーム中HUDレイヤー */
   #hud-layer {
     position: fixed;
     inset: 0;
@@ -195,7 +276,7 @@
     z-index: 200;
   }
 
-  /* 右側の視点切替ボタンのみ */
+  /* 右側の視点切り替えボタン */
   .view-controls {
     position: absolute;
     right: 14px;
@@ -203,7 +284,7 @@
     transform: translateY(-50%);
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     pointer-events: auto;
   }
   .view-btn {
@@ -211,26 +292,29 @@
     border: 1px solid var(--neon);
     color: var(--neon);
     font-family: inherit;
-    font-size: 14px;
-    padding: 10px 14px;
+    font-size: 13px;
+    padding: 8px 12px;
     cursor: pointer;
-    box-shadow: 0 0 8px rgba(57, 255, 20, 0.3);
+    box-shadow: 0 0 8px rgba(57, 255, 20, 0.25);
   }
-  .view-btn.active { background: var(--neon); color: #000; }
+  .view-btn.active {
+    background: var(--neon);
+    color: #000;
+  }
 
-  /* 画面中央／下部のミニマル通知バナー */
+  /* 中央通知バナー */
   #center-banner {
     position: absolute;
-    bottom: 24px;
+    top: 15%;
     left: 50%;
     transform: translateX(-50%);
     background: rgba(0, 0, 0, 0.94);
-    border: 1px solid var(--neon);
-    padding: 8px 18px;
-    font-size: 15px;
+    border: 2px solid var(--neon);
+    padding: 12px 26px;
+    font-size: 18px;
     text-align: center;
     display: none;
-    box-shadow: 0 0 14px rgba(57, 255, 20, 0.35);
+    box-shadow: 0 0 20px rgba(57, 255, 20, 0.45);
     z-index: 260;
     white-space: nowrap;
   }
@@ -249,6 +333,7 @@
     border: 1px solid var(--neon);
     padding: 10px 14px;
     pointer-events: auto;
+    max-width: 92vw;
   }
 
   /* アイテム配布ボックスモーダル */
@@ -275,22 +360,25 @@
     gap: 10px;
     justify-content: center;
     margin: 10px 0;
-    min-height: 72px;
+    min-height: 68px;
   }
   .item-card {
     border: 1px solid var(--neon);
     background: #000;
-    padding: 8px 10px;
+    padding: 6px 10px;
     min-width: 90px;
     text-align: center;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
   }
-  .item-card.selected { background: var(--neon); color: #000; }
+  .item-card.selected {
+    background: var(--neon);
+    color: #000;
+  }
   .slots-8-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -299,7 +387,7 @@
   }
   .slot-cell {
     border: 1px dashed var(--neon);
-    height: 48px;
+    height: 46px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -308,7 +396,10 @@
     cursor: pointer;
     text-align: center;
   }
-  .slot-cell.occupied { border-style: solid; background: rgba(57, 255, 20, 0.15); }
+  .slot-cell.occupied {
+    border-style: solid;
+    background: rgba(57, 255, 20, 0.15);
+  }
 
   /* 3D頭上プレイヤー名ラベル */
   .name-tag {
@@ -322,9 +413,16 @@
     z-index: 150;
     white-space: nowrap;
   }
-  .name-tag.turn-active { color: var(--neon); text-shadow: 0 0 8px var(--neon); }
-  .name-tag.dead { color: #666; text-decoration: line-through; }
+  .name-tag.turn-active {
+    color: var(--neon);
+    text-shadow: 0 0 8px var(--neon);
+  }
+  .name-tag.dead {
+    color: #666;
+    text-decoration: line-through;
+  }
 
+  /* 画面フラッシュ演出 */
   #flash-fx {
     position: fixed;
     inset: 0;
@@ -334,17 +432,36 @@
     transition: opacity 0.25s;
   }
 
-  /* BGM用非表示YouTube iframe */
-  #bgm-container { display: none; }
+  /* 初回音声有効化＆BGM開始オーバーレイ */
+  #audio-start-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+  }
 </style>
 </head>
 <body class="scanlines">
 
-<!-- バックショットルーレットBGM (YouTube: lRjJk4xhHHE) -->
-<div id="bgm-container">
-  <iframe width="560" height="315" src="https://www.youtube.com/embed/lRjJk4xhHHE?autoplay=1&loop=1&playlist=lRjJk4xhHHE" title="BGM" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<!-- 初回タッチでBGM＆効果音を有効化するオーバーレイ -->
+<div id="audio-start-overlay">
+  <div style="font-size:26px; margin-bottom:12px; text-shadow:0 0 12px var(--neon);">[ LIFE TRADE ver 0.3 ]</div>
+  <div style="font-size:15px; margin-bottom:24px; opacity:0.85;">画面をタッチしてBGM（YouTube耐久音源）と効果音を有効化してください</div>
+  <button class="btn" style="font-size:18px; padding:12px 26px;" onclick="initializeAudioAndStart()">ゲームを開始する</button>
 </div>
 
+<!-- 隠しYouTube BGMプレーヤー (マグネサイトさん 30分耐久: lRjJk4xhHHE) -->
+<div style="display:none;" id="youtube-bgm-container">
+  <iframe width="200" height="100" src="https://www.youtube.com/embed/lRjJk4xhHHE?autoplay=1&loop=1&playlist=lRjJk4xhHHE" frameborder="0" allow="autoplay"></iframe>
+</div>
+
+<!-- 縦画面警告 -->
 <div id="rotate-warning">
   <div style="font-size:22px; margin-bottom:10px;">[ SYSTEM NOTICE ]</div>
   <div>スマホを横画面（ランドスケープ）にしてプレイしてください</div>
@@ -353,11 +470,11 @@
 <div id="flash-fx"></div>
 
 <!-- ① タイトル・マッチング画面 -->
-<div id="title-screen" class="screen active">
+<div id="title-screen" class="screen">
   <div class="term-header">
     <div>
       <span class="game-title">Life Trade</span>
-      <span class="game-ver">ver 0.2</span>
+      <span class="game-ver">ver 0.3</span>
     </div>
     <div style="font-size:12px;">3D RUSSIAN ROULETTE [ONLINE]</div>
   </div>
@@ -366,7 +483,7 @@
     <div class="box-panel">
       <div>
         <div class="input-group">
-          <label>&gt; プレイヤー名</label>
+          <label>&gt; プレイヤー名 (NAME)</label>
           <input type="text" id="player-name-input" maxlength="10" placeholder="PLAYER" />
         </div>
         <div class="input-group">
@@ -375,28 +492,28 @@
         </div>
       </div>
       <div style="display:flex; gap:10px;">
-        <button class="btn btn-center" style="flex:1;" onclick="createRoom()">[ 部屋作成 ]</button>
-        <button class="btn btn-center" style="flex:1;" onclick="joinRoom()">[ 部屋参加 ]</button>
+        <button class="btn btn-center" style="flex:1;" onclick="createRoom()">[ 部屋を作成 ]</button>
+        <button class="btn btn-center" style="flex:1;" onclick="joinRoom()">[ 部屋に参加 ]</button>
       </div>
     </div>
 
     <div class="box-panel">
       <div style="font-size:13px; line-height:1.6;">
         <div>&gt; STATUS: <span id="net-status">READY</span></div>
-        <div>&gt; 初期ライフ: ⚡×5 (黄緑色モニター)</div>
+        <div>&gt; 残機モニター: ⚡黄緑色LED仕様</div>
         <div>&gt; アイテム: 3Dオブジェクト直タップで操作</div>
-        <div>&gt; ショットガン: タップして撃つ / スライドで確認</div>
+        <div>&gt; ショットガン: タップで発砲 / スライドで次弾確認</div>
         <div id="title-error" style="color:var(--danger); margin-top:6px;"></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ② 部屋に入った後のロビー -->
+<!-- ② 入室後のロビー画面 -->
 <div id="lobby-screen" class="screen">
   <div class="room-layout">
     <div>
-      <div style="font-size:14px; margin-bottom:6px;">ハイローラー： <span style="float:right;">Life Trade ver 0.2</span></div>
+      <div style="font-size:14px; margin-bottom:6px;">ハイローラー： <span style="float:right;">Life Trade ver 0.3</span></div>
       <div class="player-table-wrap">
         <div class="player-list-box" id="lobby-player-list"></div>
         <div class="kick-col" id="lobby-kick-col"></div>
@@ -409,12 +526,12 @@
       </div>
     </div>
 
-    <div style="display:flex; justify-content:space-between; align-items:flex-end; font-size:14px;">
-      <div>
+    <div class="room-bottom">
+      <div class="room-settings">
         <div style="cursor:pointer;" onclick="copyRoomId()">📋 ロビーIDコピー: <strong id="display-room-id">---</strong> <span id="copy-toast" style="font-size:12px;"></span></div>
-        <div style="cursor:pointer; margin-top:4px;" onclick="cycleMaxPlayers()">🚪 PLAYER LIMIT: <strong id="display-max-players">5</strong> (2〜5)</div>
+        <div style="cursor:pointer;" onclick="cycleMaxPlayers()">🚪 PLAYER LIMIT: <strong id="display-max-players">5</strong> (2〜5)</div>
       </div>
-      <div style="text-align:right;" id="lobby-wait-msg">まもなくゲーム開始！</div>
+      <div class="room-status-right" id="lobby-wait-msg">まもなくゲーム開始！</div>
     </div>
   </div>
 </div>
@@ -425,7 +542,6 @@
   <div id="name-tags-container"></div>
 
   <div id="hud-layer">
-    <!-- 右側の視点切替ボタンのみ -->
     <div class="view-controls">
       <button class="view-btn active" id="cam-btn-front" onclick="setCameraMode('front')">対面</button>
       <button class="view-btn" id="cam-btn-down" onclick="setCameraMode('down')">手元</button>
@@ -454,7 +570,45 @@
 
 <script>
 /* ==========================================================================
-   1. アイテム定義（より直感的な見た目）
+   オーディオ＆Web Audioシンセサイザーモジュール
+   ========================================================================== */
+let audioCtx = null;
+
+function initializeAudioAndStart() {
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  document.getElementById('audio-start-overlay').style.display = 'none';
+  document.getElementById('title-screen').classList.add('active');
+}
+
+function playTone(freq, type, dur, vol = 0.15) {
+  if (!audioCtx) return;
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + dur);
+  } catch(e) {}
+}
+
+function playShotSound(isLive) {
+  if (isLive) {
+    playTone(70, 'sawtooth', 0.5, 0.45);
+    playTone(35, 'square', 0.55, 0.4);
+  } else {
+    playTone(920, 'triangle', 0.08, 0.22);
+  }
+}
+
+/* ==========================================================================
+   アイテム定義（全8種）
    ========================================================================== */
 const ITEM_DEFS = {
   saw: { id: 'saw', name: 'ノコギリ', desc: '実弾ダメージが2になる' },
@@ -469,36 +623,9 @@ const ITEM_DEFS = {
 const ITEM_KEYS = Object.keys(ITEM_DEFS);
 
 /* ==========================================================================
-   2. Web Audio 効果音
+   PeerJS ネットワーク＆オンラインロジック
    ========================================================================== */
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playTone(freq, type, dur, vol = 0.15) {
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = type;
-  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-  gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + dur);
-}
-function playShotSound(isLive) {
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  if (isLive) {
-    playTone(80, 'sawtooth', 0.45, 0.4);
-    playTone(40, 'square', 0.5, 0.35);
-  } else {
-    playTone(900, 'triangle', 0.08, 0.2);
-  }
-}
-
-/* ==========================================================================
-   3. 通信＆状態管理
-   ========================================================================== */
-const PEER_PREFIX = 'lifetrade-v02-room-';
+const PEER_PREFIX = 'lifetrade-v03-room-';
 let peer = null;
 let isHost = false;
 let myId = '';
@@ -553,9 +680,7 @@ function createRoom() {
   peer.on('open', (id) => {
     myId = id;
     gameState = {
-      phase: 'lobby',
-      maxPlayers: 5,
-      round: 1,
+      phase: 'lobby', maxPlayers: 5, round: 1,
       players: [{
         id: myId, name: myName, hp: 5, maxHp: 5,
         slots: Array(8).fill(null), alive: true, lookYaw: 0, handAction: 'idle', lootPending: []
@@ -576,7 +701,7 @@ function createRoom() {
   });
   peer.on('error', (err) => {
     document.getElementById('net-status').textContent = 'ERROR';
-    setError(err.type === 'unavailable-id' ? '既に使われている部屋番号です' : '通信エラー');
+    setError(err.type === 'unavailable-id' ? '既に使用されている部屋番号です' : '通信エラー');
   });
 }
 
@@ -600,7 +725,7 @@ function joinRoom() {
       enterLobbyUI();
     });
     hostConn.on('data', (data) => handleClientReceive(data));
-    hostConn.on('close', () => { alert('ホストとの接続が切れました'); location.reload(); });
+    hostConn.on('close', () => { alert('ホストとの接続が切断されました'); location.reload(); });
   });
   peer.on('error', () => { setError('部屋が見つかりません'); });
 }
@@ -688,7 +813,7 @@ function hostStartGame() {
 }
 
 /* ==========================================================================
-   4. ゲームロジック
+   ホスト側ゲーム進行マネージャー（弾の数・配分のじっくり演出含む）
    ========================================================================== */
 function startNewRound() {
   const alivePlayers = gameState.players.filter(p => p.alive);
@@ -787,6 +912,7 @@ function executeItemUse(player, slotIndex) {
   const itemId = player.slots[slotIndex];
   if (!itemId) return;
   player.slots[slotIndex] = null;
+  player.handAction = 'item_' + itemId;
 
   let privateMsg = null;
   let bannerText = `${player.name} が【${ITEM_DEFS[itemId].name}】を使用`;
@@ -832,7 +958,7 @@ function executeItemUse(player, slotIndex) {
     gameState.round++;
     setTimeout(() => startNewRound(), 1500);
   } else {
-    broadcastState({ kind: 'banner', text: bannerText });
+    broadcastState({ kind: 'item_fx', text: bannerText });
   }
 }
 
@@ -843,6 +969,7 @@ function executeShoot(shooter, targetId) {
   const isLive = gameState.shells.shift();
   const dmg = isLive ? (gameState.sawActive ? 2 : 1) : 0;
   gameState.sawActive = false;
+  shooter.handAction = 'shoot';
 
   if (isLive) {
     target.hp = Math.max(0, target.hp - dmg);
@@ -850,7 +977,7 @@ function executeShoot(shooter, targetId) {
   }
 
   const selfShot = (shooter.id === target.id);
-  let text = isLive ? `💥 実弾！ ${target.name} に ${dmg} ダメージ` : `💧 空砲`;
+  let text = isLive ? `💥 実弾！！ ${target.name} に ${dmg} ダメージ` : `💧 空砲`;
 
   if (!(selfShot && !isLive)) advanceTurnIndex();
 
@@ -863,6 +990,7 @@ function executeShoot(shooter, targetId) {
   });
 
   setTimeout(() => {
+    shooter.handAction = 'idle';
     const alivePlayers = gameState.players.filter(p => p.alive);
     if (alivePlayers.length <= 1 || gameState.shells.length === 0) {
       if (gameState.shells.length === 0) gameState.round++;
@@ -870,7 +998,7 @@ function executeShoot(shooter, targetId) {
     } else {
       broadcastState();
     }
-  }, 1600);
+  }, 1800);
 }
 
 function handleClientReceive(data) {
@@ -880,7 +1008,7 @@ function handleClientReceive(data) {
 }
 
 /* ==========================================================================
-   5. 3Dシーン＆インタラクション
+   Three.js 3Dグラフィックス＆インタラクション管理
    ========================================================================== */
 let threeInitialized = false;
 let cameraMode = 'front';
@@ -904,15 +1032,16 @@ function applyStateUpdate(newState, event) {
 
   if (event) {
     if (event.kind === 'round_start') {
-      showBanner(`ROUND ${event.round} [ 実弾: ${event.live} / 空砲: ${event.blank} ]`, 3500);
-    } else if (event.kind === 'banner') {
+      showBanner(`ROUND ${event.round} 装填完了 [ 実弾: ${event.live} / 空砲: ${event.blank} ]`, 4500);
+      playTone(440, 'sine', 0.2, 0.2);
+    } else if (event.kind === 'banner' || event.kind === 'item_fx') {
       showBanner(event.text, 2200);
     } else if (event.kind === 'shoot_fx') {
       playShotSound(event.isLive);
-      showBanner(event.text, 2000);
-      if (event.isLive) triggerFlash('rgba(255,20,20,0.5)');
+      showBanner(event.text, 2200);
+      if (event.isLive) triggerFlash('rgba(255,20,20,0.55)');
     } else if (event.kind === 'gameover') {
-      showBanner(`勝者: ${event.winner}`, 8000);
+      showBanner(`🏆 勝者: ${event.winner}`, 8000);
     }
   }
 
@@ -924,7 +1053,7 @@ function applyStateUpdate(newState, event) {
   }
 }
 
-function showBanner(text, dur = 2000) {
+function showBanner(text, dur = 2200) {
   const el = document.getElementById('center-banner');
   el.textContent = text;
   el.style.display = 'block';
@@ -946,9 +1075,6 @@ function setCameraMode(mode) {
   userYawOffset = 0;
 }
 
-/* ==========================================================================
-   アイテム配置モーダル
-   ========================================================================== */
 let tempLootItems = [], tempSlots = [], selectedLootIdx = null;
 
 function openLootModal(me) {
@@ -971,7 +1097,7 @@ function renderLootModal() {
     const card = document.createElement('div');
     card.className = 'item-card' + (selectedLootIdx === idx ? ' selected' : '');
     card.innerHTML = `<strong>${ITEM_DEFS[itemId].name}</strong>`;
-    card.onclick = () => { selectedLootIdx = idx; renderLootModal(); };
+    card.onclick = () => { selectedLootIdx = idx; renderLootModal(); playTone(600, 'sine', 0.05, 0.1); };
     boxRow.appendChild(card);
   });
 
@@ -984,6 +1110,7 @@ function renderLootModal() {
         tempSlots[sIdx] = tempLootItems.splice(selectedLootIdx, 1)[0];
         selectedLootIdx = tempLootItems.length > 0 ? 0 : null;
         renderLootModal();
+        playTone(450, 'triangle', 0.08, 0.12);
       }
     };
     grid.appendChild(cell);
@@ -997,146 +1124,13 @@ function finishLootPhase() {
   sendToHost({ type: 'loot_done', slots: tempSlots });
 }
 
-/* ==========================================================================
-   Three.js 3D構築
-   ========================================================================== */
-function initThreeScene() {
-  const canvas = document.getElementById('three-canvas');
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x050404);
-  scene.fog = new THREE.FogExp2(0x050404, 0.08);
-
-  camera = new THREE.PerspectiveCamera(56, window.innerWidth / window.innerHeight, 0.1, 50);
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-  scene.add(new THREE.AmbientLight(0x443a32, 1.4));
-  const spot = new THREE.SpotLight(0xffebd6, 2.5, 16, Math.PI / 3, 0.4);
-  spot.position.set(0, 5, 0);
-  scene.add(spot);
-
-  // 五角形テーブル
-  tableGroup = new THREE.Group();
-  scene.add(tableGroup);
-  const tableMesh = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.5, 2.3, 0.26, 5),
-    new THREE.MeshStandardMaterial({ color: 0x222620, roughness: 0.8 })
-  );
-  tableMesh.position.y = 0.72;
-  tableGroup.add(tableMesh);
-
-  // ショットガン
-  shotgunGroup = new THREE.Group();
-  shotgunGroup.position.set(0, 0.96, 0);
-  const receiver = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1, 0.12, 0.4),
-    new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8 })
-  );
-  barrelMesh = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.03, 0.03, 0.9, 12),
-    new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.85 })
-  );
-  barrelMesh.rotation.x = Math.PI / 2;
-  barrelMesh.position.set(0, 0.02, 0.4);
-  shotgunGroup.add(receiver, barrelMesh);
-  tableGroup.add(shotgunGroup);
-
-  // タップ＆スライド操作判定
-  let pointerDownX = 0, pointerDownY = 0, isDragging = false;
-  canvas.addEventListener('pointerdown', (e) => {
-    pointerDownX = e.clientX; pointerDownY = e.clientY;
-    isDragging = true;
-  });
-  canvas.addEventListener('pointerup', (e) => {
-    isDragging = false;
-    const dx = e.clientX - pointerDownX;
-    const dy = e.clientY - pointerDownY;
-
-    // スライド操作（虫眼鏡・携帯代わり）
-    if (Math.abs(dx) > 60 && Math.abs(dy) < 30) {
-      const me = gameState.players.find(p => p.id === myId);
-      const isMyTurn = (gameState.phase === 'play' && gameState.players[gameState.turnIndex]?.id === myId);
-      if (isMyTurn && gameState.shells.length > 0) {
-        const next = gameState.shells[0];
-        showBanner(next ? '🔍 [スライド確認] 次は【赤：実弾】' : '🔍 [スライド確認] 次は【青：空砲】', 3000);
-        return;
-      }
-    }
-
-    // タップ判定
-    if (Math.hypot(dx, dy) < 10) {
-      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(scene.children, true);
-      if (intersects.length > 0) handleCanvasClick(intersects[0]);
-    }
-  });
-
-  window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-  });
-
-  animate3D();
-}
-
-function handleCanvasClick(hit) {
-  const me = gameState.players.find(p => p.id === myId);
-  const isMyTurn = (gameState.phase === 'play' && gameState.players[gameState.turnIndex]?.id === myId);
-  if (!isMyTurn || !me || !me.alive) return;
-
-  // ショットガンをタップした場合
-  let obj = hit.object;
-  let isShotgun = false;
-  while (obj) {
-    if (obj === shotgunGroup) { isShotgun = true; break; }
-    obj = obj.parent;
-  }
-
-  if (isShotgun) {
-    openShootTargetModal();
-    return;
-  }
-}
-
-function openShootTargetModal() {
-  const overlay = document.getElementById('action-overlay');
-  overlay.innerHTML = '';
-  overlay.style.display = 'flex';
-
-  gameState.players.forEach(p => {
-    if (!p.alive) return;
-    const isMe = (p.id === myId);
-    const btn = document.createElement('button');
-    btn.className = isMe ? 'btn' : 'btn';
-    btn.style.borderColor = isMe ? 'var(--neon)' : 'var(--danger)';
-    btn.style.color = isMe ? 'var(--neon)' : 'var(--danger)';
-    btn.textContent = isMe ? `自分に撃つ (${p.name})` : `${p.name} を撃つ`;
-    btn.onclick = () => {
-      overlay.style.display = 'none';
-      sendToHost({ type: 'shoot', targetId: p.id });
-    };
-    overlay.appendChild(btn);
-  });
-
-  const cancel = document.createElement('button');
-  cancel.className = 'btn';
-  cancel.textContent = 'キャンセル';
-  cancel.onclick = () => { overlay.style.display = 'none'; };
-  overlay.appendChild(cancel);
-}
-
-/* 黃緑色の⚡残機モニターテクスチャ */
 function createHpCanvasTexture(hp, maxHp = 5) {
   const c = document.createElement('canvas');
   c.width = 256; c.height = 64;
   const ctx = c.getContext('2d');
   ctx.fillStyle = '#031203';
   ctx.fillRect(0, 0, 256, 64);
-  ctx.strokeStyle = '#76ff03'; // 黄緑色
+  ctx.strokeStyle = '#76ff03'; // 黄緑色の残機モニター
   ctx.lineWidth = 4;
   ctx.strokeRect(2, 2, 252, 60);
 
@@ -1166,10 +1160,145 @@ function buildMaskMesh(seatIndex) {
   return group;
 }
 
+function buildHandMesh() {
+  return new THREE.Mesh(
+    new THREE.BoxGeometry(0.12, 0.05, 0.16),
+    new THREE.MeshStandardMaterial({ color: 0x8f7a6c, roughness: 0.8 })
+  );
+}
+
 function buildItem3DMesh(itemId) {
-  const mat = new THREE.MeshStandardMaterial({ color: 0x76ff03, roughness: 0.4 });
+  const mat = new THREE.MeshStandardMaterial({ color: 0x76ff03, roughness: 0.4, metalness: 0.3 });
   if (itemId === 'beer') return new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.15, 10), mat);
-  return new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 0.16), mat);
+  return new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 0.15), mat);
+}
+
+function initThreeScene() {
+  const canvas = document.getElementById('three-canvas');
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x050404);
+  scene.fog = new THREE.FogExp2(0x050404, 0.08);
+
+  camera = new THREE.PerspectiveCamera(56, window.innerWidth / window.innerHeight, 0.1, 50);
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  scene.add(new THREE.AmbientLight(0x443a32, 1.4));
+  const spot = new THREE.SpotLight(0xffebd6, 2.5, 16, Math.PI / 3, 0.4);
+  spot.position.set(0, 5, 0);
+  scene.add(spot);
+
+  tableGroup = new THREE.Group();
+  scene.add(tableGroup);
+  const tableMesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.5, 2.3, 0.26, 5),
+    new THREE.MeshStandardMaterial({ color: 0x222620, roughness: 0.8 })
+  );
+  tableMesh.position.y = 0.72;
+  tableGroup.add(tableMesh);
+
+  shotgunGroup = new THREE.Group();
+  shotgunGroup.position.set(0, 0.96, 0);
+  const receiver = new THREE.Mesh(
+    new THREE.BoxGeometry(0.1, 0.12, 0.4),
+    new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8 })
+  );
+  barrelMesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.03, 0.03, 0.9, 12),
+    new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.85 })
+  );
+  barrelMesh.rotation.x = Math.PI / 2;
+  barrelMesh.position.set(0, 0.02, 0.4);
+  shotgunGroup.add(receiver, barrelMesh);
+  tableGroup.add(shotgunGroup);
+
+  let pointerDownX = 0, pointerDownY = 0;
+  canvas.addEventListener('pointerdown', (e) => {
+    pointerDownX = e.clientX; pointerDownY = e.clientY;
+  });
+  canvas.addEventListener('pointerup', (e) => {
+    const dx = e.clientX - pointerDownX;
+    const dy = e.clientY - pointerDownY;
+
+    if (Math.abs(dx) > 60 && Math.abs(dy) < 40) {
+      const me = gameState.players.find(p => p.id === myId);
+      const isMyTurn = (gameState.phase === 'play' && gameState.players[gameState.turnIndex]?.id === myId);
+      if (isMyTurn && gameState.shells.length > 0) {
+        const next = gameState.shells[0];
+        showBanner(next ? '🔍 [次弾確認] 【赤：実弾】' : '🔍 [次弾確認] 【青：空砲】', 3000);
+        playTone(800, 'sine', 0.1, 0.1);
+        return;
+      }
+    }
+
+    if (Math.hypot(dx, dy) < 12) {
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(scene.children, true);
+      if (intersects.length > 0) handleCanvasClick(intersects[0]);
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  animate3D();
+}
+
+function handleCanvasClick(hit) {
+  const me = gameState.players.find(p => p.id === myId);
+  const isMyTurn = (gameState.phase === 'play' && gameState.players[gameState.turnIndex]?.id === myId);
+  if (!isMyTurn || !me || !me.alive) return;
+
+  let obj = hit.object;
+  let clickedItem = null;
+  let clickedShotgun = false;
+
+  while (obj) {
+    if (obj.userData && obj.userData.itemId) { clickedItem = obj.userData; break; }
+    if (obj === shotgunGroup) { clickedShotgun = true; break; }
+    obj = obj.parent;
+  }
+
+  if (clickedItem && clickedItem.ownerId === myId) {
+    sendToHost({ type: 'use_item', slotIndex: clickedItem.slotIndex });
+    playTone(550, 'sine', 0.08, 0.15);
+    return;
+  }
+
+  if (clickedShotgun) {
+    openShootTargetModal();
+  }
+}
+
+function openShootTargetModal() {
+  const overlay = document.getElementById('action-overlay');
+  overlay.innerHTML = '';
+  overlay.style.display = 'flex';
+
+  gameState.players.forEach(p => {
+    if (!p.alive) return;
+    const isMe = (p.id === myId);
+    const btn = document.createElement('button');
+    btn.className = isMe ? 'btn' : 'btn btn-danger';
+    btn.textContent = isMe ? `🔫 自分を撃つ (${p.name})` : `🎯 ${p.name} を撃つ`;
+    btn.onclick = () => {
+      overlay.style.display = 'none';
+      sendToHost({ type: 'shoot', targetId: p.id });
+    };
+    overlay.appendChild(btn);
+  });
+
+  const cancel = document.createElement('button');
+  cancel.className = 'btn';
+  cancel.textContent = '戻る';
+  cancel.onclick = () => { overlay.style.display = 'none'; };
+  overlay.appendChild(cancel);
 }
 
 function update3DSceneFromState() {
@@ -1192,7 +1321,6 @@ function update3DSceneFromState() {
       const group = new THREE.Group();
       scene.add(group);
 
-      // 残機モニター
       const hpTex = createHpCanvasTexture(p.hp, p.maxHp);
       const screenMesh = new THREE.Mesh(
         new THREE.PlaneGeometry(0.5, 0.12),
@@ -1208,30 +1336,37 @@ function update3DSceneFromState() {
       headGroup.rotation.y = Math.PI;
       group.add(headGroup);
 
+      const leftHand = buildHandMesh();
+      leftHand.position.set(-0.35, 1.05, 2.1);
+      const rightHand = buildHandMesh();
+      rightHand.position.set(0.35, 1.05, 2.1);
+      group.add(leftHand, rightHand);
+
       const nameTag = document.createElement('div');
       nameTag.className = 'name-tag';
       tagsContainer.appendChild(nameTag);
 
-      seatVisuals[p.id] = { group, headGroup, screenMesh, itemMeshes: [], nameTag };
+      seatVisuals[p.id] = { group, headGroup, leftHand, rightHand, screenMesh, itemMeshes: [], nameTag };
     }
 
     const vis = seatVisuals[p.id];
     vis.group.rotation.y = angle;
     vis.headGroup.visible = (p.id !== myId && p.alive);
+    vis.leftHand.visible = (p.id !== myId && p.alive);
+    vis.rightHand.visible = (p.id !== myId && p.alive);
 
     vis.screenMesh.material.map = createHpCanvasTexture(p.hp, p.maxHp);
     vis.screenMesh.material.needsUpdate = true;
 
-    // アイテム3Dメッシュ描画（直接タッチ可能）
     vis.itemMeshes.forEach(m => vis.group.remove(m));
     vis.itemMeshes = [];
     p.slots.forEach((itemId, sIdx) => {
       if (itemId) {
         const m = buildItem3DMesh(itemId);
         const side = sIdx < 4 ? -1 : 1;
-        const cx = side * (0.6 + (sIdx % 4) * 0.22);
-        const cz = 1.4 + Math.floor(sIdx / 4) * 0.25;
-        m.position.set(cx, 0.9, cz);
+        const cx = side * (0.55 + (sIdx % 4) * 0.22);
+        const cz = 1.35 + Math.floor(sIdx / 4) * 0.25;
+        m.position.set(cx, 0.89, cz);
         m.userData = { ownerId: p.id, slotIndex: sIdx, itemId };
         vis.group.add(m);
         vis.itemMeshes.push(m);
@@ -1270,10 +1405,13 @@ function animate3D() {
 
   if (shotgunGroup) {
     let targetYaw = gameState.turnIndex * ((Math.PI * 2) / 5);
-    shotgunGroup.rotation.y += (targetYaw - shotgunGroup.rotation.y) * 0.1;
+    if (gameState.aimTargetId) {
+      const tIdx = gameState.players.findIndex(p => p.id === gameState.aimTargetId);
+      if (tIdx !== -1) targetYaw = tIdx * ((Math.PI * 2) / 5);
+    }
+    shotgunGroup.rotation.y += (targetYaw - shotgunGroup.rotation.y) * 0.12;
   }
 
-  // ネームタグ投影
   gameState.players.forEach((p, idx) => {
     const vis = seatVisuals[p.id];
     if (!vis || p.id === myId) return;
