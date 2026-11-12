@@ -178,6 +178,22 @@
     pointer-events: none;
   }
 
+  /* BGMコントロールボタン */
+  .bgm-btn {
+    background: #000;
+    color: var(--neon);
+    border: 1px solid var(--neon);
+    font-family: inherit;
+    font-size: 12px;
+    padding: 4px 8px;
+    cursor: pointer;
+    margin-left: 8px;
+  }
+  .bgm-btn:active {
+    background: var(--neon);
+    color: #000;
+  }
+
   /* 入室後ロビー（参考画像準拠） */
   .room-layout {
     display: flex;
@@ -290,6 +306,9 @@
     border: 1px solid var(--neon);
     padding: 4px 10px;
     font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
   /* カメラ視点切替＆操作ボタン */
@@ -502,9 +521,24 @@
     opacity: 0;
     transition: opacity 0.25s;
   }
+
+  /* 非表示YouTube BGMプレイヤー */
+  #yt-bgm-container {
+    position: fixed;
+    width: 1px;
+    height: 1px;
+    opacity: 0.001;
+    pointer-events: none;
+    bottom: 0;
+    left: 0;
+    z-index: -1;
+  }
 </style>
 </head>
 <body class="scanlines">
+
+<!-- YouTube BGM用非表示プレイヤー -->
+<div id="yt-bgm-container"><div id="yt-bgm-player"></div></div>
 
 <!-- 縦画面警告 -->
 <div id="rotate-warning">
@@ -522,7 +556,10 @@
       <span class="game-title">Life Trade</span>
       <span class="game-ver">ver 0.1</span>
     </div>
-    <div style="font-size:12px;">ONLINE 3D RUSSIAN ROULETTE [2-5 PLAYERS]</div>
+    <div style="font-size:12px; display:flex; align-items:center;">
+      <span>ONLINE 3D RUSSIAN ROULETTE [2-5 PLAYERS]</span>
+      <button class="bgm-btn" id="bgm-btn-title" onclick="toggleBgm()">♪ BGM: STANDBY</button>
+    </div>
   </div>
 
   <div class="lobby-grid">
@@ -562,7 +599,7 @@
 <div id="lobby-screen" class="screen">
   <div class="room-layout">
     <div>
-      <div style="font-size:14px; margin-bottom:6px;">ハイローラー： <span style="float:right;">Life Trade ver 0.1</span></div>
+      <div style="font-size:14px; margin-bottom:6px;">ハイローラー： <span style="float:right;">Life Trade ver 0.1 <button class="bgm-btn" id="bgm-btn-lobby" onclick="toggleBgm()">♪ BGM: ON</button></span></div>
       <div class="player-table-wrap">
         <div class="player-list-box" id="lobby-player-list"></div>
         <div class="kick-col" id="lobby-kick-col"></div>
@@ -599,8 +636,9 @@
       <div class="hud-badge">
         <span id="hud-round">ROUND 1</span> | <span id="hud-turn-info">待機中...</span>
       </div>
-      <div class="hud-badge" id="hud-shells-badge">
-        弾倉: ?
+      <div class="hud-badge">
+        <span id="hud-shells-badge">弾倉: ?</span>
+        <button class="bgm-btn" id="bgm-btn-game" onclick="toggleBgm()">♪ BGM: ON</button>
       </div>
     </div>
 
@@ -656,6 +694,98 @@
 </div>
 
 <script>
+/* ==========================================================================
+   YouTube BGM プレイヤー (https://youtu.be/lRjJk4xhHHE?si=7jc8cs46nJpsd-YU)
+   ========================================================================== */
+const BGM_VIDEO_ID = 'lRjJk4xhHHE';
+let ytPlayer = null;
+let ytReady = false;
+let bgmEnabled = true;
+
+(function loadYouTubeAPI() {
+  const tag = document.createElement('script');
+  tag.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+})();
+
+window.onYouTubeIframeAPIReady = function() {
+  const playerVars = {
+    autoplay: 1,
+    loop: 1,
+    playlist: BGM_VIDEO_ID,
+    controls: 0,
+    disablekb: 1,
+    fs: 0,
+    modestbranding: 1,
+    playsinline: 1,
+    rel: 0
+  };
+  if (location.protocol.startsWith('http')) {
+    playerVars.origin = location.origin;
+  }
+
+  ytPlayer = new YT.Player('yt-bgm-player', {
+    width: '1',
+    height: '1',
+    videoId: BGM_VIDEO_ID,
+    playerVars: playerVars,
+    events: {
+      onReady: function(e) {
+        ytReady = true;
+        e.target.setVolume(45);
+        if (bgmEnabled) {
+          e.target.playVideo();
+        }
+        updateBgmButtons();
+      },
+      onStateChange: function(e) {
+        if (e.data === YT.PlayerState.ENDED && bgmEnabled) {
+          e.target.playVideo();
+        }
+        updateBgmButtons();
+      }
+    }
+  });
+};
+
+function updateBgmButtons() {
+  const isPlaying = ytReady && ytPlayer && typeof ytPlayer.getPlayerState === 'function' && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING;
+  const label = !bgmEnabled ? '♪ BGM: OFF' : (isPlaying ? '♪ BGM: ON' : '♪ BGM: TAP TO PLAY');
+  ['bgm-btn-title', 'bgm-btn-lobby', 'bgm-btn-game'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = label;
+  });
+}
+
+function ensureBgmStart() {
+  if (!bgmEnabled || !ytReady || !ytPlayer) return;
+  const state = ytPlayer.getPlayerState();
+  if (state !== YT.PlayerState.PLAYING) {
+    ytPlayer.unMute();
+    ytPlayer.setVolume(45);
+    ytPlayer.playVideo();
+  }
+  setTimeout(updateBgmButtons, 300);
+}
+
+function toggleBgm() {
+  bgmEnabled = !bgmEnabled;
+  if (ytReady && ytPlayer) {
+    if (bgmEnabled) {
+      ytPlayer.unMute();
+      ytPlayer.setVolume(45);
+      ytPlayer.playVideo();
+    } else {
+      ytPlayer.pauseVideo();
+    }
+  }
+  updateBgmButtons();
+}
+
+// ユーザー操作でブラウザの自動再生ロックを解除してBGMを開始
+document.addEventListener('pointerdown', ensureBgmStart, { passive: true });
+document.addEventListener('keydown', ensureBgmStart, { passive: true });
+
 /* ==========================================================================
    0. ホーム画面追加用アイコン＆PWAマニフェスト動的生成
    ========================================================================== */
@@ -844,6 +974,7 @@ function getCleanCode() {
 }
 
 function createRoom() {
+  ensureBgmStart();
   setError('');
   myName = getCleanName();
   const code = getCleanCode();
@@ -904,6 +1035,7 @@ function createRoom() {
 }
 
 function joinRoom() {
+  ensureBgmStart();
   setError('');
   myName = getCleanName();
   const code = getCleanCode();
