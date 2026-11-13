@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Life Trade" />
 <meta name="theme-color" content="#000000" />
-<title>Life Trade ver 1.0</title>
+<title>Life Trade ver 0.9</title>
 
 <!-- Three.js & PeerJS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -1021,9 +1021,14 @@
 
 <script>
 /* ==========================================================================
-   YouTube BGM プレイヤー (https://youtu.be/mvkcyB_lve0?si=POGnR8dDo_UBwpH7)
+   YouTube BGM プレイヤー
+   - ロビー（待機中）: mvkcyB_lve0
+   - ゲーム開始後・奇数ラウンド: -VNhQ2-aQwE
+   - ゲーム開始後・偶数ラウンド: FL9ocieCNjM
    ========================================================================== */
-const BGM_VIDEO_ID = 'mvkcyB_lve0';
+const LOBBY_BGM_VIDEO_ID = 'mvkcyB_lve0';
+const GAME_BGM_VIDEO_IDS = ['-VNhQ2-aQwE', 'FL9ocieCNjM'];
+let currentBgmVideoId = LOBBY_BGM_VIDEO_ID;
 let ytPlayer = null;
 let ytReady = false;
 let bgmEnabled = true;
@@ -1038,7 +1043,7 @@ window.onYouTubeIframeAPIReady = function() {
   const playerVars = {
     autoplay: 1,
     loop: 1,
-    playlist: BGM_VIDEO_ID,
+    playlist: currentBgmVideoId,
     controls: 0,
     disablekb: 1,
     fs: 0,
@@ -1053,7 +1058,7 @@ window.onYouTubeIframeAPIReady = function() {
   ytPlayer = new YT.Player('yt-bgm-player', {
     width: '1',
     height: '1',
-    videoId: BGM_VIDEO_ID,
+    videoId: currentBgmVideoId,
     playerVars: playerVars,
     events: {
       onReady: function(e) {
@@ -1073,6 +1078,40 @@ window.onYouTubeIframeAPIReady = function() {
     }
   });
 };
+
+function setBgmTrack(videoId) {
+  if (!videoId || currentBgmVideoId === videoId) return;
+  currentBgmVideoId = videoId;
+  if (!ytReady || !ytPlayer) return;
+  if (bgmEnabled) {
+    ytPlayer.loadPlaylist({
+      playlist: [currentBgmVideoId],
+      index: 0,
+      startSeconds: 0
+    });
+    ytPlayer.setLoop(true);
+    ytPlayer.unMute();
+    ytPlayer.setVolume(45);
+    ytPlayer.playVideo();
+  } else {
+    ytPlayer.cuePlaylist({
+      playlist: [currentBgmVideoId],
+      index: 0,
+      startSeconds: 0
+    });
+    ytPlayer.setLoop(true);
+  }
+}
+
+function updateBgmForGameState(state) {
+  if (!state || state.phase === 'lobby') {
+    setBgmTrack(LOBBY_BGM_VIDEO_ID);
+    return;
+  }
+  const roundNum = Math.max(1, state.round || 1);
+  const trackIdx = (roundNum - 1) % GAME_BGM_VIDEO_IDS.length;
+  setBgmTrack(GAME_BGM_VIDEO_IDS[trackIdx]);
+}
 
 function updateBgmButtons() {
   const label = bgmEnabled ? '♪ BGM: ON' : '♪ BGM: OFF';
@@ -1208,18 +1247,6 @@ renderSkinSelector();
 
 /* ==========================================================================
    1. アイテム定義（全12種・指定確率合計100.00%）
-   - ノコギリ: 13.33%
-   - 虫眼鏡: 13.33%
-   - ビール: 13.33%
-   - 期限切れ薬: 13.33%
-   - 使い捨て携帯: 13.33%
-   - タバコ: 6.67%
-   - アドレナリン: 6.67%
-   - 手錠: 6.67%
-   - 目薬: 6.67%
-   - インバータ: 2.67%
-   - リモコン: 2.67%
-   - ロザリオ: 1.33%
    ========================================================================== */
 const ITEM_DEFS = {
   saw: {
@@ -1963,6 +1990,7 @@ function requestRematch() {
 function requestBackToLobby() {
   clearTimeout(aiThinkTimer);
   clearTimeout(roundLoadingTimer);
+  setBgmTrack(LOBBY_BGM_VIDEO_ID);
   if (isSoloAi) {
     isSoloAi = false;
     document.getElementById('result-modal').style.display = 'none';
@@ -2595,6 +2623,7 @@ let hitKnockback = {};
 
 function applyStateUpdate(newState, event) {
   gameState = newState;
+  updateBgmForGameState(gameState);
 
   if (gameState.phase === 'lobby') {
     document.getElementById('result-modal').style.display = 'none';
@@ -2860,7 +2889,6 @@ function updateGameHUD() {
     dirEl.style.color = gameState.turnDirection === 1 ? 'var(--neon)' : 'var(--gold)';
   }
 
-  // 右上は残り残弾数のみ表示
   const ammoEl = document.getElementById('hud-ammo-count');
   if (ammoEl) {
     ammoEl.textContent = `残弾: ${gameState.shells.length}発`;
@@ -2870,12 +2898,16 @@ function updateGameHUD() {
   const isMyTurn = (gameState.phase === 'play' && turnPlayer && turnPlayer.id === myId);
   const me = gameState.players.find(p => p.id === myId);
 
+  const focusedEnemy = adrenalineFocusTargetId
+    ? gameState.players.find(p => p.id === adrenalineFocusTargetId)
+    : null;
+
   document.getElementById('hud-turn-info').textContent =
     gameState.phase === 'loading' ? '弾薬装填中...' :
     gameState.phase === 'loot' ? 'アイテム配置中...' :
     gameState.phase === 'gameover' ? `決着！勝者: ${gameState.winnerName}` :
     pendingPlayerTargetItem ? `🎯 【${ITEM_DEFS[pendingPlayerTargetItem.itemId].name}】を使う相手を直接タップ` :
-    adrenalineStealSlot !== null ? '💉 相手の目の前の3Dアイテムを直接タップして奪う' :
+    adrenalineStealSlot !== null ? `💉 ${focusedEnemy ? focusedEnemy.name : '相手'}の3Dアイテムをタップ（下ボタン/スワイプで対象切替）` :
     isAimingMode ? '🎯 撃つ相手(3D)をタップ または 自分を撃つ' :
     (isMyTurn && me && me.noItemsNextTurn) ? '💧 目薬効果中（銃をタップして射撃のみ可能）' :
     isMyTurn ? '★ あなたのターン（銃や手元アイテムを直接タップ） ★' : `${turnPlayer ? turnPlayer.name : ''} のターン`;
@@ -2991,18 +3023,18 @@ function openItemUseModal(slotIndex, itemId) {
   extra.innerHTML = '';
 
   if (itemId === 'adrenaline') {
-    const stealablePlayers = gameState.players.filter(
-      p => p.id !== myId && p.alive && p.slots.some(s => s && s !== 'adrenaline')
-    );
-    if (stealablePlayers.length === 0) {
+    const aliveEnemies = gameState.players.filter(p => p.id !== myId && p.alive);
+    const hasAnyStealable = aliveEnemies.some(p => p.slots.some(s => s && s !== 'adrenaline'));
+    if (!hasAnyStealable) {
       extra.innerHTML = '<div style="color:var(--danger); font-size:12px;">奪えるアイテムを持っている相手がいません</div>';
       useBtn.style.display = 'none';
     } else {
-      extra.innerHTML = '<div style="font-size:12px; color:#aaffaa;">「使用する」を押すと相手の目の前に視点が移動します。</div>';
+      extra.innerHTML = '<div style="font-size:12px; color:#aaffaa;">「使用する」を押すと相手の目の前に視点が移動します。下のボタンや左右スワイプ・相手タップで全員のテーブルを見に行けます。</div>';
       useBtn.style.display = 'inline-block';
       useBtn.onclick = () => {
         closeItemModal();
-        startAdrenaline3DSelection(slotIndex, stealablePlayers);
+        const firstWithItem = aliveEnemies.find(p => p.slots.some(s => s && s !== 'adrenaline')) || aliveEnemies[0];
+        startAdrenaline3DSelection(slotIndex, firstWithItem.id);
       };
     }
   } else if (itemId === 'handcuffs' || itemId === 'eyedrops') {
@@ -3086,49 +3118,105 @@ function cancelDirectPlayerTarget() {
   update3DSceneFromState();
 }
 
-function startAdrenaline3DSelection(slotIndex, stealablePlayers) {
-  adrenalineStealSlot = slotIndex;
-  isAimingMode = false;
-  pendingPlayerTargetItem = null;
-  adrenalineFocusTargetId = stealablePlayers[0].id;
-  userYawOffset = 0;
+function getAdrenalineCandidates() {
+  return gameState.players.filter(p => p.id !== myId && p.alive);
+}
 
+function focusAdrenalineTarget(targetId) {
+  const candidates = getAdrenalineCandidates();
+  if (candidates.length === 0) return;
+  const found = candidates.find(p => p.id === targetId) || candidates[0];
+  adrenalineFocusTargetId = found.id;
+  userYawOffset = 0;
+  playTone(540, 'sine', 0.06, 0.12);
+  renderAdrenalineOverlay();
   updateGameHUD();
   update3DSceneFromState();
+}
 
+function cycleAdrenalineTarget(dir) {
+  const candidates = getAdrenalineCandidates();
+  if (candidates.length === 0) return;
+  const curIdx = candidates.findIndex(p => p.id === adrenalineFocusTargetId);
+  const nextIdx = ((curIdx === -1 ? 0 : curIdx) + dir + candidates.length) % candidates.length;
+  focusAdrenalineTarget(candidates[nextIdx].id);
+}
+
+function renderAdrenalineOverlay() {
+  const candidates = getAdrenalineCandidates();
   const overlay = document.getElementById('action-overlay');
   overlay.innerHTML = '';
   overlay.style.display = 'flex';
 
   const hint = document.createElement('span');
   hint.style.fontSize = '12px';
-  hint.textContent = '💉 目の前の3Dアイテムをタップ:';
+  hint.textContent = '💉 見に行く相手を選択 & 3Dアイテムをタップ:';
   overlay.appendChild(hint);
 
-  stealablePlayers.forEach(p => {
+  if (candidates.length > 1) {
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'btn';
+    prevBtn.style.padding = '4px 8px';
+    prevBtn.style.fontSize = '12px';
+    prevBtn.textContent = '◀ 前へ';
+    prevBtn.onclick = () => cycleAdrenalineTarget(-1);
+    overlay.appendChild(prevBtn);
+  }
+
+  candidates.forEach(p => {
+    const stealableCount = p.slots.filter(s => s && s !== 'adrenaline').length;
     const pBtn = document.createElement('button');
     pBtn.className = 'btn';
-    pBtn.style.padding = '4px 8px';
+    pBtn.style.padding = '4px 9px';
     pBtn.style.fontSize = '12px';
     if (p.id === adrenalineFocusTargetId) {
       pBtn.style.background = 'var(--neon)';
       pBtn.style.color = '#000';
+      pBtn.style.fontWeight = 'bold';
+    } else if (stealableCount === 0) {
+      pBtn.style.opacity = '0.55';
     }
-    pBtn.textContent = p.name;
-    pBtn.onclick = () => {
-      adrenalineFocusTargetId = p.id;
-      userYawOffset = 0;
-      startAdrenaline3DSelection(slotIndex, stealablePlayers);
-    };
+    pBtn.textContent = `${p.name} (${stealableCount}個)`;
+    pBtn.onclick = () => focusAdrenalineTarget(p.id);
     overlay.appendChild(pBtn);
   });
+
+  if (candidates.length > 1) {
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn';
+    nextBtn.style.padding = '4px 8px';
+    nextBtn.style.fontSize = '12px';
+    nextBtn.textContent = '次へ ▶';
+    nextBtn.onclick = () => cycleAdrenalineTarget(1);
+    overlay.appendChild(nextBtn);
+  }
 
   const cancel = document.createElement('button');
   cancel.className = 'btn';
   cancel.style.padding = '4px 10px';
+  cancel.style.fontSize = '12px';
   cancel.textContent = 'キャンセル';
   cancel.onclick = () => cancelAdrenalineSelection();
   overlay.appendChild(cancel);
+}
+
+function startAdrenaline3DSelection(slotIndex, initialTargetId) {
+  const candidates = getAdrenalineCandidates();
+  if (candidates.length === 0) return;
+
+  adrenalineStealSlot = slotIndex;
+  isAimingMode = false;
+  pendingPlayerTargetItem = null;
+
+  const initTarget = candidates.find(p => p.id === initialTargetId)
+    || candidates.find(p => p.slots.some(s => s && s !== 'adrenaline'))
+    || candidates[0];
+  adrenalineFocusTargetId = initTarget.id;
+  userYawOffset = 0;
+
+  renderAdrenalineOverlay();
+  updateGameHUD();
+  update3DSceneFromState();
 }
 
 function cancelAdrenalineSelection() {
@@ -3210,7 +3298,6 @@ const raycaster = new THREE.Raycaster();
 const pointerNDC = new THREE.Vector2();
 let interactableMeshes = [];
 
-// 精密テーブル天板テクスチャ
 function createDetailedTableTopTexture() {
   const c = document.createElement('canvas');
   c.width = 1024; c.height = 1024;
@@ -3249,7 +3336,6 @@ function createDetailedTableTopTexture() {
   return tex;
 }
 
-// レンガ壁テクスチャ
 function createBrickWallTexture() {
   const c = document.createElement('canvas');
   c.width = 512; c.height = 512;
@@ -3285,7 +3371,6 @@ function createBrickWallTexture() {
   return tex;
 }
 
-// スタジオ照明・大型スピーカー・オシロスコープラック・パイプ壁・天井ケーブルを構築
 function buildDetailedEnvironment(scene) {
   const envGroup = new THREE.Group();
   scene.add(envGroup);
@@ -3571,19 +3656,24 @@ function initThreeScene() {
   myRightHand.visible = false;
   scene.add(myLeftHand, myRightHand);
 
-  let dragging = false, movedDist = 0, prevX = 0, lastLookSend = 0;
+  let dragging = false, movedDist = 0, startX = 0, prevX = 0, lastLookSend = 0;
 
   canvas.addEventListener('pointerdown', (e) => {
     dragging = true;
     movedDist = 0;
+    startX = e.clientX;
     prevX = e.clientX;
   });
 
   window.addEventListener('pointerup', (e) => {
     if (!dragging) return;
     dragging = false;
+    const totalDx = e.clientX - startX;
     if (movedDist < 8) {
       handle3DDirectTap(e.clientX, e.clientY);
+    } else if (adrenalineStealSlot !== null && Math.abs(totalDx) >= 48) {
+      // アドレナリン選択中は左右スワイプでも別の相手のテーブルへ切り替え可能
+      cycleAdrenalineTarget(totalDx < 0 ? 1 : -1);
     }
   });
 
@@ -3592,6 +3682,7 @@ function initThreeScene() {
     const dx = e.clientX - prevX;
     movedDist += Math.abs(dx);
     prevX = e.clientX;
+    if (adrenalineStealSlot !== null) return;
     userYawOffset = Math.max(-1.15, Math.min(1.15, userYawOffset - dx * 0.005));
     const now = Date.now();
     if (now - lastLookSend > 120) {
@@ -3609,7 +3700,6 @@ function initThreeScene() {
   animate3D();
 }
 
-/* --- シビアな当たり判定による3Dタップ処理 --- */
 function handle3DDirectTap(clientX, clientY) {
   const turnPlayer = gameState.players[gameState.turnIndex];
   const isMyTurn = (gameState.phase === 'play' && turnPlayer && turnPlayer.id === myId);
@@ -3653,6 +3743,10 @@ function handle3DDirectTap(clientX, clientY) {
   }
 
   if (adrenalineStealSlot !== null) {
+    if (info.interactType === 'target_player' && info.playerId !== myId) {
+      focusAdrenalineTarget(info.playerId);
+      return;
+    }
     if (info.interactType === 'enemy_item') {
       if (info.itemId === 'adrenaline') {
         showBanner('アドレナリン自体は盗めません！', 1600);
@@ -3699,7 +3793,6 @@ function setCameraMode(mode) {
   userYawOffset = 0;
 }
 
-/* --- 10種類のスキンに対応した3Dマスク造形 --- */
 function buildMaskMesh(skinId) {
   const skin = MASK_SKINS.find(s => s.id === skinId) || MASK_SKINS[0];
   const group = new THREE.Group();
@@ -4114,7 +4207,9 @@ function update3DSceneFromState() {
       const nameTag = document.createElement('div');
       nameTag.className = 'name-tag';
       nameTag.onclick = () => {
-        if (pendingPlayerTargetItem && p.alive && p.id !== myId) {
+        if (adrenalineStealSlot !== null && p.alive && p.id !== myId) {
+          focusAdrenalineTarget(p.id);
+        } else if (pendingPlayerTargetItem && p.alive && p.id !== myId) {
           confirmDirectPlayerTarget(p.id);
         } else if (isAimingMode && p.alive && p.id !== myId) {
           confirmShootTarget(p.id);
@@ -4143,7 +4238,7 @@ function update3DSceneFromState() {
     vis.leftHand.visible = !isMe && p.alive;
     vis.rightHand.visible = !isMe && p.alive;
 
-    if (!isMe && p.alive && (isAimingMode || pendingPlayerTargetItem)) {
+    if (!isMe && p.alive && (isAimingMode || pendingPlayerTargetItem || adrenalineStealSlot !== null)) {
       interactableMeshes.push(vis.targetHitBox);
     }
 
@@ -4195,6 +4290,8 @@ function update3DSceneFromState() {
     if (isAimingMode && !isMe && p.alive) prefix = '🎯 ';
     else if (pendingPlayerTargetItem && !isMe && p.alive) {
       prefix = pendingPlayerTargetItem.itemId === 'handcuffs' ? '⛓️ ' : '💧 ';
+    } else if (adrenalineStealSlot !== null && !isMe && p.alive) {
+      prefix = p.id === adrenalineFocusTargetId ? '💉[確認中] ' : '💉 ';
     }
 
     vis.nameTag.textContent = `${prefix}${p.name} (⚡${p.hp})${statusMarks}`;
@@ -4202,7 +4299,7 @@ function update3DSceneFromState() {
       + (isTurn ? ' turn-active' : '')
       + (!p.alive ? ' dead' : '')
       + (isAimingMode && !isMe && p.alive ? ' aimable' : '')
-      + (pendingPlayerTargetItem && !isMe && p.alive ? ' item-targetable' : '');
+      + ((pendingPlayerTargetItem || adrenalineStealSlot !== null) && !isMe && p.alive ? ' item-targetable' : '');
     vis.nameTag.style.display = isMe ? 'none' : 'block';
   });
 
