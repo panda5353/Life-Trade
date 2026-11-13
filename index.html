@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Life Trade" />
 <meta name="theme-color" content="#000000" />
-<title>Life Trade ver 0.6</title>
+<title>Life Trade ver 0.7</title>
 
 <!-- Three.js & PeerJS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -110,7 +110,7 @@
 
   .lobby-grid {
     display: grid;
-    grid-template-columns: 1.1fr 0.9fr;
+    grid-template-columns: 1.15fr 0.85fr;
     gap: 16px;
     flex: 1;
     min-height: 0;
@@ -126,12 +126,12 @@
   }
 
   .input-group {
-    margin-bottom: 10px;
+    margin-bottom: 8px;
   }
   .input-group label {
     display: block;
     font-size: 13px;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
   }
   input[type="text"], input[type="tel"], select {
     width: 100%;
@@ -139,11 +139,11 @@
     border: 1px solid var(--neon);
     color: var(--neon);
     font-family: inherit;
-    font-size: 18px;
-    padding: 6px 10px;
+    font-size: 17px;
+    padding: 5px 10px;
     outline: none;
   }
-  input:focus {
+  input:focus, select:focus {
     box-shadow: 0 0 8px var(--neon);
   }
 
@@ -152,8 +152,8 @@
     color: var(--neon);
     border: 1px solid var(--neon);
     font-family: inherit;
-    font-size: 16px;
-    padding: 8px 14px;
+    font-size: 15px;
+    padding: 7px 12px;
     cursor: pointer;
     text-align: left;
     transition: background 0.12s, color 0.12s;
@@ -163,12 +163,12 @@
     color: #000;
   }
   .btn-center { text-align: center; }
-  .btn-danger {
-    border-color: var(--danger);
-    color: var(--danger);
+  .btn-gold {
+    border-color: var(--gold);
+    color: var(--gold);
   }
-  .btn-danger:hover, .btn-danger:active {
-    background: var(--danger);
+  .btn-gold:hover, .btn-gold:active {
+    background: var(--gold);
     color: #000;
   }
   .btn:disabled {
@@ -184,7 +184,6 @@
     font-size: 12px;
     padding: 4px 8px;
     cursor: pointer;
-    margin-left: 8px;
   }
   .bgm-btn:active {
     background: var(--neon);
@@ -405,13 +404,13 @@
   }
   .shell-icons-row {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     align-items: center;
     justify-content: center;
   }
   .shell-cartridge {
-    width: 20px;
-    height: 48px;
+    width: 18px;
+    height: 44px;
     border-radius: 3px 3px 1px 1px;
     position: relative;
     display: flex;
@@ -423,7 +422,7 @@
   .shell-cartridge::after {
     content: "";
     display: block;
-    height: 12px;
+    height: 11px;
     width: 100%;
     background: #d4af37;
     border-top: 1px solid #000;
@@ -541,6 +540,70 @@
     min-width: 280px;
     max-width: 90vw;
     pointer-events: auto;
+  }
+
+  /* アイテム図鑑モーダル（画像つき） */
+  #item-guide-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.88);
+    z-index: 420;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    pointer-events: auto;
+  }
+  .guide-panel {
+    border: 2px solid var(--neon);
+    background: #041004;
+    padding: 12px 16px;
+    width: min(820px, 96vw);
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 0 26px rgba(57, 255, 20, 0.35);
+  }
+  .guide-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .guide-card {
+    border: 1px solid var(--neon);
+    background: rgba(0, 0, 0, 0.85);
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .guide-card img {
+    width: 62px;
+    height: 62px;
+    border: 1px solid rgba(57, 255, 20, 0.5);
+    background: #081208;
+    flex-shrink: 0;
+  }
+  .guide-card-info {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .guide-card-title {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .rare-badge {
+    font-size: 10px;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    padding: 0 4px;
   }
 
   /* 勝敗演出＆ランキング・再戦モーダル */
@@ -682,10 +745,11 @@
   <div class="term-header">
     <div>
       <span class="game-title">Life Trade</span>
-      <span class="game-ver">ver 0.6</span>
+      <span class="game-ver">ver 0.7</span>
     </div>
-    <div style="font-size:12px; display:flex; align-items:center;">
-      <span>ONLINE 3D RUSSIAN ROULETTE [2-5 PLAYERS]</span>
+    <div style="font-size:12px; display:flex; align-items:center; gap:6px;">
+      <span>SOLO AI &amp; ONLINE [2-5 PLAYERS]</span>
+      <button class="bgm-btn" onclick="openItemGuideModal()">? アイテム図鑑</button>
       <button class="bgm-btn" id="bgm-btn-title" onclick="toggleBgm()">♪ BGM: ON</button>
     </div>
   </div>
@@ -697,27 +761,42 @@
           <label>&gt; プレイヤー名 (NAME)</label>
           <input type="text" id="player-name-input" maxlength="10" placeholder="PLAYER" />
         </div>
-        <div class="input-group">
-          <label>&gt; 3桁の部屋番号 (3-DIGIT ROOM ID)</label>
-          <input type="tel" id="room-id-input" maxlength="3" pattern="[0-9]*" placeholder="例: 777" />
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+          <div class="input-group">
+            <label>&gt; 3桁の部屋番号 (ONLINE)</label>
+            <input type="tel" id="room-id-input" maxlength="3" pattern="[0-9]*" placeholder="例: 777" />
+          </div>
+          <div class="input-group">
+            <label>&gt; AI対戦人数 (SOLO)</label>
+            <select id="ai-count-select">
+              <option value="1">AI 1体 (1対1)</option>
+              <option value="2" selected>AI 2体 (3人戦)</option>
+              <option value="3">AI 3体 (4人戦)</option>
+              <option value="4">AI 4体 (5人戦)</option>
+            </select>
+          </div>
         </div>
       </div>
-      <div style="display:flex; gap:10px;">
-        <button class="btn btn-center" style="flex:1;" onclick="createRoom()">[ 部屋を作成 ]</button>
-        <button class="btn btn-center" style="flex:1;" onclick="joinRoom()">[ 部屋に参加 ]</button>
+
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button class="btn btn-center btn-gold" onclick="startSoloAiMatch()">[ ▶ 一人用 (vs AI) で開始 ]</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-center" style="flex:1;" onclick="createRoom()">[ オンライン部屋を作成 ]</button>
+          <button class="btn btn-center" style="flex:1;" onclick="joinRoom()">[ 部屋に参加 ]</button>
+        </div>
       </div>
     </div>
 
     <div class="box-panel">
-      <div style="font-size:13px; line-height:1.5;">
+      <div style="font-size:13px; line-height:1.48;">
         <div>&gt; TERMINAL STATUS: <span id="net-status">READY</span></div>
         <div>&gt; 初期ライフ: ⚡×5 (負け抜け制)</div>
-        <div>&gt; 初期弾数: 5発からラウンドごとに+1発 (赤・青 各40%以上)</div>
-        <div>&gt; 席順・スタートプレイヤーは毎回ランダム決定</div>
-        <div id="title-error" style="color:var(--danger); margin-top:6px;"></div>
+        <div>&gt; 弾倉: 5発開始〜最大10発 (赤・青 各最低1発 / R5以降は赤率UP)</div>
+        <div>&gt; 配布: 毎ラウンド最大3個 (タバコ・アドレナリンは出現率半減)</div>
+        <div id="title-error" style="color:var(--danger); margin-top:4px;"></div>
       </div>
       <div style="font-size:11px; opacity:0.75; border-top:1px dashed var(--neon); padding-top:6px;">
-        ※ショットガン・アイテム・アドレナリン奪取・撃つ相手はすべて3D画面上で直接タップします
+        ※ゲーム中も右上の「? アイテム図鑑」からいつでも効果と画像を確認できます
       </div>
     </div>
   </div>
@@ -727,7 +806,14 @@
 <div id="lobby-screen" class="screen">
   <div class="room-layout">
     <div>
-      <div style="font-size:14px; margin-bottom:6px;">ハイローラー： <span style="float:right;">Life Trade ver 0.6 <button class="bgm-btn" id="bgm-btn-lobby" onclick="toggleBgm()">♪ BGM: ON</button></span></div>
+      <div style="font-size:14px; margin-bottom:6px;">
+        ハイローラー：
+        <span style="float:right; display:flex; gap:6px; align-items:center;">
+          <span>Life Trade ver 0.7</span>
+          <button class="bgm-btn" onclick="openItemGuideModal()">? アイテム図鑑</button>
+          <button class="bgm-btn" id="bgm-btn-lobby" onclick="toggleBgm()">♪ BGM: ON</button>
+        </span>
+      </div>
       <div class="player-table-wrap">
         <div class="player-list-box" id="lobby-player-list"></div>
         <div class="kick-col" id="lobby-kick-col"></div>
@@ -770,7 +856,8 @@
         </div>
       </div>
       <div class="hud-badge">
-        <span id="hud-shells-badge">弾倉: ?</span>
+        <span id="hud-saw-badge" style="color:var(--danger); display:none;">[威力2倍中]</span>
+        <button class="bgm-btn" onclick="openItemGuideModal()">? アイテム図鑑</button>
         <button class="bgm-btn" id="bgm-btn-game" onclick="toggleBgm()">♪ BGM: ON</button>
       </div>
     </div>
@@ -804,7 +891,7 @@
 <div id="loot-modal">
   <div class="loot-box-ui">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-      <span>[ SUPPLY BOX ] 枠にドラッグまたはタップで配置</span>
+      <span>[ SUPPLY BOX ] 枠にドラッグまたはタップで配置（最大3個）</span>
       <span id="loot-count-label">残り: 0</span>
     </div>
     <div class="loot-items-row" id="loot-box-items"></div>
@@ -827,6 +914,17 @@
   </div>
 </div>
 
+<!-- アイテム図鑑モーダル（画像つき） -->
+<div id="item-guide-modal" onclick="if(event.target===this) closeItemGuideModal()">
+  <div class="guide-panel">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--neon); padding-bottom:6px;">
+      <span style="font-size:16px;">[ ITEM DATABASE ] 全8種アイテム効果＆外観</span>
+      <button class="btn" style="padding:4px 10px;" onclick="closeItemGuideModal()">✕ 閉じる</button>
+    </div>
+    <div class="guide-grid" id="item-guide-grid"></div>
+  </div>
+</div>
+
 <!-- 勝敗演出＆ランキング・再戦モーダル -->
 <div id="result-modal">
   <div class="result-panel">
@@ -845,9 +943,9 @@
       <tbody id="ranking-tbody"></tbody>
     </table>
     <div class="result-actions">
-      <button class="btn" onclick="requestBackToLobby()">ロビーへ戻る</button>
+      <button class="btn" onclick="requestBackToLobby()">ロビー／タイトルへ戻る</button>
       <div id="rematch-area">
-        <button class="btn" id="rematch-btn" onclick="requestRematch()">▶ 再戦する（同じ部屋で再プレイ）</button>
+        <button class="btn" id="rematch-btn" onclick="requestRematch()">▶ 再戦する</button>
       </div>
     </div>
   </div>
@@ -998,51 +1096,285 @@ function toggleBgm() {
 })();
 
 /* ==========================================================================
-   1. アイテム定義（全8種）
+   1. アイテム定義（全8種：タバコ・アドレナリンは出現重み0.5＝通常の半分）
    ========================================================================== */
 const ITEM_DEFS = {
   saw: {
     id: 'saw',
     name: 'ノコギリ',
+    weight: 1.0,
+    rare: false,
     desc: '使用したターンのみ、実弾のダメージが2になる。'
   },
   magnifier: {
     id: 'magnifier',
     name: '虫眼鏡',
+    weight: 1.0,
+    rare: false,
     desc: '次に装填されている弾（薬室の弾）が実弾(赤)か空砲(青)か自分だけ確認できる。'
   },
   cigarette: {
     id: 'cigarette',
     name: 'タバコ',
-    desc: '自分のライフを1回復する（最大5）。'
+    weight: 0.5,
+    rare: true,
+    desc: '自分のライフを1回復する（最大5）。【出現率 1/2】'
   },
   beer: {
     id: 'beer',
     name: 'ビール',
+    weight: 1.0,
+    rare: false,
     desc: 'ターン消費せずに現在薬室にある弾を1つ排莢して消費する。'
   },
   medicine: {
     id: 'medicine',
     name: '期限切れ薬',
+    weight: 1.0,
+    rare: false,
     desc: '50%でライフを2回復、50%でライフを1喪失する。'
   },
   adrenaline: {
     id: 'adrenaline',
     name: 'アドレナリン',
-    desc: '相手のテーブル上の3Dアイテムを直接タップして1つ盗み、即時使用する（アドレナリン自体は盗めない）。'
+    weight: 0.5,
+    rare: true,
+    desc: '相手のテーブル上の3Dアイテムを直接タップして1つ盗み、即時使用する（アドレナリン自体は盗めない）。【出現率 1/2】'
   },
   inverter: {
     id: 'inverter',
     name: 'インバータ',
+    weight: 1.0,
+    rare: false,
     desc: '現在薬室にある弾の空砲と実弾を入れ替える。'
   },
   phone: {
     id: 'phone',
     name: '使い捨て携帯',
+    weight: 1.0,
+    rare: false,
     desc: '最初から何番目の弾が実弾(赤)か空砲(青)か教えてくれる。'
   }
 };
 const ITEM_KEYS = Object.keys(ITEM_DEFS);
+
+function rollWeightedItem() {
+  const totalWeight = ITEM_KEYS.reduce((acc, k) => acc + ITEM_DEFS[k].weight, 0);
+  let r = Math.random() * totalWeight;
+  for (const k of ITEM_KEYS) {
+    r -= ITEM_DEFS[k].weight;
+    if (r <= 0) return k;
+  }
+  return ITEM_KEYS[0];
+}
+
+/* ==========================================================================
+   アイテム図鑑用イラスト生成（3D造形に対応した鮮明なアイコン画像）
+   ========================================================================== */
+const itemImageCache = {};
+function getItemIllustrationDataUrl(itemId) {
+  if (itemImageCache[itemId]) return itemImageCache[itemId];
+  const c = document.createElement('canvas');
+  c.width = 128; c.height = 128;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#071307';
+  ctx.fillRect(0, 0, 128, 128);
+
+  // グリッド背景
+  ctx.strokeStyle = 'rgba(57, 255, 20, 0.14)';
+  ctx.lineWidth = 1;
+  for (let i = 16; i < 128; i += 24) {
+    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 128); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(128, i); ctx.stroke();
+  }
+
+  ctx.save();
+  switch (itemId) {
+    case 'saw': {
+      // 刃
+      ctx.fillStyle = '#c8d0d8';
+      ctx.beginPath();
+      ctx.moveTo(42, 48); ctx.lineTo(114, 54); ctx.lineTo(114, 72); ctx.lineTo(42, 76);
+      ctx.closePath(); ctx.fill();
+      // ギザギザ歯
+      ctx.fillStyle = '#8d99a6';
+      for (let x = 46; x < 110; x += 8) {
+        ctx.beginPath();
+        ctx.moveTo(x, 76); ctx.lineTo(x + 4, 83); ctx.lineTo(x + 8, 76);
+        ctx.fill();
+      }
+      // 木柄ハンドル
+      ctx.fillStyle = '#8b4513';
+      ctx.fillRect(14, 42, 30, 40);
+      ctx.fillStyle = '#071307';
+      ctx.fillRect(21, 51, 14, 22);
+      break;
+    }
+    case 'magnifier': {
+      // 柄
+      ctx.strokeStyle = '#333333';
+      ctx.lineWidth = 10;
+      ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(72, 72); ctx.lineTo(106, 106); ctx.stroke();
+      // レンズ
+      ctx.fillStyle = 'rgba(170, 221, 255, 0.45)';
+      ctx.beginPath(); ctx.arc(52, 52, 28, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#d8d8d8';
+      ctx.lineWidth = 6;
+      ctx.stroke();
+      // 光沢
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(52, 52, 18, -2.5, -1.6); ctx.stroke();
+      break;
+    }
+    case 'cigarette': {
+      // 箱本体
+      ctx.fillStyle = '#f5f5f5';
+      ctx.fillRect(36, 46, 56, 62);
+      // 赤い蓋
+      ctx.fillStyle = '#c82323';
+      ctx.fillRect(36, 30, 56, 20);
+      ctx.strokeStyle = '#ffd700';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(38, 48, 52, 58);
+      // 飛び出たタバコ
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(68, 16, 8, 22);
+      ctx.fillStyle = '#d98a3c';
+      ctx.fillRect(68, 28, 8, 10);
+      break;
+    }
+    case 'beer': {
+      // 缶本体
+      ctx.fillStyle = '#cfd6dc';
+      ctx.fillRect(42, 26, 44, 78);
+      // 緑ラベル帯
+      ctx.fillStyle = '#246b35';
+      ctx.fillRect(42, 48, 44, 34);
+      // 上下リム
+      ctx.fillStyle = '#eef2f5';
+      ctx.fillRect(40, 22, 48, 6);
+      ctx.fillRect(40, 102, 48, 6);
+      ctx.fillStyle = '#ffd700';
+      ctx.beginPath(); ctx.arc(64, 65, 9, 0, Math.PI * 2); ctx.fill();
+      break;
+    }
+    case 'medicine': {
+      // 茶色瓶
+      ctx.fillStyle = '#b87333';
+      ctx.fillRect(40, 42, 48, 64);
+      // 白ラベル
+      ctx.fillStyle = '#ebe6d8';
+      ctx.fillRect(40, 56, 48, 34);
+      // 十字マーク
+      ctx.fillStyle = '#ff2a2a';
+      ctx.fillRect(60, 62, 8, 22);
+      ctx.fillRect(53, 69, 22, 8);
+      // 白キャップ
+      ctx.fillStyle = '#f2f2f2';
+      ctx.fillRect(44, 26, 40, 16);
+      break;
+    }
+    case 'adrenaline': {
+      ctx.translate(64, 64);
+      ctx.rotate(-Math.PI / 4);
+      // シリンジ筒
+      ctx.fillStyle = 'rgba(221, 238, 255, 0.55)';
+      ctx.fillRect(-30, -10, 56, 20);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(-30, -10, 56, 20);
+      // ネオングリーン薬液
+      ctx.fillStyle = '#39ff14';
+      ctx.fillRect(-14, -7, 36, 14);
+      // プランジャー
+      ctx.fillStyle = '#666666';
+      ctx.fillRect(-52, -4, 22, 8);
+      ctx.fillRect(-56, -12, 5, 24);
+      // 針
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(26, 0); ctx.lineTo(54, 0); ctx.stroke();
+      break;
+    }
+    case 'inverter': {
+      // 本体ボックス
+      ctx.fillStyle = '#263829';
+      ctx.fillRect(30, 44, 68, 56);
+      ctx.strokeStyle = '#39ff14';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(30, 44, 68, 56);
+      // アンテナ
+      ctx.strokeStyle = '#cccccc';
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(84, 44); ctx.lineTo(84, 18); ctx.stroke();
+      // 赤と青のノード
+      ctx.fillStyle = '#ff2a2a';
+      ctx.beginPath(); ctx.arc(48, 72, 11, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#2a9df4';
+      ctx.beginPath(); ctx.arc(80, 72, 11, 0, Math.PI * 2); ctx.fill();
+      // 反転矢印
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(58, 65); ctx.lineTo(70, 65); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(70, 79); ctx.lineTo(58, 79); ctx.stroke();
+      break;
+    }
+    case 'phone': {
+      // ガラケー本体
+      ctx.fillStyle = '#222226';
+      ctx.fillRect(42, 26, 44, 82);
+      ctx.strokeStyle = '#777777';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(42, 26, 44, 82);
+      // アンテナ
+      ctx.fillStyle = '#111111';
+      ctx.fillRect(74, 12, 7, 14);
+      // 緑液晶
+      ctx.fillStyle = '#39ff14';
+      ctx.fillRect(48, 33, 32, 28);
+      // テンキー
+      ctx.fillStyle = '#666666';
+      for (let r = 0; r < 3; r++) {
+        for (let col = 0; col < 3; col++) {
+          ctx.fillRect(49 + col * 11, 68 + r * 11, 8, 7);
+        }
+      }
+      break;
+    }
+  }
+  ctx.restore();
+  itemImageCache[itemId] = c.toDataURL('image/png');
+  return itemImageCache[itemId];
+}
+
+function openItemGuideModal() {
+  const modal = document.getElementById('item-guide-modal');
+  const grid = document.getElementById('item-guide-grid');
+  grid.innerHTML = '';
+
+  ITEM_KEYS.forEach(k => {
+    const def = ITEM_DEFS[k];
+    const card = document.createElement('div');
+    card.className = 'guide-card';
+    const rareTag = def.rare ? `<span class="rare-badge">出現率 1/2</span>` : '';
+    card.innerHTML = `
+      <img src="${getItemIllustrationDataUrl(k)}" alt="${def.name}" />
+      <div class="guide-card-info">
+        <div class="guide-card-title">${def.name} ${rareTag}</div>
+        <div>${def.desc}</div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  modal.style.display = 'flex';
+}
+
+function closeItemGuideModal() {
+  document.getElementById('item-guide-modal').style.display = 'none';
+}
 
 /* ==========================================================================
    2. Web Audio 効果音シンセ（銃声・装填・勝敗ファンファーレ／敗北音）
@@ -1093,11 +1425,12 @@ function playMatchResultSound(isWinner) {
 }
 
 /* ==========================================================================
-   3. ネットワーク＆ゲーム状態管理（PeerJS 3桁ルーム）
+   3. ネットワーク＆ゲーム状態管理（PeerJS 3桁ルーム & 一人用AIモード）
    ========================================================================== */
-const PEER_PREFIX = 'lifetrade-v06-room-';
+const PEER_PREFIX = 'lifetrade-v07-room-';
 let peer = null;
 let isHost = false;
+let isSoloAi = false;
 let myId = '';
 let myName = 'PLAYER';
 let roomCode = '';
@@ -1142,9 +1475,89 @@ function getCleanCode() {
   return code;
 }
 
+/* --- 一人用 (vs AI) 開始 --- */
+function startSoloAiMatch() {
+  ensureBgmStart();
+  setError('');
+  if (peer) {
+    peer.destroy();
+    peer = null;
+  }
+  connections = {};
+  hostConn = null;
+  isSoloAi = true;
+  isHost = true;
+  myName = getCleanName();
+  myId = 'solo-human';
+  roomCode = 'SOLO';
+
+  const aiCount = parseInt(document.getElementById('ai-count-select').value, 10) || 2;
+  const aiNames = ['CPU-ALPHA', 'CPU-BETA', 'CPU-GAMMA', 'CPU-DELTA'];
+
+  const players = [{
+    id: myId,
+    name: myName,
+    isHostPlayer: true,
+    isAi: false,
+    hp: 5,
+    maxHp: 5,
+    slots: Array(8).fill(null),
+    alive: true,
+    lookYaw: 0,
+    handAction: 'idle',
+    lootPending: [],
+    damageDealt: 0,
+    survivedRound: 1,
+    elimOrder: 0
+  }];
+
+  for (let i = 0; i < aiCount; i++) {
+    players.push({
+      id: 'ai-bot-' + i,
+      name: aiNames[i],
+      isHostPlayer: false,
+      isAi: true,
+      hp: 5,
+      maxHp: 5,
+      slots: Array(8).fill(null),
+      alive: true,
+      lookYaw: 0,
+      handAction: 'idle',
+      lootPending: [],
+      damageDealt: 0,
+      survivedRound: 1,
+      elimOrder: 0,
+      aiKnownNext: null
+    });
+  }
+
+  gameState = {
+    phase: 'play',
+    maxPlayers: players.length,
+    round: 1,
+    players,
+    turnIndex: 0,
+    shells: [],
+    initialShellCount: 0,
+    sawActive: false,
+    aimTargetId: null,
+    winnerId: '',
+    winnerName: '',
+    elimCounter: 0
+  };
+
+  document.getElementById('title-screen').classList.remove('active');
+  document.getElementById('lobby-screen').classList.remove('active');
+  document.getElementById('game-screen').classList.add('active');
+
+  resetMatchStats();
+  startNewRound();
+}
+
 function createRoom() {
   ensureBgmStart();
   setError('');
+  isSoloAi = false;
   myName = getCleanName();
   const code = getCleanCode();
   if (!code) return;
@@ -1165,6 +1578,7 @@ function createRoom() {
         id: myId,
         name: myName,
         isHostPlayer: true,
+        isAi: false,
         hp: 5,
         maxHp: 5,
         slots: Array(8).fill(null),
@@ -1213,6 +1627,7 @@ function createRoom() {
 function joinRoom() {
   ensureBgmStart();
   setError('');
+  isSoloAi = false;
   myName = getCleanName();
   const code = getCleanCode();
   if (!code) return;
@@ -1253,11 +1668,14 @@ function sendToHost(payload) {
 
 function broadcastState(extraEvent = null) {
   if (!isHost) return;
-  const packet = { type: 'state', state: gameState, event: extraEvent };
-  Object.values(connections).forEach(c => {
-    if (c.open) c.send(packet);
-  });
+  if (!isSoloAi) {
+    const packet = { type: 'state', state: gameState, event: extraEvent };
+    Object.values(connections).forEach(c => {
+      if (c.open) c.send(packet);
+    });
+  }
   applyStateUpdate(gameState, extraEvent);
+  scheduleAiTurnIfNeeded();
 }
 
 /* ==========================================================================
@@ -1340,6 +1758,8 @@ function kickPlayer(targetId) {
 }
 
 function leaveRoom() {
+  clearTimeout(aiThinkTimer);
+  clearTimeout(roundLoadingTimer);
   if (peer) peer.destroy();
   location.reload();
 }
@@ -1371,6 +1791,7 @@ function resetMatchStats() {
     p.damageDealt = 0;
     p.survivedRound = 1;
     p.elimOrder = 0;
+    p.aiKnownNext = null;
   });
 
   // 最初のターンプレイヤーをランダムに決定
@@ -1384,6 +1805,15 @@ function requestRematch() {
 }
 
 function requestBackToLobby() {
+  clearTimeout(aiThinkTimer);
+  clearTimeout(roundLoadingTimer);
+  if (isSoloAi) {
+    isSoloAi = false;
+    document.getElementById('result-modal').style.display = 'none';
+    document.getElementById('game-screen').classList.remove('active');
+    document.getElementById('title-screen').classList.add('active');
+    return;
+  }
   if (isHost) {
     gameState.phase = 'lobby';
     resetMatchStats();
@@ -1395,12 +1825,13 @@ function requestBackToLobby() {
 
 /* ==========================================================================
    5. ホスト側ゲームロジック
-   （ラウンド1は5発スタート、以降ラウンドごとに+1発、赤・青それぞれ4割以上）
+   （5発スタート〜最大10発 / 赤青最低1発ずつ＋残りランダム / R5以降は赤率UP / アイテム3個配布）
    ========================================================================== */
 let roundLoadingTimer = null;
 
 function startNewRound() {
   clearTimeout(roundLoadingTimer);
+  clearTimeout(aiThinkTimer);
   const alivePlayers = gameState.players.filter(p => p.alive);
   if (alivePlayers.length <= 1) {
     const winner = alivePlayers[0] || null;
@@ -1420,16 +1851,23 @@ function startNewRound() {
 
   alivePlayers.forEach(p => {
     p.survivedRound = gameState.round;
+    p.aiKnownNext = null;
   });
 
-  // ラウンド1: 5発スタート、ラウンド2: 6発、ラウンド3: 7発、ラウンド4以降: 最大8発
-  const total = Math.min(8, 5 + (gameState.round - 1));
+  // ラウンド1: 5発スタート、ラウンドごとに+1発、最大10発まで増加
+  const total = Math.min(10, 5 + (gameState.round - 1));
 
-  // 赤（実弾）と青（空砲）の割合はそれぞれ40%以上
-  const minRatioCount = Math.ceil(total * 0.4);
-  const maxRatioCount = total - minRatioCount;
-  const liveCount = minRatioCount + Math.floor(Math.random() * (maxRatioCount - minRatioCount + 1));
-  const blankCount = total - liveCount;
+  // 赤(実弾)1発、青(空砲)1発を最低保証し、残りはランダム決定（5ラウンド目以降は赤率68%に上昇）
+  const liveProb = gameState.round >= 5 ? 0.68 : 0.50;
+  let liveCount = 1;
+  let blankCount = 1;
+  for (let i = 2; i < total; i++) {
+    if (Math.random() < liveProb) {
+      liveCount++;
+    } else {
+      blankCount++;
+    }
+  }
 
   const shells = [];
   for (let i = 0; i < liveCount; i++) shells.push(true);
@@ -1457,25 +1895,40 @@ function startNewRound() {
     blank: blankCount
   });
 
-  const loadDurationMs = 1500 + total * 340;
+  const loadDurationMs = 1500 + total * 300;
   roundLoadingTimer = setTimeout(() => {
     if (gameState.phase !== 'loading') return;
 
+    // 毎ラウンド最大3個ずつ配布（タバコ・アドレナリンは重み0.5）
     gameState.players.forEach(p => {
       if (!p.alive) {
         p.lootPending = [];
         return;
       }
       const emptyCount = p.slots.filter(s => s === null).length;
-      const giveCount = Math.min(4, emptyCount);
+      const giveCount = Math.min(3, emptyCount);
       const loot = [];
       for (let i = 0; i < giveCount; i++) {
-        loot.push(ITEM_KEYS[Math.floor(Math.random() * ITEM_KEYS.length)]);
+        loot.push(rollWeightedItem());
       }
-      p.lootPending = loot;
+
+      if (p.isAi) {
+        // AIは空きスロットへ即座に自動配置
+        let slotCursor = 0;
+        loot.forEach(item => {
+          while (slotCursor < 8 && p.slots[slotCursor] !== null) slotCursor++;
+          if (slotCursor < 8) {
+            p.slots[slotCursor] = item;
+            slotCursor++;
+          }
+        });
+        p.lootPending = [];
+      } else {
+        p.lootPending = loot;
+      }
     });
 
-    const anyLoot = gameState.players.some(p => p.alive && p.lootPending.length > 0);
+    const anyLoot = gameState.players.some(p => p.alive && !p.isAi && p.lootPending.length > 0);
     gameState.phase = anyLoot ? 'loot' : 'play';
     broadcastState();
   }, loadDurationMs);
@@ -1505,6 +1958,7 @@ function handleHostReceive(senderId, data) {
       id: senderId,
       name: data.name,
       isHostPlayer: false,
+      isAi: false,
       hp: 5,
       maxHp: 5,
       slots: Array(8).fill(null),
@@ -1543,7 +1997,6 @@ function handleHostReceive(senderId, data) {
   if (gameState.phase !== 'play' || gameState.turnIndex !== pIndex) return;
 
   if (data.type === 'aim') {
-    // 発砲アニメーション中は狙いを上書きしない
     if (player.handAction === 'shoot') return;
     gameState.aimTargetId = data.targetId;
     player.handAction = data.targetId ? 'aim' : 'idle';
@@ -1599,6 +2052,7 @@ function executeItemUse(player, slotIndex, stealTargetId, stealSlotIndex) {
     case 'magnifier': {
       if (gameState.shells.length > 0) {
         const nextShell = gameState.shells[0];
+        if (player.isAi) player.aiKnownNext = nextShell;
         privateIsLive = nextShell;
         privateMsg = nextShell ? '🔍 虫眼鏡: 次の弾は【実弾 (赤)】だ！' : '🔍 虫眼鏡: 次の弾は【空砲 (青)】だ！';
       }
@@ -1610,6 +2064,7 @@ function executeItemUse(player, slotIndex, stealTargetId, stealSlotIndex) {
       break;
     case 'beer': {
       const ejected = gameState.shells.shift();
+      player.aiKnownNext = null;
       bannerText += ejected ? ' → 排莢された弾は【実弾(赤)】だった！' : ' → 排莢された弾は【空砲(青)】だった！';
       break;
     }
@@ -1631,6 +2086,9 @@ function executeItemUse(player, slotIndex, stealTargetId, stealSlotIndex) {
     case 'inverter':
       if (gameState.shells.length > 0) {
         gameState.shells[0] = !gameState.shells[0];
+        if (player.isAi && player.aiKnownNext !== null) {
+          player.aiKnownNext = !player.aiKnownNext;
+        }
       }
       bannerText += '（現在の弾性が反転した！）';
       break;
@@ -1638,6 +2096,7 @@ function executeItemUse(player, slotIndex, stealTargetId, stealSlotIndex) {
       if (gameState.shells.length > 0) {
         const remIdx = Math.floor(Math.random() * gameState.shells.length);
         const isLive = gameState.shells[remIdx];
+        if (player.isAi && remIdx === 0) player.aiKnownNext = isLive;
         const consumedCount = Math.max(0, gameState.initialShellCount - gameState.shells.length);
         const fromStartNumber = consumedCount + remIdx + 1;
         privateIsLive = isLive;
@@ -1671,7 +2130,7 @@ function executeItemUse(player, slotIndex, stealTargetId, stealSlotIndex) {
     }, 900);
   }
 
-  if (privateMsg) {
+  if (privateMsg && !player.isAi) {
     if (player.id === myId) {
       showSecretInspect(privateMsg, privateIsLive);
     } else if (connections[player.id]) {
@@ -1685,6 +2144,7 @@ function executeShoot(shooter, targetId) {
   if (!target || !target.alive || gameState.shells.length === 0) return;
 
   const isLive = gameState.shells.shift();
+  shooter.aiKnownNext = null;
   const dmg = isLive ? (gameState.sawActive ? 2 : 1) : 0;
   gameState.sawActive = false;
   gameState.aimTargetId = targetId;
@@ -1739,6 +2199,145 @@ function executeShoot(shooter, targetId) {
   }, 1900);
 }
 
+/* ==========================================================================
+   一人用モード AI 思考ルーチン
+   ========================================================================== */
+let aiThinkTimer = null;
+
+function scheduleAiTurnIfNeeded() {
+  clearTimeout(aiThinkTimer);
+  if (!isSoloAi || gameState.phase !== 'play') return;
+  const current = gameState.players[gameState.turnIndex];
+  if (!current || !current.alive || !current.isAi) return;
+  if (activeShootOverride) return;
+
+  aiThinkTimer = setTimeout(() => {
+    runAiStep(current);
+  }, 1150);
+}
+
+function runAiStep(ai) {
+  if (!isSoloAi || gameState.phase !== 'play') return;
+  const current = gameState.players[gameState.turnIndex];
+  if (!current || current.id !== ai.id || !ai.alive || gameState.shells.length === 0) return;
+
+  const enemies = gameState.players.filter(p => p.alive && p.id !== ai.id);
+  if (enemies.length === 0) return;
+
+  // 1. ライフが減っていればタバコを優先使用
+  if (ai.hp < ai.maxHp) {
+    const cigIdx = ai.slots.indexOf('cigarette');
+    if (cigIdx !== -1) {
+      executeItemUse(ai, cigIdx);
+      return;
+    }
+    if (ai.hp <= 2) {
+      const medIdx = ai.slots.indexOf('medicine');
+      if (medIdx !== -1) {
+        executeItemUse(ai, medIdx);
+        return;
+      }
+    }
+  }
+
+  // 2. 次の弾が未確認なら虫眼鏡や携帯で調査
+  if (ai.aiKnownNext === null && gameState.shells.length > 1) {
+    const magIdx = ai.slots.indexOf('magnifier');
+    if (magIdx !== -1) {
+      executeItemUse(ai, magIdx);
+      return;
+    }
+    const phoneIdx = ai.slots.indexOf('phone');
+    if (phoneIdx !== -1 && Math.random() < 0.7) {
+      executeItemUse(ai, phoneIdx);
+      return;
+    }
+  }
+
+  // 3. アドレナリンがあれば相手から有用アイテムを奪取
+  const adrIdx = ai.slots.indexOf('adrenaline');
+  if (adrIdx !== -1) {
+    let bestSteal = null;
+    const priority = ['cigarette', 'saw', 'magnifier', 'beer', 'inverter', 'phone', 'medicine'];
+    for (const targetItem of priority) {
+      for (const e of enemies) {
+        const sIdx = e.slots.indexOf(targetItem);
+        if (sIdx !== -1) {
+          if (targetItem === 'cigarette' && ai.hp >= ai.maxHp) continue;
+          bestSteal = { targetId: e.id, slotIndex: sIdx };
+          break;
+        }
+      }
+      if (bestSteal) break;
+    }
+    if (bestSteal) {
+      executeItemUse(ai, adrIdx, bestSteal.targetId, bestSteal.slotIndex);
+      return;
+    }
+  }
+
+  // 4. 次の弾が「空砲」と判明している場合
+  if (ai.aiKnownNext === false) {
+    const invIdx = ai.slots.indexOf('inverter');
+    if (invIdx !== -1) {
+      executeItemUse(ai, invIdx);
+      return;
+    }
+    const beerIdx = ai.slots.indexOf('beer');
+    if (beerIdx !== -1 && gameState.shells.length > 1) {
+      executeItemUse(ai, beerIdx);
+      return;
+    }
+    // 自分を撃って連続ターンを狙う
+    executeShoot(ai, ai.id);
+    return;
+  }
+
+  // 5. 次の弾が「実弾」と判明している場合
+  if (ai.aiKnownNext === true) {
+    if (!gameState.sawActive) {
+      const sawIdx = ai.slots.indexOf('saw');
+      if (sawIdx !== -1) {
+        executeItemUse(ai, sawIdx);
+        return;
+      }
+    }
+    const target = pickAiShootEnemy(enemies);
+    executeShoot(ai, target.id);
+    return;
+  }
+
+  // 6. 弾性が不明な場合：現在の残り実弾割合で判断
+  const liveRem = gameState.shells.filter(Boolean).length;
+  const liveRatio = liveRem / gameState.shells.length;
+
+  if (liveRatio >= 0.6 && !gameState.sawActive) {
+    const sawIdx = ai.slots.indexOf('saw');
+    if (sawIdx !== -1) {
+      executeItemUse(ai, sawIdx);
+      return;
+    }
+  }
+
+  if (liveRatio < 0.45 && gameState.shells.length > 1) {
+    const beerIdx = ai.slots.indexOf('beer');
+    if (beerIdx !== -1 && Math.random() < 0.5) {
+      executeItemUse(ai, beerIdx);
+      return;
+    }
+    executeShoot(ai, ai.id);
+  } else {
+    const target = pickAiShootEnemy(enemies);
+    executeShoot(ai, target.id);
+  }
+}
+
+function pickAiShootEnemy(enemies) {
+  // HPが少ない相手を優先的に狙う
+  const sorted = [...enemies].sort((a, b) => a.hp - b.hp);
+  return Math.random() < 0.75 ? sorted[0] : enemies[Math.floor(Math.random() * enemies.length)];
+}
+
 function handleClientReceive(data) {
   if (data.type === 'kicked') {
     alert('部屋からキックされたか、満員のため入室できませんでした。');
@@ -1756,9 +2355,9 @@ function handleClientReceive(data) {
 let threeInitialized = false;
 let cameraMode = 'front';
 let isAimingMode = false;
-let adrenalineStealSlot = null; // アドレナリン使用中の自スロット番号（null以外は3Dオブジェクト直接奪取モード）
+let adrenalineStealSlot = null;
 let isChamberCutscene = false;
-let activeShootOverride = null; // 発砲アニメーション中の射撃者・ターゲット固定
+let activeShootOverride = null;
 
 function applyStateUpdate(newState, event) {
   gameState = newState;
@@ -1902,7 +2501,7 @@ function playChamberLoadAnimation(round, liveCount, blankCount) {
     rim.position.y = -0.085;
     shellGroup.add(body, rim);
 
-    const offset = (idx - (displayList.length - 1) / 2) * 0.14;
+    const offset = (idx - (displayList.length - 1) / 2) * 0.125;
     const localVec = new THREE.Vector3(offset, 1.46, -0.15);
     localVec.applyAxisAngle(new THREE.Vector3(0, 1, 0), mySeatAngle);
     shellGroup.position.copy(localVec);
@@ -1925,7 +2524,7 @@ function playChamberLoadAnimation(round, liveCount, blankCount) {
           shellGroup.rotation.x += 0.25;
         }
       }, 20);
-    }, 950 + idx * 320);
+    }, 950 + idx * 280);
   });
 
   clearTimeout(overlay._timer);
@@ -1934,7 +2533,7 @@ function playChamberLoadAnimation(round, liveCount, blankCount) {
     isChamberCutscene = false;
     loadingShellMeshes.forEach(m => scene.remove(m));
     loadingShellMeshes = [];
-  }, 1350 + displayList.length * 320);
+  }, 1350 + displayList.length * 280);
 }
 
 /* ==========================================================================
@@ -1995,7 +2594,7 @@ function openResultModal(winnerId, winnerName) {
   });
 
   if (isHost) {
-    rematchArea.innerHTML = `<button class="btn" onclick="requestRematch()">▶ 再戦する（同じ部屋で再プレイ）</button>`;
+    rematchArea.innerHTML = `<button class="btn" onclick="requestRematch()">▶ 再戦する（同じメンバーで再プレイ）</button>`;
   } else {
     rematchArea.innerHTML = `<span style="font-size:13px; opacity:0.85;">ホストの再戦操作を待機中...</span>`;
   }
@@ -2023,7 +2622,11 @@ function updateGameHUD() {
     isAimingMode ? '🎯 撃つ相手(3D)をタップ または 自分を撃つ' :
     isMyTurn ? '★ あなたのターン（銃や手元アイテムを直接タップ） ★' : `${turnPlayer ? turnPlayer.name : ''} のターン`;
 
-  document.getElementById('hud-shells-badge').textContent = `残り弾数: ${gameState.shells.length}発` + (gameState.sawActive ? ' [威力2倍中]' : '');
+  // 右上の残り弾数は削除し、ノコギリ発動中バッジのみ表示
+  const sawEl = document.getElementById('hud-saw-badge');
+  if (sawEl) {
+    sawEl.style.display = gameState.sawActive ? 'inline' : 'none';
+  }
 
   const me = gameState.players.find(p => p.id === myId);
   const myHpEl = document.getElementById('hud-my-hp');
@@ -2151,7 +2754,6 @@ function openItemUseModal(slotIndex, itemId) {
 function startAdrenaline3DSelection(slotIndex) {
   adrenalineStealSlot = slotIndex;
   isAimingMode = false;
-  // 相手のテーブル枠が見やすい俯瞰カメラに自動切替
   setCameraMode('top');
   updateGameHUD();
   update3DSceneFromState();
@@ -2411,7 +3013,6 @@ function handle3DDirectTap(clientX, clientY) {
 
   const info = hitObj.userData;
 
-  // アドレナリン奪取モード中：相手テーブル上の3Dアイテムを直接タップして奪う
   if (adrenalineStealSlot !== null) {
     if (info.interactType === 'enemy_item') {
       if (info.itemId === 'adrenaline') {
@@ -2785,7 +3386,6 @@ function update3DSceneFromState() {
         const m = buildItem3DMesh(itemId);
         m.position.copy(vis.slotCenters[sIdx]);
 
-        // アドレナリン奪取モード時は盗める相手アイテムを少し浮かせて強調
         if (adrenalineStealSlot !== null && !isMe && p.alive && itemId !== 'adrenaline') {
           m.position.y += 0.06;
           m.scale.set(1.22, 1.22, 1.22);
@@ -2885,7 +3485,6 @@ function animate3D() {
     shotgunRecoil = Math.max(0, shotgunRecoil - 0.018);
   }
 
-  // ショットガンをプレイヤーが手にもって撃つ演出（相手を撃つ時は相手の顔・マスク方向へ銃口を向ける）
   let activeShooterIdx = gameState.turnIndex;
   let activeTargetId = gameState.aimTargetId;
 
@@ -2912,11 +3511,9 @@ function animate3D() {
         const tIdx = gameState.players.findIndex(p => p.id === effectiveTargetId);
         if (tIdx !== -1) {
           if (tIdx === activeShooterIdx) {
-            // 自分自身を撃つ場合は自分の頭方向へ銃口を向ける
             const selfAngle = activeShooterIdx * ((Math.PI * 2) / 5);
             aimPos.set(Math.sin(selfAngle) * 3.1, 1.48, Math.cos(selfAngle) * 3.1);
           } else {
-            // 相手を撃つ場合は相手のマスク（頭）座標へ銃口を向ける
             aimPos = getSeatPosition(tIdx, 2.75);
             aimPos.y = 1.50;
           }
@@ -2926,7 +3523,6 @@ function animate3D() {
       const dummy = new THREE.Object3D();
       dummy.position.copy(shotgunGroup.position);
       dummy.lookAt(aimPos);
-      // 発砲時は瞬時に相手へ銃口を合わせ、構え時は滑らかに追従
       shotgunGroup.quaternion.slerp(dummy.quaternion, activeShootOverride ? 0.55 : 0.25);
 
       if (shotgunRecoil > 0) {
