@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Life Trade" />
 <meta name="theme-color" content="#000000" />
-<title>Life Trade ver 0.5</title>
+<title>Life Trade ver 0.6</title>
 
 <!-- Three.js & PeerJS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -441,7 +441,7 @@
     transform: translateY(-8px) scale(0.82);
   }
 
-  /* 射撃構え中オーバーレイ */
+  /* 射撃構え中＆アドレナリン奪取中オーバーレイ */
   #action-overlay {
     position: absolute;
     bottom: 14px;
@@ -451,7 +451,7 @@
     gap: 10px;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.9);
+    background: rgba(0, 0, 0, 0.92);
     border: 1px solid var(--neon);
     padding: 8px 14px;
     pointer-events: auto;
@@ -525,7 +525,7 @@
     background: rgba(57, 255, 20, 0.14);
   }
 
-  /* アイテム使用確認＆アドレナリン奪取モーダル */
+  /* アイテム使用確認モーダル */
   #item-confirm-modal {
     position: fixed;
     top: 50%;
@@ -682,7 +682,7 @@
   <div class="term-header">
     <div>
       <span class="game-title">Life Trade</span>
-      <span class="game-ver">ver 0.5</span>
+      <span class="game-ver">ver 0.6</span>
     </div>
     <div style="font-size:12px; display:flex; align-items:center;">
       <span>ONLINE 3D RUSSIAN ROULETTE [2-5 PLAYERS]</span>
@@ -713,11 +713,11 @@
         <div>&gt; TERMINAL STATUS: <span id="net-status">READY</span></div>
         <div>&gt; 初期ライフ: ⚡×5 (負け抜け制)</div>
         <div>&gt; 初期弾数: 5発からラウンドごとに+1発 (赤・青 各40%以上)</div>
-        <div>&gt; 毎ラウンド最大4個アイテム補充 (最大所持8枠)</div>
+        <div>&gt; 席順・スタートプレイヤーは毎回ランダム決定</div>
         <div id="title-error" style="color:var(--danger); margin-top:6px;"></div>
       </div>
       <div style="font-size:11px; opacity:0.75; border-top:1px dashed var(--neon); padding-top:6px;">
-        ※ショットガン・アイテム・撃つ相手は3D画面上で直接タップして操作します
+        ※ショットガン・アイテム・アドレナリン奪取・撃つ相手はすべて3D画面上で直接タップします
       </div>
     </div>
   </div>
@@ -727,7 +727,7 @@
 <div id="lobby-screen" class="screen">
   <div class="room-layout">
     <div>
-      <div style="font-size:14px; margin-bottom:6px;">ハイローラー： <span style="float:right;">Life Trade ver 0.5 <button class="bgm-btn" id="bgm-btn-lobby" onclick="toggleBgm()">♪ BGM: ON</button></span></div>
+      <div style="font-size:14px; margin-bottom:6px;">ハイローラー： <span style="float:right;">Life Trade ver 0.6 <button class="bgm-btn" id="bgm-btn-lobby" onclick="toggleBgm()">♪ BGM: ON</button></span></div>
       <div class="player-table-wrap">
         <div class="player-list-box" id="lobby-player-list"></div>
         <div class="kick-col" id="lobby-kick-col"></div>
@@ -795,7 +795,7 @@
       <div id="shell-visual-legend" style="font-size:14px;"></div>
     </div>
 
-    <!-- ショットガン構え中メニュー -->
+    <!-- ショットガン構え中＆アドレナリン奪取中メニュー -->
     <div id="action-overlay"></div>
   </div>
 </div>
@@ -816,7 +816,7 @@
   </div>
 </div>
 
-<!-- アイテム使用確認＆アドレナリン奪取モーダル -->
+<!-- アイテム使用確認モーダル -->
 <div id="item-confirm-modal">
   <div id="item-modal-title" style="font-size:16px; border-bottom:1px solid var(--neon); padding-bottom:4px;"></div>
   <div id="item-modal-desc" style="font-size:13px; line-height:1.4;"></div>
@@ -1029,7 +1029,7 @@ const ITEM_DEFS = {
   adrenaline: {
     id: 'adrenaline',
     name: 'アドレナリン',
-    desc: '相手のアイテムを1つ盗み、即時使用する（アドレナリン自体は盗めない）。'
+    desc: '相手のテーブル上の3Dアイテムを直接タップして1つ盗み、即時使用する（アドレナリン自体は盗めない）。'
   },
   inverter: {
     id: 'inverter',
@@ -1077,19 +1077,17 @@ function playShotSound(isLive) {
 function playMatchResultSound(isWinner) {
   if (audioCtx.state === 'suspended') audioCtx.resume();
   if (isWinner) {
-    // 勝利ファンファーレ音（上昇アルペジオ＋和音）
-    playTone(523.25, 'triangle', 0.22, 0.22, 0.00); // C5
-    playTone(659.25, 'triangle', 0.22, 0.22, 0.14); // E5
-    playTone(783.99, 'triangle', 0.22, 0.22, 0.28); // G5
-    playTone(1046.50, 'triangle', 0.75, 0.28, 0.42); // C6
+    playTone(523.25, 'triangle', 0.22, 0.22, 0.00);
+    playTone(659.25, 'triangle', 0.22, 0.22, 0.14);
+    playTone(783.99, 'triangle', 0.22, 0.22, 0.28);
+    playTone(1046.50, 'triangle', 0.75, 0.28, 0.42);
     playTone(659.25, 'sine', 0.75, 0.18, 0.42);
     playTone(783.99, 'sine', 0.75, 0.18, 0.42);
   } else {
-    // 敗北重低音（下降ディミニッシュ）
-    playTone(220.00, 'sawtooth', 0.35, 0.22, 0.00); // A3
-    playTone(207.65, 'sawtooth', 0.35, 0.22, 0.26); // G#3
-    playTone(196.00, 'sawtooth', 0.35, 0.22, 0.52); // G3
-    playTone(138.59, 'sawtooth', 0.95, 0.28, 0.78); // C#3
+    playTone(220.00, 'sawtooth', 0.35, 0.22, 0.00);
+    playTone(207.65, 'sawtooth', 0.35, 0.22, 0.26);
+    playTone(196.00, 'sawtooth', 0.35, 0.22, 0.52);
+    playTone(138.59, 'sawtooth', 0.95, 0.28, 0.78);
     playTone(69.30, 'square', 0.95, 0.22, 0.78);
   }
 }
@@ -1097,7 +1095,7 @@ function playMatchResultSound(isWinner) {
 /* ==========================================================================
    3. ネットワーク＆ゲーム状態管理（PeerJS 3桁ルーム）
    ========================================================================== */
-const PEER_PREFIX = 'lifetrade-v05-room-';
+const PEER_PREFIX = 'lifetrade-v06-room-';
 let peer = null;
 let isHost = false;
 let myId = '';
@@ -1166,6 +1164,7 @@ function createRoom() {
       players: [{
         id: myId,
         name: myName,
+        isHostPlayer: true,
         hp: 5,
         maxHp: 5,
         slots: Array(8).fill(null),
@@ -1279,13 +1278,13 @@ function renderLobby() {
   kickEl.innerHTML = '';
   dotsEl.innerHTML = '';
 
-  gameState.players.forEach((p, idx) => {
+  gameState.players.forEach((p) => {
     const row = document.createElement('div');
     row.className = 'player-row';
-    row.textContent = p.name + (idx === 0 ? ' [HOST]' : '');
+    row.textContent = p.name + (p.isHostPlayer ? ' [HOST]' : '');
     listEl.appendChild(row);
 
-    if (isHost && idx > 0) {
+    if (isHost && !p.isHostPlayer) {
       const kb = document.createElement('button');
       kb.className = 'kick-btn';
       kb.textContent = 'キック';
@@ -1356,6 +1355,13 @@ function resetMatchStats() {
   gameState.elimCounter = 0;
   gameState.winnerId = '';
   gameState.winnerName = '';
+
+  // 席順（プレイヤー配列の並び）をランダムにシャッフル
+  for (let i = gameState.players.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [gameState.players[i], gameState.players[j]] = [gameState.players[j], gameState.players[i]];
+  }
+
   gameState.players.forEach(p => {
     p.hp = 5;
     p.alive = true;
@@ -1366,7 +1372,9 @@ function resetMatchStats() {
     p.survivedRound = 1;
     p.elimOrder = 0;
   });
-  gameState.turnIndex = 0;
+
+  // 最初のターンプレイヤーをランダムに決定
+  gameState.turnIndex = Math.floor(Math.random() * gameState.players.length);
 }
 
 function requestRematch() {
@@ -1417,7 +1425,7 @@ function startNewRound() {
   // ラウンド1: 5発スタート、ラウンド2: 6発、ラウンド3: 7発、ラウンド4以降: 最大8発
   const total = Math.min(8, 5 + (gameState.round - 1));
 
-  // 赤（実弾）と青（空砲）の割合はそれぞれ40%以上（Math.ceil(total * 0.4) 〜 Math.floor(total * 0.6)）
+  // 赤（実弾）と青（空砲）の割合はそれぞれ40%以上
   const minRatioCount = Math.ceil(total * 0.4);
   const maxRatioCount = total - minRatioCount;
   const liveCount = minRatioCount + Math.floor(Math.random() * (maxRatioCount - minRatioCount + 1));
@@ -1441,7 +1449,6 @@ function startNewRound() {
     advanceTurnIndex();
   }
 
-  // まず弾の配分を見せて薬室に込める自動進行カットシーンフェーズへ
   gameState.phase = 'loading';
   broadcastState({
     kind: 'round_load',
@@ -1497,6 +1504,7 @@ function handleHostReceive(senderId, data) {
     gameState.players.push({
       id: senderId,
       name: data.name,
+      isHostPlayer: false,
       hp: 5,
       maxHp: 5,
       slots: Array(8).fill(null),
@@ -1535,6 +1543,8 @@ function handleHostReceive(senderId, data) {
   if (gameState.phase !== 'play' || gameState.turnIndex !== pIndex) return;
 
   if (data.type === 'aim') {
+    // 発砲アニメーション中は狙いを上書きしない
+    if (player.handAction === 'shoot') return;
     gameState.aimTargetId = data.targetId;
     player.handAction = data.targetId ? 'aim' : 'idle';
     broadcastState();
@@ -1746,7 +1756,9 @@ function handleClientReceive(data) {
 let threeInitialized = false;
 let cameraMode = 'front';
 let isAimingMode = false;
+let adrenalineStealSlot = null; // アドレナリン使用中の自スロット番号（null以外は3Dオブジェクト直接奪取モード）
 let isChamberCutscene = false;
+let activeShootOverride = null; // 発砲アニメーション中の射撃者・ターゲット固定
 
 function applyStateUpdate(newState, event) {
   gameState = newState;
@@ -1775,6 +1787,7 @@ function applyStateUpdate(newState, event) {
   const isMyTurn = (gameState.phase === 'play' && turnPlayer && turnPlayer.id === myId);
   if (!isMyTurn) {
     isAimingMode = false;
+    adrenalineStealSlot = null;
   }
 
   update3DSceneFromState();
@@ -1787,6 +1800,10 @@ function applyStateUpdate(newState, event) {
       showBanner(event.text, 2400);
       if (event.item === 'cigarette' || event.item === 'medicine') triggerFlash('rgba(57,255,20,0.22)');
     } else if (event.kind === 'shoot_fx') {
+      activeShootOverride = { shooterId: event.shooterId, targetId: event.targetId };
+      clearTimeout(activeShootOverride._timer);
+      activeShootOverride._timer = setTimeout(() => { activeShootOverride = null; }, 1850);
+
       shotgunRecoil = 0.32;
       playShotSound(event.isLive);
       showBanner(event.text, 2200);
@@ -1885,7 +1902,6 @@ function playChamberLoadAnimation(round, liveCount, blankCount) {
     rim.position.y = -0.085;
     shellGroup.add(body, rim);
 
-    // 自分の席向きに合わせて横一列に並べ、込める弾をしっかり見せる
     const offset = (idx - (displayList.length - 1) / 2) * 0.14;
     const localVec = new THREE.Vector3(offset, 1.46, -0.15);
     localVec.applyAxisAngle(new THREE.Vector3(0, 1, 0), mySeatAngle);
@@ -1893,7 +1909,6 @@ function playChamberLoadAnimation(round, liveCount, blankCount) {
     scene.add(shellGroup);
     loadingShellMeshes.push(shellGroup);
 
-    // いったん見せたあと、1発ずつ順番にショットガン薬室へ装填
     setTimeout(() => {
       if (iconEls[idx]) iconEls[idx].classList.add('loaded');
       playTone(isLive ? 320 : 520, 'triangle', 0.09, 0.16);
@@ -1954,7 +1969,6 @@ function openResultModal(winnerId, winnerName) {
   titleEl.className = 'result-banner-title ' + (isMeWinner ? 'win' : 'lose');
   subEl.textContent = `CHAMPION: ${winnerName}（最終ラウンド: ROUND ${gameState.round}）`;
 
-  // ランキング順位ソート（1位: 生存者 → 以降は脱落順が遅い順 → 残りHP → 与ダメージ）
   const ranked = [...gameState.players].sort((a, b) => {
     if (a.alive !== b.alive) return a.alive ? -1 : 1;
     if ((b.elimOrder || 0) !== (a.elimOrder || 0)) return (b.elimOrder || 0) - (a.elimOrder || 0);
@@ -2005,6 +2019,7 @@ function updateGameHUD() {
     gameState.phase === 'loading' ? '弾薬装填中...' :
     gameState.phase === 'loot' ? 'アイテム配置中...' :
     gameState.phase === 'gameover' ? `決着！勝者: ${gameState.winnerName}` :
+    adrenalineStealSlot !== null ? '💉 相手のテーブル上の3Dアイテムを直接タップして奪う' :
     isAimingMode ? '🎯 撃つ相手(3D)をタップ または 自分を撃つ' :
     isMyTurn ? '★ あなたのターン（銃や手元アイテムを直接タップ） ★' : `${turnPlayer ? turnPlayer.name : ''} のターン`;
 
@@ -2020,7 +2035,7 @@ function updateGameHUD() {
     myHpEl.innerHTML = boltsHtml;
   }
 
-  if (!isMyTurn) {
+  if (!isMyTurn && adrenalineStealSlot === null && !isAimingMode) {
     document.getElementById('action-overlay').style.display = 'none';
   }
 }
@@ -2096,7 +2111,7 @@ function finishLootPhase() {
 }
 
 /* ==========================================================================
-   8. アイテム使用＆射撃ターゲットUI（他プレイヤーは3D選択）
+   8. アイテム使用＆アドレナリン3D直接選択＆射撃ターゲットUI
    ========================================================================== */
 function openItemUseModal(slotIndex, itemId) {
   const def = ITEM_DEFS[itemId];
@@ -2108,31 +2123,19 @@ function openItemUseModal(slotIndex, itemId) {
   extra.innerHTML = '';
 
   if (itemId === 'adrenaline') {
-    useBtn.style.display = 'none';
-    const others = gameState.players.filter(p => p.id !== myId && p.alive);
-    let foundAny = false;
-    others.forEach(op => {
-      op.slots.forEach((opItem, opSlotIdx) => {
-        if (opItem && opItem !== 'adrenaline') {
-          foundAny = true;
-          const b = document.createElement('button');
-          b.className = 'btn';
-          b.textContent = `${op.name} の【${ITEM_DEFS[opItem].name}】を奪って使う`;
-          b.onclick = () => {
-            closeItemModal();
-            sendToHost({
-              type: 'use_item',
-              slotIndex,
-              stealTargetId: op.id,
-              stealSlotIndex: opSlotIdx
-            });
-          };
-          extra.appendChild(b);
-        }
-      });
-    });
-    if (!foundAny) {
+    const hasStealable = gameState.players.some(
+      p => p.id !== myId && p.alive && p.slots.some(s => s && s !== 'adrenaline')
+    );
+    if (!hasStealable) {
       extra.innerHTML = '<div style="color:var(--danger); font-size:12px;">奪えるアイテムを持っている相手がいません</div>';
+      useBtn.style.display = 'none';
+    } else {
+      extra.innerHTML = '<div style="font-size:12px; color:#aaffaa;">「使用する」を押した後、相手のテーブル上の3Dアイテムを直接タップしてください。</div>';
+      useBtn.style.display = 'inline-block';
+      useBtn.onclick = () => {
+        closeItemModal();
+        startAdrenaline3DSelection(slotIndex);
+      };
     }
   } else {
     useBtn.style.display = 'inline-block';
@@ -2145,11 +2148,44 @@ function openItemUseModal(slotIndex, itemId) {
   modal.style.display = 'flex';
 }
 
+function startAdrenaline3DSelection(slotIndex) {
+  adrenalineStealSlot = slotIndex;
+  isAimingMode = false;
+  // 相手のテーブル枠が見やすい俯瞰カメラに自動切替
+  setCameraMode('top');
+  updateGameHUD();
+  update3DSceneFromState();
+
+  const overlay = document.getElementById('action-overlay');
+  overlay.innerHTML = '';
+  overlay.style.display = 'flex';
+
+  const hint = document.createElement('span');
+  hint.style.fontSize = '13px';
+  hint.textContent = '💉 奪いたい相手の3Dアイテムを直接タップ';
+  overlay.appendChild(hint);
+
+  const cancel = document.createElement('button');
+  cancel.className = 'btn';
+  cancel.textContent = 'キャンセル';
+  cancel.onclick = () => cancelAdrenalineSelection();
+  overlay.appendChild(cancel);
+}
+
+function cancelAdrenalineSelection() {
+  adrenalineStealSlot = null;
+  document.getElementById('action-overlay').style.display = 'none';
+  setCameraMode('front');
+  updateGameHUD();
+  update3DSceneFromState();
+}
+
 function closeItemModal() {
   document.getElementById('item-confirm-modal').style.display = 'none';
 }
 
 function openShootTargetMenu() {
+  adrenalineStealSlot = null;
   isAimingMode = true;
   if (cameraMode === 'down') {
     setCameraMode('front');
@@ -2198,7 +2234,7 @@ function confirmShootTarget(targetId) {
 }
 
 /* ==========================================================================
-   9. Three.js 3D空間構築・リアルアイテム造形・手に持って撃つショットガン演出
+   9. Three.js 3D空間構築・リアルアイテム造形・相手へ銃口を向けるショットガン演出
    ========================================================================== */
 let scene, camera, renderer;
 let tableGroup, shotgunGroup, barrelMesh;
@@ -2358,9 +2394,11 @@ function handle3DDirectTap(clientX, clientY) {
 
   raycaster.setFromCamera(pointerNDC, camera);
   const targets = [...interactableMeshes];
-  shotgunGroup.children.forEach(c => {
-    if (c.userData && c.userData.interactType === 'shotgun') targets.push(c);
-  });
+  if (!isAimingMode && adrenalineStealSlot === null) {
+    shotgunGroup.children.forEach(c => {
+      if (c.userData && c.userData.interactType === 'shotgun') targets.push(c);
+    });
+  }
 
   const hits = raycaster.intersectObjects(targets, true);
   if (hits.length === 0) return;
@@ -2372,6 +2410,29 @@ function handle3DDirectTap(clientX, clientY) {
   if (!hitObj) return;
 
   const info = hitObj.userData;
+
+  // アドレナリン奪取モード中：相手テーブル上の3Dアイテムを直接タップして奪う
+  if (adrenalineStealSlot !== null) {
+    if (info.interactType === 'enemy_item') {
+      if (info.itemId === 'adrenaline') {
+        showBanner('アドレナリン自体は盗めません！', 1600);
+        return;
+      }
+      const mySlot = adrenalineStealSlot;
+      adrenalineStealSlot = null;
+      document.getElementById('action-overlay').style.display = 'none';
+      setCameraMode('front');
+      playTone(720, 'sine', 0.1, 0.16);
+      sendToHost({
+        type: 'use_item',
+        slotIndex: mySlot,
+        stealTargetId: info.playerId,
+        stealSlotIndex: info.slotIndex
+      });
+    }
+    return;
+  }
+
   if (isAimingMode) {
     if (info.interactType === 'target_player' && info.playerId !== myId) {
       playShotSound(false);
@@ -2711,7 +2772,7 @@ function update3DSceneFromState() {
     vis.leftHand.visible = !isMe && p.alive;
     vis.rightHand.visible = !isMe && p.alive;
 
-    if (!isMe && p.alive) {
+    if (!isMe && p.alive && isAimingMode) {
       interactableMeshes.push(vis.targetHitBox);
     }
 
@@ -2724,15 +2785,35 @@ function update3DSceneFromState() {
         const m = buildItem3DMesh(itemId);
         m.position.copy(vis.slotCenters[sIdx]);
 
-        if (isMe && p.alive) {
+        // アドレナリン奪取モード時は盗める相手アイテムを少し浮かせて強調
+        if (adrenalineStealSlot !== null && !isMe && p.alive && itemId !== 'adrenaline') {
+          m.position.y += 0.06;
+          m.scale.set(1.22, 1.22, 1.22);
+        }
+
+        if (isMe && p.alive && adrenalineStealSlot === null) {
           const hitBox = new THREE.Mesh(
-            new THREE.BoxGeometry(0.25, 0.24, 0.25),
+            new THREE.BoxGeometry(0.26, 0.25, 0.26),
             new THREE.MeshBasicMaterial({ visible: false })
           );
           hitBox.position.y = 0.08;
           hitBox.userData = { interactType: 'my_item', slotIndex: sIdx, itemId: itemId };
           m.add(hitBox);
           interactableMeshes.push(hitBox);
+        } else if (!isMe && p.alive && adrenalineStealSlot !== null) {
+          const enemyHitBox = new THREE.Mesh(
+            new THREE.BoxGeometry(0.28, 0.28, 0.28),
+            new THREE.MeshBasicMaterial({ visible: false })
+          );
+          enemyHitBox.position.y = 0.08;
+          enemyHitBox.userData = {
+            interactType: 'enemy_item',
+            playerId: p.id,
+            slotIndex: sIdx,
+            itemId: itemId
+          };
+          m.add(enemyHitBox);
+          interactableMeshes.push(enemyHitBox);
         }
 
         vis.group.add(m);
@@ -2763,7 +2844,6 @@ function animate3D() {
   requestAnimationFrame(animate3D);
   const t = performance.now() * 0.0025;
 
-  // カメラ制御（弾装填カットシーン中／決着勝者ズーム／通常視点）
   if (isChamberCutscene) {
     const camX = Math.sin(mySeatAngle) * 1.85;
     const camZ = Math.cos(mySeatAngle) * 1.85;
@@ -2805,28 +2885,40 @@ function animate3D() {
     shotgunRecoil = Math.max(0, shotgunRecoil - 0.018);
   }
 
-  // ショットガンをプレイヤーが手にもって撃つ演出
-  const turnPlayer = gameState.players[gameState.turnIndex];
-  const shooterIdx = gameState.turnIndex;
-  const isHeld = turnPlayer && (turnPlayer.handAction === 'aim' || turnPlayer.handAction === 'shoot' || (turnPlayer.id === myId && isAimingMode));
+  // ショットガンをプレイヤーが手にもって撃つ演出（相手を撃つ時は相手の顔・マスク方向へ銃口を向ける）
+  let activeShooterIdx = gameState.turnIndex;
+  let activeTargetId = gameState.aimTargetId;
+
+  if (activeShootOverride) {
+    const sIdx = gameState.players.findIndex(p => p.id === activeShootOverride.shooterId);
+    if (sIdx !== -1) {
+      activeShooterIdx = sIdx;
+      activeTargetId = activeShootOverride.targetId;
+    }
+  }
+
+  const shooterPlayer = gameState.players[activeShooterIdx];
+  const isHeld = Boolean(activeShootOverride) || (shooterPlayer && (shooterPlayer.handAction === 'aim' || shooterPlayer.handAction === 'shoot' || (shooterPlayer.id === myId && isAimingMode)));
 
   if (shotgunGroup) {
-    if (isHeld && shooterIdx >= 0 && shooterIdx < gameState.players.length) {
-      const holdPos = getSeatPosition(shooterIdx, 1.95);
-      holdPos.y = 1.26;
-      shotgunGroup.position.lerp(holdPos, 0.22);
+    if (isHeld && activeShooterIdx >= 0 && activeShooterIdx < gameState.players.length) {
+      const holdPos = getSeatPosition(activeShooterIdx, 1.9);
+      holdPos.y = 1.28;
+      shotgunGroup.position.lerp(holdPos, 0.28);
 
-      let aimPos = new THREE.Vector3(0, 1.26, 0);
-      const effectiveTargetId = gameState.aimTargetId || (turnPlayer.id === myId && isAimingMode ? myId : null);
+      let aimPos = new THREE.Vector3(0, 1.28, 0);
+      const effectiveTargetId = activeTargetId || (shooterPlayer && shooterPlayer.id === myId && isAimingMode ? myId : null);
       if (effectiveTargetId) {
         const tIdx = gameState.players.findIndex(p => p.id === effectiveTargetId);
         if (tIdx !== -1) {
-          if (tIdx === shooterIdx) {
-            const selfAngle = shooterIdx * ((Math.PI * 2) / 5);
-            aimPos.set(Math.sin(selfAngle) * 3.2, 1.38, Math.cos(selfAngle) * 3.2);
+          if (tIdx === activeShooterIdx) {
+            // 自分自身を撃つ場合は自分の頭方向へ銃口を向ける
+            const selfAngle = activeShooterIdx * ((Math.PI * 2) / 5);
+            aimPos.set(Math.sin(selfAngle) * 3.1, 1.48, Math.cos(selfAngle) * 3.1);
           } else {
-            aimPos = getSeatPosition(tIdx, 2.5);
-            aimPos.y = 1.38;
+            // 相手を撃つ場合は相手のマスク（頭）座標へ銃口を向ける
+            aimPos = getSeatPosition(tIdx, 2.75);
+            aimPos.y = 1.50;
           }
         }
       }
@@ -2834,14 +2926,15 @@ function animate3D() {
       const dummy = new THREE.Object3D();
       dummy.position.copy(shotgunGroup.position);
       dummy.lookAt(aimPos);
-      shotgunGroup.quaternion.slerp(dummy.quaternion, 0.22);
+      // 発砲時は瞬時に相手へ銃口を合わせ、構え時は滑らかに追従
+      shotgunGroup.quaternion.slerp(dummy.quaternion, activeShootOverride ? 0.55 : 0.25);
 
       if (shotgunRecoil > 0) {
         shotgunGroup.translateZ(-shotgunRecoil * 0.5);
         shotgunGroup.rotateX(-shotgunRecoil * 0.45);
       }
 
-      if (turnPlayer.id === myId) {
+      if (shooterPlayer && shooterPlayer.id === myId) {
         myLeftHand.visible = true;
         myRightHand.visible = true;
         const leftGrip = new THREE.Vector3(-0.06, -0.04, 0.34).applyMatrix4(shotgunGroup.matrixWorld);
@@ -2858,7 +2951,7 @@ function animate3D() {
       myLeftHand.visible = false;
       myRightHand.visible = false;
       shotgunGroup.position.lerp(new THREE.Vector3(0, 0.98, 0), 0.18);
-      const restYaw = (shooterIdx >= 0 ? shooterIdx : 0) * ((Math.PI * 2) / 5);
+      const restYaw = (activeShooterIdx >= 0 ? activeShooterIdx : 0) * ((Math.PI * 2) / 5);
       const restQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), restYaw);
       shotgunGroup.quaternion.slerp(restQuat, 0.15);
     }
@@ -2870,13 +2963,14 @@ function animate3D() {
 
     vis.headGroup.position.y = 1.52 + Math.sin(t + idx) * 0.03;
 
-    if (p.id !== myId && (p.handAction === 'aim' || p.handAction === 'shoot')) {
+    const isThisShooter = (activeShootOverride && activeShootOverride.shooterId === p.id) || (p.handAction === 'aim' || p.handAction === 'shoot');
+    if (p.id !== myId && isThisShooter) {
       const leftWorld = new THREE.Vector3(-0.06, -0.04, 0.34).applyMatrix4(shotgunGroup.matrixWorld);
       const rightWorld = new THREE.Vector3(0.06, -0.05, -0.18).applyMatrix4(shotgunGroup.matrixWorld);
       vis.group.worldToLocal(leftWorld);
       vis.group.worldToLocal(rightWorld);
-      vis.leftHand.position.lerp(leftWorld, 0.35);
-      vis.rightHand.position.lerp(rightWorld, 0.35);
+      vis.leftHand.position.lerp(leftWorld, 0.38);
+      vis.rightHand.position.lerp(rightWorld, 0.38);
     } else if (p.handAction && p.handAction.startsWith('item_')) {
       vis.rightHand.position.set(0.1, 1.25 + Math.sin(t * 6) * 0.08, 1.95);
     } else {
