@@ -857,7 +857,7 @@
         <div>&gt; TERMINAL STATUS: <span id="net-status">READY</span></div>
         <div>&gt; 初期ライフ: ⚡×5 (負け抜け制)</div>
         <div>&gt; 弾倉: 5発開始〜最大10発 (赤・青 各最低1発 / R5以降は赤率UP)</div>
-        <div>&gt; 出現率: 手錠・目薬・タバコ・アドレナリン(1/2) / リモコン・インバータ(1/5) / ロザリオ(1/10)</div>
+        <div>&gt; 出現率: ノコギリ・虫眼鏡・ビール・薬・携帯(13.33%) / タバコ・アドレナリン・手錠・目薬(6.67%) / リモコン・インバータ(2.67%) / ロザリオ(1.33%)</div>
         <div>&gt; 席順・スタートプレイヤーは毎回ランダム決定</div>
         <div id="title-error" style="color:var(--danger); margin-top:4px;"></div>
       </div>
@@ -1207,115 +1207,116 @@ function renderSkinSelector() {
 renderSkinSelector();
 
 /* ==========================================================================
-   1. アイテム定義（全12種）
-   - ロザリオ: 1/10 (10%)
-   - リモコン: 1/5 (weight: 0.2)
-   - インバータ: 1/5 (weight: 0.2)
-   - 手錠: 1/2 (weight: 0.5)
-   - 目薬: 1/2 (weight: 0.5)
-   - タバコ: 1/2 (weight: 0.5)
-   - アドレナリン: 1/2 (weight: 0.5)
+   1. アイテム定義（全12種・指定確率合計100.00%）
+   - ノコギリ: 13.33%
+   - 虫眼鏡: 13.33%
+   - ビール: 13.33%
+   - 期限切れ薬: 13.33%
+   - 使い捨て携帯: 13.33%
+   - タバコ: 6.67%
+   - アドレナリン: 6.67%
+   - 手錠: 6.67%
+   - 目薬: 6.67%
+   - インバータ: 2.67%
+   - リモコン: 2.67%
+   - ロザリオ: 1.33%
    ========================================================================== */
 const ITEM_DEFS = {
   saw: {
     id: 'saw',
     name: 'ノコギリ',
-    weight: 1.0,
-    badge: '',
+    rate: 13.33,
+    badge: '出現率 13.33%',
     desc: '使用したターンのみ、実弾のダメージが2になる。'
   },
   magnifier: {
     id: 'magnifier',
     name: '虫眼鏡',
-    weight: 1.0,
-    badge: '',
+    rate: 13.33,
+    badge: '出現率 13.33%',
     desc: '次に装填されている弾（薬室の弾）が実弾(赤)か空砲(青)か自分だけ確認できる。'
   },
   cigarette: {
     id: 'cigarette',
     name: 'タバコ',
-    weight: 0.5,
-    badge: '出現率 1/2',
+    rate: 6.67,
+    badge: '出現率 6.67%',
     desc: '自分のライフを1回復する（最大5）。'
   },
   beer: {
     id: 'beer',
     name: 'ビール',
-    weight: 1.0,
-    badge: '',
+    rate: 13.33,
+    badge: '出現率 13.33%',
     desc: 'ターン消費せずに現在薬室にある弾を1つ排莢して消費する。'
   },
   medicine: {
     id: 'medicine',
     name: '期限切れ薬',
-    weight: 1.0,
-    badge: '',
+    rate: 13.33,
+    badge: '出現率 13.33%',
     desc: '50%でライフを2回復、50%でライフを1喪失する。'
   },
   adrenaline: {
     id: 'adrenaline',
     name: 'アドレナリン',
-    weight: 0.5,
-    badge: '出現率 1/2',
+    rate: 6.67,
+    badge: '出現率 6.67%',
     desc: '相手を選んで目の前にズームし、テーブル上の3Dアイテムを直接タップして1つ盗み即時使用する（アドレナリン自体は盗めない）。'
   },
   inverter: {
     id: 'inverter',
     name: 'インバータ',
-    weight: 0.2,
-    badge: '出現率 1/5',
+    rate: 2.67,
+    badge: '出現率 2.67%',
     desc: '現在薬室にある弾の空砲と実弾を入れ替える。'
   },
   phone: {
     id: 'phone',
     name: '使い捨て携帯',
-    weight: 1.0,
-    badge: '',
+    rate: 13.33,
+    badge: '出現率 13.33%',
     desc: '最初から何番目の弾が実弾(赤)か空砲(青)か教えてくれる。'
   },
   handcuffs: {
     id: 'handcuffs',
     name: '手錠',
-    weight: 0.5,
-    badge: '出現率 1/2',
+    rate: 6.67,
+    badge: '出現率 6.67%',
     desc: '使う相手を直接タップして拘束し、次にターンが回ってきても1回スキップさせる。'
   },
   remote: {
     id: 'remote',
     name: 'リモコン',
-    weight: 0.2,
-    badge: '出現率 1/5',
+    rate: 2.67,
+    badge: '出現率 2.67%',
     desc: 'ターンの進行順番（時計回り／反時計回り）を逆順にする。'
   },
   eyedrops: {
     id: 'eyedrops',
     name: '目薬',
-    weight: 0.5,
-    badge: '出現率 1/2',
+    rate: 6.67,
+    badge: '出現率 6.67%',
     desc: '使う相手を直接タップして選択し、その相手は次の自分のターンにアイテムを使えなくなる。'
   },
   rosary: {
     id: 'rosary',
     name: 'ロザリオ',
-    weight: 0, // 別途 1/10 (10%) で抽選
-    badge: '超レア 1/10',
+    rate: 1.33,
+    badge: '超レア 1.33%',
     desc: '使用者はそのラウンドの間、ライフが0になっても残機2個（⚡×2）でその場で復活できる。'
   }
 };
 const ITEM_KEYS = Object.keys(ITEM_DEFS);
-const STANDARD_ITEM_KEYS = ITEM_KEYS.filter(k => k !== 'rosary');
 
 function rollWeightedItem() {
-  if (Math.random() < 0.1) {
-    return 'rosary';
-  }
-  const totalWeight = STANDARD_ITEM_KEYS.reduce((acc, k) => acc + ITEM_DEFS[k].weight, 0);
-  let r = Math.random() * totalWeight;
-  for (const k of STANDARD_ITEM_KEYS) {
-    r -= ITEM_DEFS[k].weight;
+  const totalRate = ITEM_KEYS.reduce((acc, k) => acc + ITEM_DEFS[k].rate, 0);
+  let r = Math.random() * totalRate;
+  for (const k of ITEM_KEYS) {
+    r -= ITEM_DEFS[k].rate;
     if (r <= 0) return k;
   }
-  return STANDARD_ITEM_KEYS[0];
+  return ITEM_KEYS[0];
 }
 
 /* ==========================================================================
@@ -3209,7 +3210,7 @@ const raycaster = new THREE.Raycaster();
 const pointerNDC = new THREE.Vector2();
 let interactableMeshes = [];
 
-// 精密テーブル天板テクスチャ（参考画像の緑がかったパネル＋白グリッド線＋リベット風テクスチャ）
+// 精密テーブル天板テクスチャ
 function createDetailedTableTopTexture() {
   const c = document.createElement('canvas');
   c.width = 1024; c.height = 1024;
@@ -3218,7 +3219,6 @@ function createDetailedTableTopTexture() {
   ctx.fillStyle = '#333b2f';
   ctx.fillRect(0, 0, 1024, 1024);
 
-  // 汚し・経年劣化ノイズ
   for (let i = 0; i < 6500; i++) {
     const x = Math.random() * 1024;
     const y = Math.random() * 1024;
@@ -3227,12 +3227,10 @@ function createDetailedTableTopTexture() {
     ctx.fillRect(x, y, r, r);
   }
 
-  // 外周の金属縁帯
   ctx.strokeStyle = '#1b1d19';
   ctx.lineWidth = 42;
   ctx.strokeRect(21, 21, 982, 982);
 
-  // 放射状およびグリッド状の白線パネルライン
   ctx.strokeStyle = 'rgba(218, 226, 208, 0.58)';
   ctx.lineWidth = 4;
   const step = 128;
@@ -3241,7 +3239,6 @@ function createDetailedTableTopTexture() {
     ctx.beginPath(); ctx.moveTo(0, p); ctx.lineTo(1024, p); ctx.stroke();
   }
 
-  // 二重フレーム線
   ctx.strokeStyle = 'rgba(225, 232, 215, 0.72)';
   ctx.lineWidth = 5;
   ctx.strokeRect(64, 64, 896, 896);
@@ -3252,7 +3249,7 @@ function createDetailedTableTopTexture() {
   return tex;
 }
 
-// レンガ壁テクスチャ（参考画像の暗い赤茶レンガと目地）
+// レンガ壁テクスチャ
 function createBrickWallTexture() {
   const c = document.createElement('canvas');
   c.width = 512; c.height = 512;
@@ -3276,7 +3273,6 @@ function createBrickWallTexture() {
     }
   }
 
-  // 経年汚れ・煤
   for (let i = 0; i < 2200; i++) {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
     ctx.fillRect(Math.random() * 512, Math.random() * 512, 4, 4);
@@ -3294,7 +3290,6 @@ function buildDetailedEnvironment(scene) {
   const envGroup = new THREE.Group();
   scene.add(envGroup);
 
-  // 1. レンガ壁の部屋＋金属床＋天井
   const brickTex = createBrickWallTexture();
   const roomGeo = new THREE.CylinderGeometry(7.2, 7.2, 6.4, 20, 1, true);
   const roomMat = new THREE.MeshStandardMaterial({
@@ -3327,19 +3322,16 @@ function buildDetailedEnvironment(scene) {
   const darkMetalMat = new THREE.MeshStandardMaterial({ color: 0x222426, roughness: 0.55, metalness: 0.75 });
   const rackBeigeMat = new THREE.MeshStandardMaterial({ color: 0x6b6458, roughness: 0.6, metalness: 0.35 });
 
-  // 2. 5席それぞれの背後の壁面に産業設備を配置
   for (let i = 0; i < 5; i++) {
     const sector = new THREE.Group();
     sector.rotation.y = i * ((Math.PI * 2) / 5);
     envGroup.add(sector);
 
-    // 縦パイプ群＋バルブハンドル（参考画像中央・右寄り）
     [-0.45, -0.15, 0.25, 0.55, 0.85].forEach((px, pIdx) => {
       const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 5.6, 10), rustPipeMat);
       pipe.position.set(px, 2.8, 6.75 - (pIdx % 2) * 0.08);
       sector.add(pipe);
 
-      // パイプ継ぎ目フランジ
       [1.4, 3.1, 4.4].forEach(fy => {
         const flange = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.06, 10), darkMetalMat);
         flange.position.set(px, fy, 6.75 - (pIdx % 2) * 0.08);
@@ -3347,14 +3339,12 @@ function buildDetailedEnvironment(scene) {
       });
     });
 
-    // 赤い丸バルブハンドル
     [1.85, 2.45].forEach((vy, vIdx) => {
       const valve = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.022, 8, 16), rustPipeMat);
       valve.position.set(0.75 + vIdx * 0.22, vy, 6.62);
       sector.add(valve);
     });
 
-    // 壁際の鋳鉄ラジエーター（参考画像のプレイヤー背後）
     const radGroup = new THREE.Group();
     radGroup.position.set(-0.35, 0.9, 6.45);
     for (let r = 0; r < 9; r++) {
@@ -3364,7 +3354,6 @@ function buildDetailedEnvironment(scene) {
     }
     sector.add(radGroup);
 
-    // 左側：バーンドア付き大型スタジオスポットライト（参考画像左上）
     const spotHousing = new THREE.Group();
     spotHousing.position.set(-2.35, 3.25, 5.75);
     spotHousing.lookAt(0, 1.0, 0);
@@ -3377,7 +3366,6 @@ function buildDetailedEnvironment(scene) {
     lensGlow.position.z = 0.28;
     spotHousing.add(canBody, lensGlow);
 
-    // 4枚の遮光フラップ（バーンドア）
     [
       [0, 0.36, 0.35, 0.52, 0.26, -0.45, 0],
       [0, -0.36, 0.35, 0.52, 0.26, 0.45, 0],
@@ -3391,7 +3379,6 @@ function buildDetailedEnvironment(scene) {
     });
     sector.add(spotHousing);
 
-    // 左下：アナログ計器＆オシロスコープラック（参考画像左下）
     const leftRack = new THREE.Group();
     leftRack.position.set(-2.45, 1.35, 5.65);
     leftRack.rotation.y = 0.32;
@@ -3414,12 +3401,10 @@ function buildDetailedEnvironment(scene) {
     leftRack.add(ampBottom, ledStrip, meterTop, dialScreen);
     sector.add(leftRack);
 
-    // 右側：大型デュアルウーファースピーカー＋換気ファン＋オーディオデッキ（参考画像右上・右）
     const rightStack = new THREE.Group();
     rightStack.position.set(2.35, 1.15, 5.75);
     rightStack.rotation.y = -0.28;
 
-    // 2段大型スピーカーボックス
     const spkCabinet = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.95, 0.72), darkMetalMat);
     spkCabinet.position.set(0.45, 0.98, 0);
     rightStack.add(spkCabinet);
@@ -3438,7 +3423,6 @@ function buildDetailedEnvironment(scene) {
       rightStack.add(coneOuter, coneInner);
     });
 
-    // オーディオデッキ積載＆丸型換気ファン
     const deckBox = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.85, 0.62), rackBeigeMat);
     deckBox.position.set(-0.55, 0.42, 0.05);
     const fanFrame = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.86, 0.2), darkMetalMat);
@@ -3448,7 +3432,6 @@ function buildDetailedEnvironment(scene) {
     rightStack.add(deckBox, fanFrame, fanRing);
     sector.add(rightStack);
 
-    // 天井から垂れ下がる太い黒ケーブル（参考画像上部）
     const cableCurve = new THREE.CatmullRomCurve3([
       new THREE.Vector3(-2.6, 4.9, 5.5),
       new THREE.Vector3(-0.8, 3.85, 6.2),
@@ -3472,7 +3455,6 @@ function initThreeScene() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-  // 照明（参考画像の暖色系スタジオスポット＋薄暗い緑反射）
   const ambient = new THREE.AmbientLight(0x544942, 1.55);
   scene.add(ambient);
 
@@ -3484,10 +3466,8 @@ function initThreeScene() {
   backRimLight.position.set(0, 2.8, 0);
   scene.add(backRimLight);
 
-  // 精密背景（レンガ壁・パイプ・スタジオ照明・スピーカー・計器ラック）を構築
   buildDetailedEnvironment(scene);
 
-  // 精密テーブル構築（参考画像の八角〜五角金属フレーム＋グリッド天板＋中央ターンテーブル＋各席モニター）
   tableGroup = new THREE.Group();
   scene.add(tableGroup);
 
@@ -3509,7 +3489,6 @@ function initThreeScene() {
   tableMesh.position.y = 0.72;
   tableGroup.add(tableMesh);
 
-  // テーブル外周の重厚な金属縁＆コーナーボルト
   const outerRim = new THREE.Mesh(
     new THREE.TorusGeometry(tableRadius * 0.96, 0.065, 8, 10),
     new THREE.MeshStandardMaterial({ color: 0x1c1e1a, metalness: 0.75, roughness: 0.45 })
@@ -3528,7 +3507,6 @@ function initThreeScene() {
     tableGroup.add(bolt);
   }
 
-  // 中央の大型回転ターンテーブル＋外周リング＋十字スリット（参考画像中央）
   const centerOuterRing = new THREE.Mesh(
     new THREE.TorusGeometry(0.96, 0.075, 10, 32),
     new THREE.MeshStandardMaterial({ color: 0x45473e, metalness: 0.65, roughness: 0.45 })
@@ -3544,7 +3522,6 @@ function initThreeScene() {
   centerInnerDisc.position.y = 0.885;
   tableGroup.add(centerInnerDisc);
 
-  // ターンテーブル上の十字スリットライン
   const slitMat = new THREE.MeshBasicMaterial({ color: 0x161814 });
   const slit1 = new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.01, 0.025), slitMat);
   slit1.position.y = 0.918;
@@ -3552,7 +3529,6 @@ function initThreeScene() {
   slit2.position.y = 0.918;
   tableGroup.add(slit1, slit2);
 
-  // ショットガン造形
   shotgunGroup = new THREE.Group();
   shotgunGroup.position.set(0, 0.99, 0);
 
@@ -3651,11 +3627,9 @@ function handle3DDirectTap(clientX, clientY) {
     });
   }
 
-  // recursive=false にすることでタイトな専用ヒットボックスのみを厳密に判定し、誤爆を防ぐ
   const hits = raycaster.intersectObjects(targets, false);
   if (hits.length === 0) return;
 
-  // 最もレイの中心（ヒットボックス中心）に近いものを優先選択してシビアに判定
   let bestHit = hits[0];
   let bestDistToCenter = Infinity;
   const worldBoxCenter = new THREE.Vector3();
@@ -3671,7 +3645,6 @@ function handle3DDirectTap(clientX, clientY) {
   const info = bestHit.object.userData;
   if (!info || !info.interactType) return;
 
-  // 手錠・目薬の直接プレイヤー選択モード中
   if (pendingPlayerTargetItem) {
     if (info.interactType === 'target_player' && info.playerId !== myId) {
       confirmDirectPlayerTarget(info.playerId);
@@ -3679,7 +3652,6 @@ function handle3DDirectTap(clientX, clientY) {
     return;
   }
 
-  // アドレナリン奪取モード中
   if (adrenalineStealSlot !== null) {
     if (info.interactType === 'enemy_item') {
       if (info.itemId === 'adrenaline') {
@@ -3702,7 +3674,6 @@ function handle3DDirectTap(clientX, clientY) {
     return;
   }
 
-  // 射撃ターゲット選択中
   if (isAimingMode) {
     if (info.interactType === 'target_player' && info.playerId !== myId) {
       playShotSound(false);
@@ -3711,7 +3682,6 @@ function handle3DDirectTap(clientX, clientY) {
     return;
   }
 
-  // 通常行動：ショットガン or 自分の手元アイテム
   if (info.interactType === 'shotgun') {
     playTone(440, 'triangle', 0.08, 0.15);
     openShootTargetMenu();
@@ -4088,7 +4058,6 @@ function update3DSceneFromState() {
       const group = new THREE.Group();
       scene.add(group);
 
-      // 各席手前の小型モニター台座（参考画像テーブル手前左右の端末）
       const sideConsole = new THREE.Mesh(
         new THREE.BoxGeometry(0.42, 0.14, 0.16),
         new THREE.MeshStandardMaterial({ color: 0x2a2d27, metalness: 0.6, roughness: 0.4 })
@@ -4103,7 +4072,6 @@ function update3DSceneFromState() {
       consoleScreen.rotation.set(-0.35, Math.PI + 0.25, 0);
       group.add(sideConsole, consoleScreen);
 
-      // アイテムスロット枠（間隔を明確に空けて隣接誤タップを防止）
       const slotCenters = [];
       const lineMat = new THREE.LineBasicMaterial({ color: 0xb8c4b0 });
       [-1, 1].forEach(side => {
@@ -4191,7 +4159,6 @@ function update3DSceneFromState() {
           m.scale.set(1.22, 1.22, 1.22);
         }
 
-        // 当たり判定をシビア（0.17×0.17）に設定して隣接アイテム誤タップを防止
         if (isMe && p.alive && adrenalineStealSlot === null && !pendingPlayerTargetItem && !isAimingMode) {
           const hitBox = new THREE.Mesh(
             new THREE.BoxGeometry(0.17, 0.17, 0.17),
