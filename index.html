@@ -1,4487 +1,1350 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="Life Trade" />
-<meta name="theme-color" content="#000000" />
-<title>Life Trade ver 0.9</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#070812" />
+  <title>VOLT - Online Battle Arena</title>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; touch-action: none; }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background: #060711; color: #eef6ff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", sans-serif;
+    }
+    canvas { display: block; width: 100vw; height: 100vh; }
 
-<!-- Three.js & PeerJS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    /* 共通ネオンUI */
+    .overlay {
+      position: fixed; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: radial-gradient(circle at center, rgba(16, 22, 54, 0.88), rgba(5, 6, 16, 0.96));
+      backdrop-filter: blur(8px); z-index: 20; padding: 16px;
+    }
+    .hidden { display: none !important; }
 
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=DotGothic16&family=Share+Tech+Mono&display=swap');
+    .logo-wrap { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+    .logo-icon {
+      width: 58px; height: 58px; border-radius: 14px;
+      background: linear-gradient(135deg, #071929, #150b36);
+      border: 2px solid #00f3ff;
+      box-shadow: 0 0 22px rgba(0, 243, 255, 0.55), inset 0 0 12px rgba(138, 43, 226, 0.6);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .title-text h1 {
+      font-size: 40px; font-weight: 900; letter-spacing: 5px; line-height: 1;
+      background: linear-gradient(90deg, #00f3ff, #9d4edd);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 12px rgba(0, 243, 255, 0.5));
+    }
+    .title-text p { font-size: 11px; letter-spacing: 2.5px; color: #8ab4f8; margin-top: 4px; }
 
-  :root {
-    --neon: #39ff14;
-    --neon-dim: rgba(57, 255, 20, 0.25);
-    --neon-dark: #0a2205;
-    --danger: #ff2a2a;
-    --blank: #2a9df4;
-    --gold: #ffd700;
-    --bg: #000000;
-  }
+    .card {
+      width: 100%; max-width: 460px;
+      background: rgba(12, 16, 36, 0.85);
+      border: 1px solid rgba(0, 243, 255, 0.35);
+      border-radius: 16px; padding: 18px;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.7), inset 0 0 20px rgba(98, 0, 234, 0.15);
+    }
+    .input-row { display: flex; gap: 8px; margin-bottom: 12px; }
+    input {
+      flex: 1; background: rgba(6, 9, 22, 0.9);
+      border: 1px solid rgba(0, 243, 255, 0.4); border-radius: 10px;
+      color: #fff; padding: 10px 14px; font-size: 15px; outline: none;
+      touch-action: auto; user-select: text; -webkit-user-select: text;
+    }
+    input:focus { border-color: #00f3ff; box-shadow: 0 0 12px rgba(0, 243, 255, 0.4); }
 
-  * {
-    box-sizing: border-box;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
-  }
+    .btn {
+      border: none; border-radius: 10px; padding: 11px 16px;
+      font-size: 14px; font-weight: 800; letter-spacing: 1px; cursor: pointer;
+      color: #fff; transition: transform 0.08s, box-shadow 0.15s;
+    }
+    .btn:active { transform: scale(0.95); }
+    .btn-cyan {
+      background: linear-gradient(135deg, #00c6ff, #0072ff);
+      box-shadow: 0 0 16px rgba(0, 198, 255, 0.45);
+    }
+    .btn-purple {
+      background: linear-gradient(135deg, #7b2cbf, #5a189a);
+      border: 1px solid #c77dff;
+      box-shadow: 0 0 16px rgba(157, 78, 221, 0.45);
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, #ff9e00, #ff5400);
+      box-shadow: 0 0 18px rgba(255, 110, 0, 0.5);
+    }
+    .btn-full { width: 100%; margin-bottom: 10px; font-size: 15px; padding: 13px; }
+    .status-msg { text-align: center; font-size: 12px; color: #ff6b8b; min-height: 18px; margin-top: 4px; }
 
-  html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--bg);
-    color: var(--neon);
-    font-family: 'DotGothic16', 'Share Tech Mono', monospace;
-    overflow: hidden;
-    touch-action: manipulation;
-  }
+    /* ロビー */
+    .room-badge {
+      text-align: center; padding: 8px; border-radius: 10px;
+      background: rgba(0, 243, 255, 0.1); border: 1px dashed #00f3ff;
+      margin-bottom: 12px;
+    }
+    .room-badge span { font-size: 28px; font-weight: 900; color: #00f3ff; letter-spacing: 6px; }
+    .player-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .player-item {
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(255, 255, 255, 0.05); padding: 8px 12px; border-radius: 8px;
+      font-size: 14px; font-weight: 700;
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
 
-  #rotate-warning {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background: #000;
-    color: var(--neon);
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 20px;
-    border: 2px solid var(--neon);
-  }
-  @media screen and (orientation: portrait) {
-    #rotate-warning { display: flex; }
-  }
+    /* HUD */
+    #hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+    .hud-top {
+      position: absolute; top: 10px; left: 14px; right: 14px;
+      display: flex; justify-content: space-between; align-items: flex-start;
+    }
+    .hud-box {
+      background: rgba(8, 12, 28, 0.78); border: 1px solid rgba(0, 243, 255, 0.35);
+      border-radius: 12px; padding: 7px 13px; backdrop-filter: blur(4px);
+    }
+    .timer { font-size: 22px; font-weight: 900; color: #00f3ff; letter-spacing: 2px; text-align: center; }
+    .phase-tag { font-size: 10px; color: #c77dff; text-align: center; font-weight: 700; }
 
-  .scanlines::after {
-    content: "";
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-      to bottom,
-      rgba(0, 0, 0, 0) 0px,
-      rgba(0, 0, 0, 0) 2px,
-      rgba(0, 20, 0, 0.22) 3px,
-      rgba(0, 0, 0, 0.32) 4px
-    );
-    z-index: 500;
-  }
+    .hp-bar-bg { width: 160px; height: 12px; background: rgba(255,255,255,0.12); border-radius: 6px; overflow: hidden; margin-top: 4px; }
+    .hp-bar-fill { height: 100%; background: linear-gradient(90deg, #00f3ff, #39ff14); transition: width 0.12s; }
+    .buff-icons { display: flex; gap: 6px; margin-top: 5px; font-size: 11px; font-weight: 800; }
+    .buff-tag { padding: 2px 6px; border-radius: 5px; background: rgba(255,255,255,0.12); }
 
-  .screen {
-    position: fixed;
-    inset: 0;
-    padding: env(safe-area-inset-top, 10px) env(safe-area-inset-right, 14px) env(safe-area-inset-bottom, 10px) env(safe-area-inset-left, 14px);
-    display: none;
-    flex-direction: column;
-    background: #000;
-    z-index: 100;
-  }
-  .screen.active { display: flex; }
+    /* キルログ & チャット */
+    .feed-area {
+      position: absolute; top: 72px; left: 14px;
+      display: flex; flex-direction: column; gap: 4px; max-width: 240px;
+    }
+    .feed-item {
+      background: rgba(8, 10, 24, 0.72); border-left: 3px solid #00f3ff;
+      padding: 4px 8px; border-radius: 4px; font-size: 11px;
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
 
-  .term-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    border-bottom: 1px solid var(--neon);
-    padding-bottom: 5px;
-    margin-bottom: 8px;
-  }
-  .game-title {
-    font-size: 24px;
-    letter-spacing: 2px;
-    text-shadow: 0 0 8px var(--neon);
-  }
-  .game-ver {
-    font-size: 13px;
-    opacity: 0.85;
-    margin-left: 8px;
-  }
+    /* クイックチャット（同盟・裏切り） */
+    .chat-bar {
+      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+      margin-top: 54px; display: flex; gap: 5px; pointer-events: auto; flex-wrap: wrap; justify-content: center;
+    }
+    .chat-btn {
+      background: rgba(18, 22, 48, 0.85); border: 1px solid rgba(157, 78, 221, 0.6);
+      color: #e0aaff; border-radius: 14px; padding: 4px 10px; font-size: 11px; font-weight: 700;
+      cursor: pointer;
+    }
+    .chat-btn:active { background: #7b2cbf; color: #fff; }
 
-  .lobby-grid {
-    display: grid;
-    grid-template-columns: 1.15fr 0.85fr;
-    gap: 12px;
-    flex: 1;
-    min-height: 0;
-  }
+    /* スマホ操作UI */
+    .touch-controls { position: absolute; inset: 0; pointer-events: none; }
+    #stickZone {
+      position: absolute; bottom: 18px; left: 18px;
+      width: 140px; height: 140px; pointer-events: auto;
+    }
+    .action-btns {
+      position: absolute; bottom: 22px; right: 24px;
+      display: flex; gap: 16px; align-items: flex-end; pointer-events: auto;
+    }
+    .act-btn {
+      border-radius: 50%; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; font-weight: 900;
+      color: #fff; cursor: pointer; position: relative; overflow: hidden;
+    }
+    #btnDash {
+      width: 68px; height: 68px;
+      background: radial-gradient(circle, rgba(123, 44, 191, 0.85), rgba(45, 12, 84, 0.9));
+      border: 2px solid #c77dff; box-shadow: 0 0 18px rgba(199, 125, 255, 0.5);
+      font-size: 12px;
+    }
+    #btnAtk {
+      width: 86px; height: 86px;
+      background: radial-gradient(circle, rgba(0, 198, 255, 0.85), rgba(0, 65, 130, 0.92));
+      border: 2.5px solid #00f3ff; box-shadow: 0 0 24px rgba(0, 243, 255, 0.6);
+      font-size: 15px;
+    }
+    .cd-mask {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.68);
+      display: flex; align-items: center; justify-content: center; font-size: 14px;
+    }
 
-  .box-panel {
-    border: 1px solid var(--neon);
-    padding: 10px 12px;
-    background: rgba(5, 18, 5, 0.85);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    min-height: 0;
-  }
-
-  .input-group {
-    margin-bottom: 6px;
-  }
-  .input-group label {
-    display: block;
-    font-size: 12px;
-    margin-bottom: 2px;
-  }
-  input[type="text"], input[type="tel"], select {
-    width: 100%;
-    background: #000;
-    border: 1px solid var(--neon);
-    color: var(--neon);
-    font-family: inherit;
-    font-size: 15px;
-    padding: 4px 8px;
-    outline: none;
-  }
-  input:focus, select:focus {
-    box-shadow: 0 0 8px var(--neon);
-  }
-
-  /* スキン選択10種グリッド */
-  .skin-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 4px;
-    margin-top: 3px;
-  }
-  .skin-btn {
-    border: 1px solid rgba(57, 255, 20, 0.45);
-    background: #000;
-    color: var(--neon);
-    font-family: inherit;
-    font-size: 10px;
-    padding: 3px 2px;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    text-align: center;
-  }
-  .skin-btn.selected {
-    border: 2px solid var(--gold);
-    background: rgba(255, 215, 0, 0.16);
-    color: var(--gold);
-    box-shadow: 0 0 8px rgba(255, 215, 0, 0.45);
-  }
-  .skin-swatch {
-    width: 18px;
-    height: 12px;
-    border: 1px solid #fff;
-  }
-
-  .btn {
-    background: #000;
-    color: var(--neon);
-    border: 1px solid var(--neon);
-    font-family: inherit;
-    font-size: 14px;
-    padding: 6px 10px;
-    cursor: pointer;
-    text-align: left;
-    transition: background 0.12s, color 0.12s;
-  }
-  .btn:hover, .btn:active {
-    background: var(--neon);
-    color: #000;
-  }
-  .btn-center { text-align: center; }
-  .btn-gold {
-    border-color: var(--gold);
-    color: var(--gold);
-  }
-  .btn-gold:hover, .btn-gold:active {
-    background: var(--gold);
-    color: #000;
-  }
-  .btn:disabled {
-    opacity: 0.35;
-    pointer-events: none;
-  }
-
-  .bgm-btn {
-    background: #000;
-    color: var(--neon);
-    border: 1px solid var(--neon);
-    font-family: inherit;
-    font-size: 12px;
-    padding: 4px 8px;
-    cursor: pointer;
-  }
-  .bgm-btn:active {
-    background: var(--neon);
-    color: #000;
-  }
-
-  .room-layout {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    height: 100%;
-    padding: 6px 12px;
-  }
-  .player-table-wrap {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-  }
-  .player-list-box {
-    width: 310px;
-    border: 1px solid var(--neon);
-  }
-  .player-row {
-    height: 30px;
-    border-bottom: 1px solid var(--neon);
-    padding: 4px 8px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 14px;
-  }
-  .player-row:last-child { border-bottom: none; }
-  .kick-col {
-    display: flex;
-    flex-direction: column;
-    margin-top: 30px;
-  }
-  .kick-btn {
-    height: 30px;
-    border: 1px solid var(--neon);
-    border-bottom: none;
-    background: #000;
-    color: var(--neon);
-    font-family: inherit;
-    font-size: 13px;
-    padding: 0 10px;
-    cursor: pointer;
-  }
-  .kick-btn:last-child { border-bottom: 1px solid var(--neon); }
-  .kick-btn:active { background: var(--neon); color: #000; }
-
-  .slot-indicators {
-    display: flex;
-    gap: 6px;
-    margin-top: 8px;
-  }
-  .slot-dot {
-    width: 22px;
-    height: 22px;
-    border: 1px solid var(--neon);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-  }
-  .slot-dot.filled::after {
-    content: "■";
-    font-size: 11px;
-  }
-
-  .room-bottom {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    font-size: 14px;
-  }
-  .room-settings div {
-    margin-top: 4px;
-    cursor: pointer;
-  }
-  .room-status-right {
-    text-align: right;
-  }
-
-  /* 3Dゲーム画面 */
-  #game-screen {
-    padding: 0;
-    background: #050505;
-  }
-  #three-canvas {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
-
-  /* ゲーム中HUD */
-  #hud-layer {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 200;
-  }
-  .hud-top-bar {
-    position: absolute;
-    top: 8px;
-    left: 12px;
-    right: 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    pointer-events: auto;
-  }
-  .hud-left-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .hud-badge {
-    background: rgba(0, 0, 0, 0.85);
-    border: 1px solid var(--neon);
-    padding: 4px 10px;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .hud-ammo-only {
-    background: rgba(0, 0, 0, 0.9);
-    border: 1px solid var(--neon);
-    padding: 6px 14px;
-    font-size: 16px;
-    letter-spacing: 1px;
-    text-shadow: 0 0 6px var(--neon);
-    pointer-events: none;
-  }
-  .my-hp-badge {
-    background: rgba(0, 15, 0, 0.9);
-    border: 1px solid var(--neon);
-    padding: 5px 12px;
-    font-size: 16px;
-    letter-spacing: 3px;
-    text-shadow: 0 0 8px var(--neon);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .hp-bolt-off {
-    opacity: 0.22;
-    filter: grayscale(1);
-  }
-  .status-pill {
-    font-size: 11px;
-    padding: 1px 5px;
-    border: 1px solid var(--gold);
-    color: var(--gold);
-    letter-spacing: 0;
-  }
-
-  /* カメラ視点切替ボタン（正面・俯瞰のみ） */
-  .view-controls {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    pointer-events: auto;
-  }
-  .view-btn {
-    background: rgba(0, 0, 0, 0.85);
-    border: 1px solid var(--neon);
-    color: var(--neon);
-    font-family: inherit;
-    font-size: 13px;
-    padding: 8px 10px;
-    cursor: pointer;
-  }
-  .view-btn.active {
-    background: var(--neon);
-    color: #000;
-  }
-
-  /* 弾数・通知バナー */
-  #center-banner {
-    position: absolute;
-    top: 15%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.92);
-    border: 2px solid var(--neon);
-    padding: 10px 22px;
-    font-size: 17px;
-    text-align: center;
-    display: none;
-    box-shadow: 0 0 18px rgba(57, 255, 20, 0.4);
-    z-index: 260;
-    white-space: nowrap;
-  }
-
-  /* 虫眼鏡・携帯の専用シークレット通知 */
-  #secret-inspect-banner {
-    position: absolute;
-    top: 26%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 10, 0, 0.96);
-    border: 2px solid #ffffff;
-    padding: 12px 24px;
-    font-size: 19px;
-    text-align: center;
-    display: none;
-    box-shadow: 0 0 24px rgba(255, 255, 255, 0.45);
-    z-index: 280;
-    white-space: nowrap;
-  }
-
-  /* ラウンド開始時の弾配分オーバーレイ */
-  #shell-visual-overlay {
-    position: fixed;
-    top: 56px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.94);
-    border: 2px solid var(--neon);
-    padding: 10px 24px;
-    z-index: 320;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0 0 24px rgba(57, 255, 20, 0.45);
-    pointer-events: none;
-  }
-  .shell-icons-row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    justify-content: center;
-  }
-  .shell-cartridge {
-    width: 18px;
-    height: 44px;
-    border-radius: 3px 3px 1px 1px;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    border: 1px solid #fff;
-    transition: opacity 0.25s, transform 0.25s;
-  }
-  .shell-cartridge::after {
-    content: "";
-    display: block;
-    height: 11px;
-    width: 100%;
-    background: #d4af37;
-    border-top: 1px solid #000;
-  }
-  .shell-cartridge.live {
-    background: var(--danger);
-    box-shadow: 0 0 12px var(--danger);
-  }
-  .shell-cartridge.blank {
-    background: var(--blank);
-    box-shadow: 0 0 12px var(--blank);
-  }
-  .shell-cartridge.loaded {
-    opacity: 0.22;
-    transform: translateY(-8px) scale(0.82);
-  }
-
-  /* 射撃構え中＆アドレナリン奪取中＆ターゲット直接選択オーバーレイ */
-  #action-overlay {
-    position: absolute;
-    bottom: 14px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: none;
-    gap: 8px;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.92);
-    border: 1px solid var(--neon);
-    padding: 8px 14px;
-    pointer-events: auto;
-    max-width: 94vw;
-  }
-
-  /* アイテム配布ボックス＆手元スロットUI */
-  #loot-modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.78);
-    z-index: 300;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 12px;
-    pointer-events: auto;
-  }
-  .loot-box-ui {
-    border: 2px solid var(--neon);
-    background: #030d03;
-    padding: 12px 16px;
-    width: min(640px, 94vw);
-  }
-  .loot-items-row {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin: 10px 0;
-    min-height: 68px;
-  }
-  .item-card {
-    border: 1px solid var(--neon);
-    background: #000;
-    padding: 6px 8px;
-    min-width: 96px;
-    text-align: center;
-    cursor: grab;
-    font-size: 12px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-  }
-  .item-card.selected {
-    background: var(--neon);
-    color: #000;
-    box-shadow: 0 0 10px var(--neon);
-  }
-  .slots-8-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
-    margin-top: 8px;
-  }
-  .slot-cell {
-    border: 1px dashed var(--neon);
-    height: 46px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    background: rgba(0, 25, 0, 0.5);
-    cursor: pointer;
-    text-align: center;
-    padding: 2px;
-  }
-  .slot-cell.occupied {
-    border-style: solid;
-    background: rgba(57, 255, 20, 0.14);
-  }
-
-  /* アイテム使用確認モーダル */
-  #item-confirm-modal {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #000;
-    border: 2px solid var(--neon);
-    padding: 14px 18px;
-    z-index: 350;
-    display: none;
-    flex-direction: column;
-    gap: 10px;
-    min-width: 290px;
-    max-width: 90vw;
-    pointer-events: auto;
-  }
-
-  /* アイテム図鑑モーダル（画像つき） */
-  #item-guide-modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.88);
-    z-index: 420;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 12px;
-    pointer-events: auto;
-  }
-  .guide-panel {
-    border: 2px solid var(--neon);
-    background: #041004;
-    padding: 12px 16px;
-    width: min(840px, 96vw);
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    box-shadow: 0 0 26px rgba(57, 255, 20, 0.35);
-  }
-  .guide-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    overflow-y: auto;
-    padding-right: 4px;
-  }
-  .guide-card {
-    border: 1px solid var(--neon);
-    background: rgba(0, 0, 0, 0.85);
-    padding: 8px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .guide-card img {
-    width: 60px;
-    height: 60px;
-    border: 1px solid rgba(57, 255, 20, 0.5);
-    background: #081208;
-    flex-shrink: 0;
-  }
-  .guide-card-info {
-    font-size: 12px;
-    line-height: 1.35;
-  }
-  .guide-card-title {
-    font-size: 14px;
-    font-weight: bold;
-    margin-bottom: 2px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .rare-badge {
-    font-size: 10px;
-    border: 1px solid var(--gold);
-    color: var(--gold);
-    padding: 0 4px;
-  }
-
-  /* 勝敗演出＆ランキング・再戦モーダル */
-  #result-modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.86);
-    z-index: 380;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    pointer-events: auto;
-  }
-  .result-panel {
-    border: 2px solid var(--neon);
-    background: rgba(4, 14, 4, 0.96);
-    padding: 16px 22px;
-    width: min(680px, 95vw);
-    box-shadow: 0 0 30px rgba(57, 255, 20, 0.35);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .result-banner-title {
-    font-size: 26px;
-    letter-spacing: 3px;
-    text-align: center;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--neon);
-  }
-  .result-banner-title.win {
-    color: var(--gold);
-    border-color: var(--gold);
-    text-shadow: 0 0 14px rgba(255, 215, 0, 0.75);
-  }
-  .result-banner-title.lose {
-    color: var(--danger);
-    border-color: var(--danger);
-    text-shadow: 0 0 14px rgba(255, 42, 42, 0.75);
-  }
-  .ranking-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-  }
-  .ranking-table th, .ranking-table td {
-    border: 1px solid var(--neon);
-    padding: 6px 10px;
-    text-align: center;
-  }
-  .ranking-table th {
-    background: rgba(57, 255, 20, 0.16);
-  }
-  .ranking-table tr.rank-1 {
-    color: var(--gold);
-    font-weight: bold;
-    background: rgba(255, 215, 0, 0.08);
-  }
-  .ranking-table tr.is-me {
-    box-shadow: inset 0 0 8px rgba(57, 255, 20, 0.45);
-  }
-  .result-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    margin-top: 4px;
-  }
-
-  /* 3D頭上プレイヤー名ラベル */
-  .name-tag {
-    position: fixed;
-    color: #ffffff;
-    font-family: 'DotGothic16', monospace;
-    font-size: 14px;
-    text-shadow: 0 0 4px #000, 1px 1px 0 #000;
-    transform: translate(-50%, -100%);
-    pointer-events: none;
-    z-index: 150;
-    white-space: nowrap;
-    padding: 2px 6px;
-  }
-  .name-tag.turn-active {
-    color: var(--neon);
-    text-shadow: 0 0 8px var(--neon);
-  }
-  .name-tag.dead {
-    color: #666;
-    text-decoration: line-through;
-  }
-  .name-tag.aimable {
-    pointer-events: auto;
-    cursor: pointer;
-    border: 1px solid var(--danger);
-    background: rgba(40, 0, 0, 0.85);
-    color: #ff6666;
-    box-shadow: 0 0 10px var(--danger);
-  }
-  .name-tag.item-targetable {
-    pointer-events: auto;
-    cursor: pointer;
-    border: 1px solid var(--gold);
-    background: rgba(40, 32, 0, 0.88);
-    color: var(--gold);
-    box-shadow: 0 0 10px var(--gold);
-  }
-
-  #flash-fx {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 400;
-    opacity: 0;
-    transition: opacity 0.25s;
-  }
-
-  #yt-bgm-container {
-    position: fixed;
-    width: 1px;
-    height: 1px;
-    opacity: 0.001;
-    pointer-events: none;
-    bottom: 0;
-    left: 0;
-    z-index: -1;
-  }
-</style>
+    /* 横画面推奨バナー（縦持ち時） */
+    #rotateHint {
+      display: none; position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%);
+      background: rgba(255, 0, 127, 0.85); color: #fff; font-size: 11px; font-weight: 700;
+      padding: 4px 12px; border-radius: 20px; z-index: 30; pointer-events: none;
+    }
+    @media (orientation: portrait) { #rotateHint { display: block; } }
+  </style>
 </head>
-<body class="scanlines">
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <div id="rotateHint">📱 スマホは横画面にするとプレイしやすくなります</div>
 
-<!-- YouTube BGM用非表示プレイヤー -->
-<div id="yt-bgm-container"><div id="yt-bgm-player"></div></div>
-
-<!-- 縦画面警告 -->
-<div id="rotate-warning">
-  <div style="font-size:22px; margin-bottom:10px;">[ SYSTEM NOTICE ]</div>
-  <div>スマホを横画面（ランドスケープ）にしてプレイしてください</div>
-</div>
-
-<!-- フラッシュ演出 -->
-<div id="flash-fx"></div>
-
-<!-- ① 部屋に入る前のロビー -->
-<div id="title-screen" class="screen active">
-  <div class="term-header">
-    <div>
-      <span class="game-title">Life Trade</span>
-      <span class="game-ver">ver 0.9</span>
+  <!-- タイトル画面 -->
+  <div id="titleScreen" class="overlay">
+    <div class="logo-wrap">
+      <div class="logo-icon">
+        <svg width="36" height="36" viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="vg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#00f3ff"/>
+              <stop offset="100%" stop-color="#9d4edd"/>
+            </linearGradient>
+          </defs>
+          <polygon points="15,20 38,20 50,58 62,20 85,20 50,90" fill="url(#vg)"/>
+          <polygon points="43,15 57,15 50,42" fill="#ffffff"/>
+        </svg>
+      </div>
+      <div class="title-text">
+        <h1>VOLT</h1>
+        <p>ONLINE BATTLE ARENA</p>
+      </div>
     </div>
-    <div style="font-size:12px; display:flex; align-items:center; gap:6px;">
-      <span>SOLO AI &amp; ONLINE [2-5 PLAYERS]</span>
-      <button class="bgm-btn" onclick="openItemGuideModal()">? アイテム図鑑</button>
-      <button class="bgm-btn" id="bgm-btn-title" onclick="toggleBgm()">♪ BGM: ON</button>
+
+    <div class="card">
+      <div class="input-row">
+        <input id="playerNameInput" type="text" maxlength="10" placeholder="プレイヤー名（例: VOLT）" />
+      </div>
+      <button id="btnSolo" class="btn btn-gold btn-full">⚡ 1人で練習（CPU4体と即バトル）</button>
+      <button id="btnCreate" class="btn btn-cyan btn-full">🌐 オンライン部屋を作る（4〜5人）</button>
+      <div class="input-row" style="margin-bottom:0;">
+        <input id="roomCodeInput" type="tel" maxlength="3" placeholder="3桁の部屋番号（例: 482）" />
+        <button id="btnJoin" class="btn btn-purple">参加する</button>
+      </div>
+      <div id="titleStatus" class="status-msg"></div>
+    </div>
+  </div>
+
+  <!-- ロビー待機画面 -->
+  <div id="lobbyScreen" class="overlay hidden">
+    <div class="card">
+      <div class="room-badge">
+        <div style="font-size:11px; color:#8ab4f8;">部屋番号（友達に共有）</div>
+        <span id="lobbyCode">---</span>
+      </div>
+      <div id="lobbyPlayers" class="player-list"></div>
+      <button id="btnStart4" class="btn btn-cyan btn-full hidden">🔥 バトル開始（4〜5人）</button>
+      <button id="btnStartBot" class="btn btn-purple btn-full hidden">🤖 空き枠にCPUを入れて開始</button>
+      <div id="lobbyWaitMsg" style="text-align:center; font-size:13px; color:#8ab4f8;">ホストの開始を待っています...</div>
     </div>
   </div>
 
-  <div class="lobby-grid">
-    <div class="box-panel">
-      <div>
-        <div style="display:grid; grid-template-columns: 1.1fr 0.9fr; gap:8px;">
-          <div class="input-group">
-            <label>&gt; プレイヤー名 (NAME)</label>
-            <input type="text" id="player-name-input" maxlength="10" placeholder="PLAYER" />
-          </div>
-          <div class="input-group">
-            <label>&gt; AI対戦人数 (SOLO)</label>
-            <select id="ai-count-select">
-              <option value="1">AI 1体 (1対1)</option>
-              <option value="2" selected>AI 2体 (3人戦)</option>
-              <option value="3">AI 3体 (4人戦)</option>
-              <option value="4">AI 4体 (5人戦)</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="input-group">
-          <label>&gt; スキン選択 (MASK SKIN 10種): <strong id="selected-skin-label" style="color:var(--gold);">スチーム</strong></label>
-          <div class="skin-grid" id="skin-selector-grid"></div>
-        </div>
-
-        <div class="input-group" style="margin-top:4px;">
-          <label>&gt; 3桁の部屋番号 (ONLINE MULTIPLAYER)</label>
-          <input type="tel" id="room-id-input" maxlength="3" pattern="[0-9]*" placeholder="例: 777" />
-        </div>
-      </div>
-
-      <div style="display:flex; flex-direction:column; gap:6px;">
-        <button class="btn btn-center btn-gold" onclick="startSoloAiMatch()">[ ▶ 一人用 (vs AI) で開始 ]</button>
-        <div style="display:flex; gap:8px;">
-          <button class="btn btn-center" style="flex:1;" onclick="createRoom()">[ オンライン部屋を作成 ]</button>
-          <button class="btn btn-center" style="flex:1;" onclick="joinRoom()">[ 部屋に参加 ]</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="box-panel">
-      <div style="font-size:12.5px; line-height:1.45;">
-        <div>&gt; TERMINAL STATUS: <span id="net-status">READY</span></div>
-        <div>&gt; 初期ライフ: ⚡×5 (負け抜け制)</div>
-        <div>&gt; 弾倉: 5発開始〜最大10発 (赤・青 各最低1発 / R5以降は赤率UP)</div>
-        <div>&gt; 出現率: ノコギリ・虫眼鏡・ビール・薬・携帯(13.33%) / タバコ・アドレナリン・手錠・目薬(6.67%) / リモコン・インバータ(2.67%) / ロザリオ(1.33%)</div>
-        <div>&gt; 席順・スタートプレイヤーは毎回ランダム決定</div>
-        <div id="title-error" style="color:var(--danger); margin-top:4px;"></div>
-      </div>
-      <div style="font-size:11px; opacity:0.75; border-top:1px dashed var(--neon); padding-top:5px;">
-        ※選んだスキンは他のプレイヤーから見るあなたの3Dマスクに反映されます
-      </div>
+  <!-- リザルト画面 -->
+  <div id="resultScreen" class="overlay hidden">
+    <div class="card" style="text-align:center;">
+      <div style="font-size:13px; color:#c77dff; letter-spacing:2px; font-weight:800;">MATCH FINISHED</div>
+      <h2 id="winnerText" style="font-size:30px; margin:10px 0; color:#00f3ff; text-shadow:0 0 16px rgba(0,243,255,0.7);">WINNER: ---</h2>
+      <div id="resultStats" style="font-size:13px; color:#cbd5e1; margin-bottom:18px; line-height:1.7;"></div>
+      <button id="btnRematch" class="btn btn-cyan btn-full">🔄 もう一度遊ぶ（再戦）</button>
+      <button id="btnBackTitle" class="btn btn-purple btn-full" style="margin-bottom:0;">🏠 タイトルへ戻る</button>
     </div>
   </div>
-</div>
 
-<!-- ② 部屋に入った後のロビー -->
-<div id="lobby-screen" class="screen">
-  <div class="room-layout">
-    <div>
-      <div style="font-size:14px; margin-bottom:6px;">
-        ハイローラー：
-        <span style="float:right; display:flex; gap:6px; align-items:center;">
-          <span>Life Trade ver 0.9</span>
-          <button class="bgm-btn" onclick="openItemGuideModal()">? アイテム図鑑</button>
-          <button class="bgm-btn" id="bgm-btn-lobby" onclick="toggleBgm()">♪ BGM: ON</button>
-        </span>
-      </div>
-      <div class="player-table-wrap">
-        <div class="player-list-box" id="lobby-player-list"></div>
-        <div class="kick-col" id="lobby-kick-col"></div>
-      </div>
-      <div class="slot-indicators" id="lobby-slot-dots"></div>
-
-      <div style="margin-top:16px; display:flex; flex-direction:column; gap:8px; align-items:flex-start;">
-        <button class="btn" onclick="leaveRoom()">テーブルを離脱</button>
-        <button class="btn" id="start-game-btn" onclick="hostStartGame()">ゲーム開始</button>
-      </div>
-    </div>
-
-    <div class="room-bottom">
-      <div class="room-settings">
-        <div style="opacity:0.8; margin-bottom:4px;">マッチ設定カスタマイズ</div>
-        <div onclick="copyRoomId()">📋 ロビーIDコピー: <strong id="display-room-id">---</strong> <span id="copy-toast" style="font-size:12px;"></span></div>
-        <div onclick="cycleMaxPlayers()">🚪 PLAYER LIMIT: <strong id="display-max-players">5</strong> (タップで2〜5変更)</div>
-      </div>
-      <div class="room-status-right">
-        <div style="font-size:16px; margin-bottom:4px;" id="lobby-wait-msg">まもなくゲーム開始！</div>
-        <div style="font-size:12px; opacity:0.8;">3桁の番号を仲間に共有してください</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ③ 3Dゲーム本編画面 -->
-<div id="game-screen" class="screen">
-  <canvas id="three-canvas"></canvas>
-  <div id="name-tags-container"></div>
-
-  <div id="hud-layer">
-    <div class="hud-top-bar">
-      <div class="hud-left-stack">
-        <div class="hud-badge">
-          <span id="hud-round">ROUND 1</span>
-          <span id="hud-dir-badge">↻ 時計回り</span> |
-          <span id="hud-turn-info">待機中...</span>
-          <span id="hud-saw-badge" style="color:var(--danger); display:none;">[威力2倍]</span>
+  <!-- 戦闘HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-top">
+      <div class="hud-box">
+        <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:800;">
+          <span id="hudName">PLAYER</span>
+          <span id="hudHpText">100 / 100</span>
         </div>
-        <div style="display:flex; gap:6px; align-items:center;">
-          <div class="my-hp-badge" id="hud-my-hp">⚡⚡⚡⚡⚡</div>
-          <button class="bgm-btn" onclick="openItemGuideModal()">? 図鑑</button>
-          <button class="bgm-btn" id="bgm-btn-game" onclick="toggleBgm()">♪ BGM: ON</button>
+        <div class="hp-bar-bg"><div id="hudHpBar" class="hp-bar-fill" style="width:100%;"></div></div>
+        <div id="hudBuffs" class="buff-icons"></div>
+      </div>
+
+      <div class="hud-box">
+        <div id="hudTimer" class="timer">05:00</div>
+        <div id="hudPhase" class="phase-tag">通常フェーズ</div>
+      </div>
+
+      <div class="hud-box" style="text-align:right;">
+        <div style="font-size:11px; color:#8ab4f8;">生存者</div>
+        <div id="hudAlive" style="font-size:20px; font-weight:900; color:#39ff14;">5 / 5</div>
+      </div>
+    </div>
+
+    <div class="chat-bar">
+      <button class="chat-btn" data-chat="🤝 組もう！">🤝 組もう！</button>
+      <button class="chat-btn" data-chat="🎯 1位を狙おう">🎯 1位狙おう</button>
+      <button class="chat-btn" data-chat="😈 裏切ったな！">😈 裏切ったな！</button>
+      <button class="chat-btn" data-chat="🙏 ごめん！">🙏 ごめん！</button>
+      <button class="chat-btn" data-chat="👍 ナイス！">👍 ナイス！</button>
+    </div>
+
+    <div id="feedArea" class="feed-area"></div>
+
+    <div class="touch-controls">
+      <div id="stickZone"></div>
+      <div class="action-btns">
+        <div id="btnDash" class="act-btn">
+          <span>DASH</span>
+          <div id="dashCdMask" class="cd-mask hidden">3.0</div>
+        </div>
+        <div id="btnAtk" class="act-btn">
+          <span>ATTACK</span>
+          <div id="atkCdMask" class="cd-mask hidden">0.7</div>
         </div>
       </div>
-
-      <!-- 右上：残り残弾数のみ表示 -->
-      <div class="hud-ammo-only" id="hud-ammo-count">残弾: 0発</div>
-    </div>
-
-    <!-- 視点切り替え（正面・俯瞰のみ） -->
-    <div class="view-controls">
-      <button class="view-btn active" id="cam-btn-front" onclick="setCameraMode('front')">正面(相手)</button>
-      <button class="view-btn" id="cam-btn-top" onclick="setCameraMode('top')">俯瞰</button>
-    </div>
-
-    <!-- 中央通知バナー -->
-    <div id="center-banner"></div>
-
-    <!-- 虫眼鏡・携帯専用シークレット通知 -->
-    <div id="secret-inspect-banner"></div>
-
-    <!-- ラウンド開始時の視覚的弾装填表示 -->
-    <div id="shell-visual-overlay">
-      <div id="shell-visual-title" style="font-size:15px; letter-spacing:1px;">CHAMBER LOADING...</div>
-      <div class="shell-icons-row" id="shell-visual-icons"></div>
-      <div id="shell-visual-legend" style="font-size:14px;"></div>
-    </div>
-
-    <!-- ショットガン構え中＆アドレナリン奪取中＆手錠・目薬相手選択メニュー -->
-    <div id="action-overlay"></div>
-  </div>
-</div>
-
-<!-- アイテム配布ボックスモーダル -->
-<div id="loot-modal">
-  <div class="loot-box-ui">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <span>[ SUPPLY BOX ] 枠にドラッグまたはタップで配置（最大3個）</span>
-      <span id="loot-count-label">残り: 0</span>
-    </div>
-    <div class="loot-items-row" id="loot-box-items"></div>
-    <div style="font-size:12px; opacity:0.85;">▼ あなたのアイテム枠（最大8枠 / 現在の空き枠分まで取得可能）</div>
-    <div class="slots-8-grid" id="loot-slots-grid"></div>
-    <div style="margin-top:10px; text-align:right;">
-      <button class="btn" id="loot-done-btn" onclick="finishLootPhase()">配置完了</button>
     </div>
   </div>
-</div>
-
-<!-- アイテム使用確認モーダル -->
-<div id="item-confirm-modal">
-  <div id="item-modal-title" style="font-size:16px; border-bottom:1px solid var(--neon); padding-bottom:4px;"></div>
-  <div id="item-modal-desc" style="font-size:13px; line-height:1.4;"></div>
-  <div id="item-modal-extra" style="display:flex; flex-direction:column; gap:6px;"></div>
-  <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:4px;">
-    <button class="btn" onclick="closeItemModal()">キャンセル</button>
-    <button class="btn" id="item-modal-use-btn">使用する</button>
-  </div>
-</div>
-
-<!-- アイテム図鑑モーダル（全12種・画像つき） -->
-<div id="item-guide-modal" onclick="if(event.target===this) closeItemGuideModal()">
-  <div class="guide-panel">
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--neon); padding-bottom:6px;">
-      <span style="font-size:16px;">[ ITEM DATABASE ] 全12種アイテム効果＆出現率</span>
-      <button class="btn" style="padding:4px 10px;" onclick="closeItemGuideModal()">✕ 閉じる</button>
-    </div>
-    <div class="guide-grid" id="item-guide-grid"></div>
-  </div>
-</div>
-
-<!-- 勝敗演出＆ランキング・再戦モーダル -->
-<div id="result-modal">
-  <div class="result-panel">
-    <div id="result-banner-title" class="result-banner-title">MATCH RESULT</div>
-    <div id="result-subtitle" style="text-align:center; font-size:15px;"></div>
-    <table class="ranking-table">
-      <thead>
-        <tr>
-          <th>順位</th>
-          <th>プレイヤー</th>
-          <th>残りライフ</th>
-          <th>与ダメージ</th>
-          <th>生存ラウンド</th>
-        </tr>
-      </thead>
-      <tbody id="ranking-tbody"></tbody>
-    </table>
-    <div class="result-actions">
-      <button class="btn" onclick="requestBackToLobby()">ロビー／タイトルへ戻る</button>
-      <div id="rematch-area">
-        <button class="btn" id="rematch-btn" onclick="requestRematch()">▶ 再戦する</button>
-      </div>
-    </div>
-  </div>
-</div>
 
 <script>
-/* ==========================================================================
-   YouTube BGM プレイヤー
-   - ロビー（待機中）: mvkcyB_lve0
-   - ゲーム開始後・奇数ラウンド: -VNhQ2-aQwE
-   - ゲーム開始後・偶数ラウンド: FL9ocieCNjM
-   ========================================================================== */
-const LOBBY_BGM_VIDEO_ID = 'mvkcyB_lve0';
-const GAME_BGM_VIDEO_IDS = ['-VNhQ2-aQwE', 'FL9ocieCNjM'];
-let currentBgmVideoId = LOBBY_BGM_VIDEO_ID;
-let ytPlayer = null;
-let ytReady = false;
-let bgmEnabled = true;
-
-(function loadYouTubeAPI() {
-  const tag = document.createElement('script');
-  tag.src = 'https://www.youtube.com/iframe_api';
-  document.head.appendChild(tag);
-})();
-
-window.onYouTubeIframeAPIReady = function() {
-  const playerVars = {
-    autoplay: 1,
-    loop: 1,
-    playlist: currentBgmVideoId,
-    controls: 0,
-    disablekb: 1,
-    fs: 0,
-    modestbranding: 1,
-    playsinline: 1,
-    rel: 0
-  };
-  if (location.protocol.startsWith('http')) {
-    playerVars.origin = location.origin;
-  }
-
-  ytPlayer = new YT.Player('yt-bgm-player', {
-    width: '1',
-    height: '1',
-    videoId: currentBgmVideoId,
-    playerVars: playerVars,
-    events: {
-      onReady: function(e) {
-        ytReady = true;
-        e.target.setVolume(45);
-        if (bgmEnabled) {
-          e.target.playVideo();
-        }
-        updateBgmButtons();
-      },
-      onStateChange: function(e) {
-        if (e.data === YT.PlayerState.ENDED && bgmEnabled) {
-          e.target.playVideo();
-        }
-        updateBgmButtons();
-      }
-    }
-  });
-};
-
-function setBgmTrack(videoId) {
-  if (!videoId || currentBgmVideoId === videoId) return;
-  currentBgmVideoId = videoId;
-  if (!ytReady || !ytPlayer) return;
-  if (bgmEnabled) {
-    ytPlayer.loadPlaylist({
-      playlist: [currentBgmVideoId],
-      index: 0,
-      startSeconds: 0
-    });
-    ytPlayer.setLoop(true);
-    ytPlayer.unMute();
-    ytPlayer.setVolume(45);
-    ytPlayer.playVideo();
-  } else {
-    ytPlayer.cuePlaylist({
-      playlist: [currentBgmVideoId],
-      index: 0,
-      startSeconds: 0
-    });
-    ytPlayer.setLoop(true);
-  }
-}
-
-function updateBgmForGameState(state) {
-  if (!state || state.phase === 'lobby') {
-    setBgmTrack(LOBBY_BGM_VIDEO_ID);
-    return;
-  }
-  const roundNum = Math.max(1, state.round || 1);
-  const trackIdx = (roundNum - 1) % GAME_BGM_VIDEO_IDS.length;
-  setBgmTrack(GAME_BGM_VIDEO_IDS[trackIdx]);
-}
-
-function updateBgmButtons() {
-  const label = bgmEnabled ? '♪ BGM: ON' : '♪ BGM: OFF';
-  ['bgm-btn-title', 'bgm-btn-lobby', 'bgm-btn-game'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = label;
-  });
-}
-
-function ensureBgmStart() {
-  if (!bgmEnabled || !ytReady || !ytPlayer) return;
-  const state = ytPlayer.getPlayerState();
-  if (state !== YT.PlayerState.PLAYING) {
-    ytPlayer.unMute();
-    ytPlayer.setVolume(45);
-    ytPlayer.playVideo();
-  }
-  setTimeout(updateBgmButtons, 250);
-}
-
-function toggleBgm() {
-  bgmEnabled = !bgmEnabled;
-  if (ytReady && ytPlayer) {
-    if (bgmEnabled) {
-      ytPlayer.unMute();
-      ytPlayer.setVolume(45);
-      ytPlayer.playVideo();
-    } else {
-      ytPlayer.pauseVideo();
-    }
-  }
-  updateBgmButtons();
-}
-
-['pointerdown', 'touchstart', 'click', 'keydown'].forEach(ev => {
-  document.addEventListener(ev, ensureBgmStart, { passive: true });
-});
-
-/* ==========================================================================
-   0. ホーム画面追加用アイコン＆PWAマニフェスト動的生成
-   ========================================================================== */
-(function generateAppIcon() {
-  const c = document.createElement('canvas');
-  c.width = 512; c.height = 512;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#000000';
-  ctx.fillRect(0, 0, 512, 512);
-  ctx.strokeStyle = '#39ff14';
-  ctx.lineWidth = 18;
-  ctx.strokeRect(24, 24, 464, 464);
-
-  ctx.fillStyle = '#39ff14';
-  ctx.font = 'bold 54px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('LIFE', 256, 130);
-  ctx.fillText('TRADE', 256, 190);
-
-  ctx.beginPath();
-  ctx.moveTo(280, 225);
-  ctx.lineTo(205, 340);
-  ctx.lineTo(260, 340);
-  ctx.lineTo(230, 445);
-  ctx.lineTo(315, 315);
-  ctx.lineTo(258, 315);
-  ctx.closePath();
-  ctx.fill();
-
-  const iconUrl = c.toDataURL('image/png');
-  const appleIcon = document.createElement('link');
-  appleIcon.rel = 'apple-touch-icon';
-  appleIcon.href = iconUrl;
-  document.head.appendChild(appleIcon);
-
+/* =========================================================
+   1. PWA Manifest & Service Worker 動的登録（1ファイル完結用）
+   ========================================================= */
+(() => {
+  const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#070a19"/><polygon points="90,110 200,110 256,310 312,110 422,110 256,440" fill="#00f3ff"/><polygon points="220,80 292,80 256,220" fill="#9d4edd"/></svg>`;
+  const iconUrl = 'data:image/svg+xml;base64,' + btoa(iconSvg);
   const manifest = {
-    name: 'Life Trade',
-    short_name: 'Life Trade',
+    name: 'VOLT - Online Battle Arena',
+    short_name: 'VOLT',
     start_url: '.',
-    display: 'standalone',
+    display: 'fullscreen',
     orientation: 'landscape',
-    background_color: '#000000',
-    theme_color: '#000000',
-    icons: [{ src: iconUrl, sizes: '512x512', type: 'image/png' }]
+    background_color: '#060711',
+    theme_color: '#060711',
+    icons: [{ src: iconUrl, sizes: '512x512', type: 'image/svg+xml' }]
   };
-  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-  const manLink = document.createElement('link');
-  manLink.rel = 'manifest';
-  manLink.href = URL.createObjectURL(blob);
-  document.head.appendChild(manLink);
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify(manifest));
+  document.head.appendChild(link);
 })();
 
-/* ==========================================================================
-   スキン定義（全10種）
-   ========================================================================== */
-const MASK_SKINS = [
-  { id: 'steam', name: 'スチーム', body: 0x6e685f, eye: 0x111111, rim: 0x222222, accent: 0x1d1d1d, type: 'single_filter', swatch: '#6e685f' },
-  { id: 'hazard', name: 'ハザード', body: 0xd9a404, eye: 0x111111, rim: 0x1c1c1c, accent: 0x111111, type: 'dual_filter', swatch: '#d9a404' },
-  { id: 'cyber', name: 'サイバー緑', body: 0x162416, eye: 0x39ff14, rim: 0x39ff14, accent: 0x0b330b, type: 'visor', swatch: '#39ff14' },
-  { id: 'crimson', name: 'クリムゾン', body: 0x8c1919, eye: 0xffd700, rim: 0x220000, accent: 0x2b2b2b, type: 'horns', swatch: '#8c1919' },
-  { id: 'frost', name: 'フロスト青', body: 0x2a6f97, eye: 0xaaddff, rim: 0xffffff, accent: 0x1b4965, type: 'dual_filter', swatch: '#2a9df4' },
-  { id: 'skull', name: 'スカル白', body: 0xe8e4d9, eye: 0x0a0a0a, rim: 0x333333, accent: 0x222222, type: 'skull', swatch: '#e8e4d9' },
-  { id: 'gold', name: 'ロイヤル金', body: 0xd4af37, eye: 0xff2a2a, rim: 0x4a3b00, accent: 0xffffff, type: 'crown', swatch: '#ffd700' },
-  { id: 'shadow', name: 'シャドウ黒', body: 0x141418, eye: 0xff2a2a, rim: 0x444444, accent: 0x0a0a0c, type: 'visor', swatch: '#222228' },
-  { id: 'toxic', name: 'トキシック紫', body: 0x5a189a, eye: 0x39ff14, rim: 0x240046, accent: 0x3c096c, type: 'dual_filter', swatch: '#7b2cbf' },
-  { id: 'rust', name: 'ラスト鉄錆', body: 0x7f4f24, eye: 0xff9f1c, rim: 0x332211, accent: 0x582f0e, type: 'single_filter', swatch: '#7f4f24' }
+/* =========================================================
+   2. Web Audio API シンセサイザー効果音エンジン
+   ========================================================= */
+class SoundFX {
+  constructor() { this.ctx = null; }
+  unlock() {
+    if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+  }
+  play(type) {
+    this.unlock();
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === 'slash' || type === 'powerSlash') {
+      osc.type = type === 'powerSlash' ? 'sawtooth' : 'triangle';
+      osc.frequency.setValueAtTime(type === 'powerSlash' ? 520 : 380, now);
+      osc.frequency.exponentialRampToValueAtTime(75, now + 0.16);
+      gain.gain.setValueAtTime(0.28, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+      osc.start(now); osc.stop(now + 0.17);
+    } else if (type === 'hit') {
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(170, now);
+      osc.frequency.exponentialRampToValueAtTime(42, now + 0.14);
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+      osc.start(now); osc.stop(now + 0.15);
+    } else if (type === 'dash') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(220, now);
+      osc.frequency.exponentialRampToValueAtTime(680, now + 0.18);
+      gain.gain.setValueAtTime(0.22, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      osc.start(now); osc.stop(now + 0.19);
+    } else if (type === 'bomb') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(110, now);
+      osc.frequency.exponentialRampToValueAtTime(24, now + 0.45);
+      gain.gain.setValueAtTime(0.45, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+      osc.start(now); osc.stop(now + 0.46);
+    } else if (type === 'heal') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, now);
+      osc.frequency.setValueAtTime(660, now + 0.09);
+      osc.frequency.setValueAtTime(880, now + 0.18);
+      gain.gain.setValueAtTime(0.22, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+      osc.start(now); osc.stop(now + 0.31);
+    } else if (type === 'item') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(587, now);
+      osc.frequency.setValueAtTime(880, now + 0.08);
+      gain.gain.setValueAtTime(0.22, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      osc.start(now); osc.stop(now + 0.23);
+    } else if (type === 'shieldBreak') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(920, now);
+      osc.frequency.exponentialRampToValueAtTime(240, now + 0.24);
+      gain.gain.setValueAtTime(0.26, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+      osc.start(now); osc.stop(now + 0.25);
+    } else if (type === 'ko') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(260, now);
+      osc.frequency.exponentialRampToValueAtTime(35, now + 0.55);
+      gain.gain.setValueAtTime(0.4, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+      osc.start(now); osc.stop(now + 0.56);
+    } else if (type === 'chat') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(740, now);
+      osc.frequency.setValueAtTime(980, now + 0.06);
+      gain.gain.setValueAtTime(0.14, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      osc.start(now); osc.stop(now + 0.16);
+    }
+  }
+}
+const sfx = new SoundFX();
+
+/* =========================================================
+   3. ゲーム定数 & 状態管理
+   ========================================================= */
+const MAP_SIZE = 1500;
+const MATCH_TIME = 300; // 5分 (300秒)
+const COLORS = [
+  { main: '#00f3ff', glow: 'rgba(0, 243, 255, 0.55)' },
+  { main: '#ff007f', glow: 'rgba(255, 0, 127, 0.55)' },
+  { main: '#39ff14', glow: 'rgba(57, 255, 20, 0.55)' },
+  { main: '#ffd700', glow: 'rgba(255, 215, 0, 0.55)' },
+  { main: '#c77dff', glow: 'rgba(199, 125, 255, 0.55)' }
+];
+const ITEM_SPECS = [
+  { type: 'bomb', label: '爆弾', icon: '💣', color: '#ff3b30' },
+  { type: 'heal', label: '回復', icon: '💚', color: '#39ff14' },
+  { type: 'thunder', label: '雷', icon: '⚡', color: '#ffd700' },
+  { type: 'shield', label: 'シールド', icon: '🛡️', color: '#00f3ff' },
+  { type: 'trap', label: '罠', icon: '🕸️', color: '#c77dff' },
+  { type: 'sword', label: '強化剣', icon: '⚔️', color: '#ff9500' }
 ];
 
-let selectedSkinId = localStorage.getItem('lt_selected_skin') || 'steam';
-if (!MASK_SKINS.find(s => s.id === selectedSkinId)) selectedSkinId = 'steam';
-
-function renderSkinSelector() {
-  const grid = document.getElementById('skin-selector-grid');
-  const label = document.getElementById('selected-skin-label');
-  if (!grid) return;
-  grid.innerHTML = '';
-
-  const currentSkin = MASK_SKINS.find(s => s.id === selectedSkinId) || MASK_SKINS[0];
-  if (label) label.textContent = currentSkin.name;
-
-  MASK_SKINS.forEach(skin => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'skin-btn' + (skin.id === selectedSkinId ? ' selected' : '');
-    btn.innerHTML = `<span class="skin-swatch" style="background:${skin.swatch};"></span><span>${skin.name}</span>`;
-    btn.onclick = () => {
-      selectedSkinId = skin.id;
-      localStorage.setItem('lt_selected_skin', selectedSkinId);
-      renderSkinSelector();
-    };
-    grid.appendChild(btn);
-  });
-}
-renderSkinSelector();
-
-/* ==========================================================================
-   1. アイテム定義（全12種・指定確率合計100.00%）
-   ========================================================================== */
-const ITEM_DEFS = {
-  saw: {
-    id: 'saw',
-    name: 'ノコギリ',
-    rate: 13.33,
-    badge: '出現率 13.33%',
-    desc: '使用したターンのみ、実弾のダメージが2になる。'
-  },
-  magnifier: {
-    id: 'magnifier',
-    name: '虫眼鏡',
-    rate: 13.33,
-    badge: '出現率 13.33%',
-    desc: '次に装填されている弾（薬室の弾）が実弾(赤)か空砲(青)か自分だけ確認できる。'
-  },
-  cigarette: {
-    id: 'cigarette',
-    name: 'タバコ',
-    rate: 6.67,
-    badge: '出現率 6.67%',
-    desc: '自分のライフを1回復する（最大5）。'
-  },
-  beer: {
-    id: 'beer',
-    name: 'ビール',
-    rate: 13.33,
-    badge: '出現率 13.33%',
-    desc: 'ターン消費せずに現在薬室にある弾を1つ排莢して消費する。'
-  },
-  medicine: {
-    id: 'medicine',
-    name: '期限切れ薬',
-    rate: 13.33,
-    badge: '出現率 13.33%',
-    desc: '50%でライフを2回復、50%でライフを1喪失する。'
-  },
-  adrenaline: {
-    id: 'adrenaline',
-    name: 'アドレナリン',
-    rate: 6.67,
-    badge: '出現率 6.67%',
-    desc: '相手を選んで目の前にズームし、テーブル上の3Dアイテムを直接タップして1つ盗み即時使用する（アドレナリン自体は盗めない）。'
-  },
-  inverter: {
-    id: 'inverter',
-    name: 'インバータ',
-    rate: 2.67,
-    badge: '出現率 2.67%',
-    desc: '現在薬室にある弾の空砲と実弾を入れ替える。'
-  },
-  phone: {
-    id: 'phone',
-    name: '使い捨て携帯',
-    rate: 13.33,
-    badge: '出現率 13.33%',
-    desc: '最初から何番目の弾が実弾(赤)か空砲(青)か教えてくれる。'
-  },
-  handcuffs: {
-    id: 'handcuffs',
-    name: '手錠',
-    rate: 6.67,
-    badge: '出現率 6.67%',
-    desc: '使う相手を直接タップして拘束し、次にターンが回ってきても1回スキップさせる。'
-  },
-  remote: {
-    id: 'remote',
-    name: 'リモコン',
-    rate: 2.67,
-    badge: '出現率 2.67%',
-    desc: 'ターンの進行順番（時計回り／反時計回り）を逆順にする。'
-  },
-  eyedrops: {
-    id: 'eyedrops',
-    name: '目薬',
-    rate: 6.67,
-    badge: '出現率 6.67%',
-    desc: '使う相手を直接タップして選択し、その相手は次の自分のターンにアイテムを使えなくなる。'
-  },
-  rosary: {
-    id: 'rosary',
-    name: 'ロザリオ',
-    rate: 1.33,
-    badge: '超レア 1.33%',
-    desc: '使用者はそのラウンドの間、ライフが0になっても残機2個（⚡×2）でその場で復活できる。'
-  }
-};
-const ITEM_KEYS = Object.keys(ITEM_DEFS);
-
-function rollWeightedItem() {
-  const totalRate = ITEM_KEYS.reduce((acc, k) => acc + ITEM_DEFS[k].rate, 0);
-  let r = Math.random() * totalRate;
-  for (const k of ITEM_KEYS) {
-    r -= ITEM_DEFS[k].rate;
-    if (r <= 0) return k;
-  }
-  return ITEM_KEYS[0];
-}
-
-/* ==========================================================================
-   アイテム図鑑用イラスト生成（全12種）
-   ========================================================================== */
-const itemImageCache = {};
-function getItemIllustrationDataUrl(itemId) {
-  if (itemImageCache[itemId]) return itemImageCache[itemId];
-  const c = document.createElement('canvas');
-  c.width = 128; c.height = 128;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#071307';
-  ctx.fillRect(0, 0, 128, 128);
-
-  ctx.strokeStyle = 'rgba(57, 255, 20, 0.14)';
-  ctx.lineWidth = 1;
-  for (let i = 16; i < 128; i += 24) {
-    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 128); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(128, i); ctx.stroke();
-  }
-
-  ctx.save();
-  switch (itemId) {
-    case 'saw': {
-      ctx.fillStyle = '#c8d0d8';
-      ctx.beginPath();
-      ctx.moveTo(42, 48); ctx.lineTo(114, 54); ctx.lineTo(114, 72); ctx.lineTo(42, 76);
-      ctx.closePath(); ctx.fill();
-      ctx.fillStyle = '#8d99a6';
-      for (let x = 46; x < 110; x += 8) {
-        ctx.beginPath();
-        ctx.moveTo(x, 76); ctx.lineTo(x + 4, 83); ctx.lineTo(x + 8, 76);
-        ctx.fill();
-      }
-      ctx.fillStyle = '#8b4513';
-      ctx.fillRect(14, 42, 30, 40);
-      ctx.fillStyle = '#071307';
-      ctx.fillRect(21, 51, 14, 22);
-      break;
-    }
-    case 'magnifier': {
-      ctx.strokeStyle = '#333333';
-      ctx.lineWidth = 10;
-      ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(72, 72); ctx.lineTo(106, 106); ctx.stroke();
-      ctx.fillStyle = 'rgba(170, 221, 255, 0.45)';
-      ctx.beginPath(); ctx.arc(52, 52, 28, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#d8d8d8';
-      ctx.lineWidth = 6;
-      ctx.stroke();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(52, 52, 18, -2.5, -1.6); ctx.stroke();
-      break;
-    }
-    case 'cigarette': {
-      ctx.fillStyle = '#f5f5f5';
-      ctx.fillRect(36, 46, 56, 62);
-      ctx.fillStyle = '#c82323';
-      ctx.fillRect(36, 30, 56, 20);
-      ctx.strokeStyle = '#ffd700';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(38, 48, 52, 58);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(68, 16, 8, 22);
-      ctx.fillStyle = '#d98a3c';
-      ctx.fillRect(68, 28, 8, 10);
-      break;
-    }
-    case 'beer': {
-      ctx.fillStyle = '#cfd6dc';
-      ctx.fillRect(42, 26, 44, 78);
-      ctx.fillStyle = '#246b35';
-      ctx.fillRect(42, 48, 44, 34);
-      ctx.fillStyle = '#eef2f5';
-      ctx.fillRect(40, 22, 48, 6);
-      ctx.fillRect(40, 102, 48, 6);
-      ctx.fillStyle = '#ffd700';
-      ctx.beginPath(); ctx.arc(64, 65, 9, 0, Math.PI * 2); ctx.fill();
-      break;
-    }
-    case 'medicine': {
-      ctx.fillStyle = '#b87333';
-      ctx.fillRect(40, 42, 48, 64);
-      ctx.fillStyle = '#ebe6d8';
-      ctx.fillRect(40, 56, 48, 34);
-      ctx.fillStyle = '#ff2a2a';
-      ctx.fillRect(60, 62, 8, 22);
-      ctx.fillRect(53, 69, 22, 8);
-      ctx.fillStyle = '#f2f2f2';
-      ctx.fillRect(44, 26, 40, 16);
-      break;
-    }
-    case 'adrenaline': {
-      ctx.translate(64, 64);
-      ctx.rotate(-Math.PI / 4);
-      ctx.fillStyle = 'rgba(221, 238, 255, 0.55)';
-      ctx.fillRect(-30, -10, 56, 20);
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(-30, -10, 56, 20);
-      ctx.fillStyle = '#39ff14';
-      ctx.fillRect(-14, -7, 36, 14);
-      ctx.fillStyle = '#666666';
-      ctx.fillRect(-52, -4, 22, 8);
-      ctx.fillRect(-56, -12, 5, 24);
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath(); ctx.moveTo(26, 0); ctx.lineTo(54, 0); ctx.stroke();
-      break;
-    }
-    case 'inverter': {
-      ctx.fillStyle = '#263829';
-      ctx.fillRect(30, 44, 68, 56);
-      ctx.strokeStyle = '#39ff14';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(30, 44, 68, 56);
-      ctx.strokeStyle = '#cccccc';
-      ctx.lineWidth = 4;
-      ctx.beginPath(); ctx.moveTo(84, 44); ctx.lineTo(84, 18); ctx.stroke();
-      ctx.fillStyle = '#ff2a2a';
-      ctx.beginPath(); ctx.arc(48, 72, 11, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#2a9df4';
-      ctx.beginPath(); ctx.arc(80, 72, 11, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(58, 65); ctx.lineTo(70, 65); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(70, 79); ctx.lineTo(58, 79); ctx.stroke();
-      break;
-    }
-    case 'phone': {
-      ctx.fillStyle = '#222226';
-      ctx.fillRect(42, 26, 44, 82);
-      ctx.strokeStyle = '#777777';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(42, 26, 44, 82);
-      ctx.fillStyle = '#111111';
-      ctx.fillRect(74, 12, 7, 14);
-      ctx.fillStyle = '#39ff14';
-      ctx.fillRect(48, 33, 32, 28);
-      ctx.fillStyle = '#666666';
-      for (let r = 0; r < 3; r++) {
-        for (let col = 0; col < 3; col++) {
-          ctx.fillRect(49 + col * 11, 68 + r * 11, 8, 7);
-        }
-      }
-      break;
-    }
-    case 'handcuffs': {
-      ctx.strokeStyle = '#cfd8dc';
-      ctx.lineWidth = 8;
-      ctx.beginPath(); ctx.arc(38, 66, 20, 0, Math.PI * 2); ctx.stroke();
-      ctx.beginPath(); ctx.arc(90, 66, 20, 0, Math.PI * 2); ctx.stroke();
-      ctx.strokeStyle = '#90a4ae';
-      ctx.lineWidth = 5;
-      ctx.beginPath(); ctx.moveTo(56, 66); ctx.lineTo(72, 66); ctx.stroke();
-      break;
-    }
-    case 'remote': {
-      ctx.fillStyle = '#1f2428';
-      ctx.fillRect(44, 20, 40, 88);
-      ctx.strokeStyle = '#39ff14';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(44, 20, 40, 88);
-      ctx.fillStyle = '#ff2a2a';
-      ctx.beginPath(); ctx.arc(64, 34, 6, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#2a9df4';
-      ctx.fillRect(52, 50, 24, 18);
-      ctx.fillStyle = '#bbbbbb';
-      ctx.fillRect(52, 76, 10, 8);
-      ctx.fillRect(66, 76, 10, 8);
-      ctx.fillRect(52, 90, 10, 8);
-      ctx.fillRect(66, 90, 10, 8);
-      break;
-    }
-    case 'eyedrops': {
-      ctx.fillStyle = '#e0f7fa';
-      ctx.fillRect(46, 52, 36, 52);
-      ctx.fillStyle = '#2a9df4';
-      ctx.fillRect(46, 68, 36, 24);
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.moveTo(52, 52); ctx.lineTo(64, 24); ctx.lineTo(76, 52);
-      ctx.closePath(); ctx.fill();
-      break;
-    }
-    case 'rosary': {
-      ctx.strokeStyle = '#ffd700';
-      ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(64, 44, 24, 0, Math.PI * 2); ctx.stroke();
-      ctx.fillStyle = '#ffd700';
-      ctx.fillRect(59, 66, 10, 44);
-      ctx.fillRect(47, 78, 34, 10);
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath(); ctx.arc(64, 83, 4, 0, Math.PI * 2); ctx.fill();
-      break;
-    }
-  }
-  ctx.restore();
-  itemImageCache[itemId] = c.toDataURL('image/png');
-  return itemImageCache[itemId];
-}
-
-function openItemGuideModal() {
-  const modal = document.getElementById('item-guide-modal');
-  const grid = document.getElementById('item-guide-grid');
-  grid.innerHTML = '';
-
-  ITEM_KEYS.forEach(k => {
-    const def = ITEM_DEFS[k];
-    const card = document.createElement('div');
-    card.className = 'guide-card';
-    const rareTag = def.badge ? `<span class="rare-badge">${def.badge}</span>` : '';
-    card.innerHTML = `
-      <img src="${getItemIllustrationDataUrl(k)}" alt="${def.name}" />
-      <div class="guide-card-info">
-        <div class="guide-card-title">${def.name} ${rareTag}</div>
-        <div>${def.desc}</div>
-      </div>
-    `;
-    grid.appendChild(card);
-  });
-
-  modal.style.display = 'flex';
-}
-
-function closeItemGuideModal() {
-  document.getElementById('item-guide-modal').style.display = 'none';
-}
-
-/* ==========================================================================
-   2. Web Audio 効果音シンセ
-   ========================================================================== */
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playTone(freq, type, dur, vol = 0.15, delay = 0) {
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  const startTime = audioCtx.currentTime + delay;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = type;
-  osc.frequency.setValueAtTime(freq, startTime);
-  gain.gain.setValueAtTime(vol, startTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, startTime + dur);
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start(startTime);
-  osc.stop(startTime + dur);
-}
-
-function playShotSound(isLive) {
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  if (isLive) {
-    playTone(90, 'sawtooth', 0.45, 0.35, 0);
-    playTone(45, 'square', 0.5, 0.3, 0);
-  } else {
-    playTone(950, 'triangle', 0.08, 0.2, 0);
-    playTone(600, 'square', 0.06, 0.15, 0.05);
-  }
-}
-
-function playMatchResultSound(isWinner) {
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  if (isWinner) {
-    playTone(523.25, 'triangle', 0.22, 0.22, 0.00);
-    playTone(659.25, 'triangle', 0.22, 0.22, 0.14);
-    playTone(783.99, 'triangle', 0.22, 0.22, 0.28);
-    playTone(1046.50, 'triangle', 0.75, 0.28, 0.42);
-    playTone(659.25, 'sine', 0.75, 0.18, 0.42);
-    playTone(783.99, 'sine', 0.75, 0.18, 0.42);
-  } else {
-    playTone(220.00, 'sawtooth', 0.35, 0.22, 0.00);
-    playTone(207.65, 'sawtooth', 0.35, 0.22, 0.26);
-    playTone(196.00, 'sawtooth', 0.35, 0.22, 0.52);
-    playTone(138.59, 'sawtooth', 0.95, 0.28, 0.78);
-    playTone(69.30, 'square', 0.95, 0.22, 0.78);
-  }
-}
-
-/* ==========================================================================
-   3. ネットワーク＆ゲーム状態管理（PeerJS 3桁ルーム & 一人用AIモード）
-   ========================================================================== */
-const PEER_PREFIX = 'lifetrade-v09-room-';
-let peer = null;
-let isHost = false;
-let isSoloAi = false;
-let myId = '';
-let myName = 'PLAYER';
+let myId = 'local_p1';
+let isHost = true;
+let isSolo = false;
 let roomCode = '';
-let connections = {};
-let hostConn = null;
+let peer = null;
+let conns = []; // ホスト用: クライアント接続リスト
+let hostConn = null; // クライアント用: ホスト接続
 
 let gameState = {
-  phase: 'lobby',
-  maxPlayers: 5,
-  round: 1,
+  phase: 'title', // title | lobby | playing | ended
+  timeLeft: MATCH_TIME,
+  zoneRadius: MAP_SIZE * 0.72,
   players: [],
-  turnIndex: 0,
-  turnDirection: 1,
-  shells: [],
-  initialShellCount: 0,
-  sawActive: false,
-  aimTargetId: null,
-  winnerId: '',
-  winnerName: '',
-  elimCounter: 0
+  items: [],
+  traps: [],
+  effects: [],
+  winner: null
 };
 
-const savedName = localStorage.getItem('lt_player_name');
-if (savedName) document.getElementById('player-name-input').value = savedName;
+let shakeTimer = 0;
+let itemSpawnTimer = 1;
+let zoneDmgTimer = 1;
 
-function setError(msg) {
-  document.getElementById('title-error').textContent = msg;
+/* =========================================================
+   4. P2P オンライン通信 (PeerJS) & ロビー制御
+   ========================================================= */
+const PEER_PREFIX = 'volt-arena-room-2026-';
+
+function getMyName() {
+  const val = document.getElementById('playerNameInput').value.trim();
+  return val || 'VOLT_' + Math.floor(10 + Math.random() * 89);
 }
 
-function getCleanName() {
-  const raw = document.getElementById('player-name-input').value.trim();
-  const name = raw || ('NO.' + Math.floor(100 + Math.random() * 900));
-  localStorage.setItem('lt_player_name', name);
-  return name;
+function showScreen(id) {
+  ['titleScreen', 'lobbyScreen', 'resultScreen', 'hud'].forEach(s => {
+    document.getElementById(s).classList.toggle('hidden', s !== id);
+  });
 }
 
-function getCleanCode() {
-  const code = document.getElementById('room-id-input').value.trim();
-  if (!/^\d{3}$/.test(code)) {
-    setError('エラー: 部屋番号は3桁の半角数字で入力してください');
-    return null;
-  }
-  return code;
+function addFeed(html, borderColor = '#00f3ff') {
+  const area = document.getElementById('feedArea');
+  const div = document.createElement('div');
+  div.className = 'feed-item';
+  div.style.borderLeftColor = borderColor;
+  div.innerHTML = html;
+  area.appendChild(div);
+  while (area.children.length > 5) area.removeChild(area.firstChild);
+  setTimeout(() => { if (div.parentNode) div.remove(); }, 4500);
 }
 
-function createPlayerObj(id, name, skinId, isHostPlayer, isAi) {
-  return {
-    id,
-    name,
-    skinId: skinId || 'steam',
-    isHostPlayer,
-    isAi,
-    hp: 5,
-    maxHp: 5,
-    slots: Array(8).fill(null),
-    alive: true,
-    lookYaw: 0,
-    handAction: 'idle',
-    lootPending: [],
-    damageDealt: 0,
-    survivedRound: 1,
-    elimOrder: 0,
-    skipNextTurn: false,
-    noItemsNextTurn: false,
-    rosaryActive: false,
-    aiKnownNext: null
-  };
-}
-
-function startSoloAiMatch() {
-  ensureBgmStart();
-  setError('');
-  if (peer) {
-    peer.destroy();
-    peer = null;
-  }
-  connections = {};
-  hostConn = null;
-  isSoloAi = true;
+// 1人練習モード
+document.getElementById('btnSolo').onclick = () => {
+  sfx.unlock();
   isHost = true;
-  myName = getCleanName();
-  myId = 'solo-human';
-  roomCode = 'SOLO';
+  isSolo = true;
+  myId = 'player_0';
+  gameState.players = [makePlayer(myId, getMyName(), 0, false)];
+  startMatch(true);
+};
 
-  const aiCount = parseInt(document.getElementById('ai-count-select').value, 10) || 2;
-  const aiNames = ['CPU-ALPHA', 'CPU-BETA', 'CPU-GAMMA', 'CPU-DELTA'];
-  const otherSkins = MASK_SKINS.filter(s => s.id !== selectedSkinId);
-
-  const players = [createPlayerObj(myId, myName, selectedSkinId, true, false)];
-
-  for (let i = 0; i < aiCount; i++) {
-    const aiSkin = otherSkins[i % otherSkins.length].id;
-    players.push(createPlayerObj('ai-bot-' + i, aiNames[i], aiSkin, false, true));
-  }
-
-  gameState = {
-    phase: 'play',
-    maxPlayers: players.length,
-    round: 1,
-    players,
-    turnIndex: 0,
-    turnDirection: 1,
-    shells: [],
-    initialShellCount: 0,
-    sawActive: false,
-    aimTargetId: null,
-    winnerId: '',
-    winnerName: '',
-    elimCounter: 0
-  };
-
-  document.getElementById('title-screen').classList.remove('active');
-  document.getElementById('lobby-screen').classList.remove('active');
-  document.getElementById('game-screen').classList.add('active');
-
-  resetMatchStats();
-  startNewRound();
-}
-
-function createRoom() {
-  ensureBgmStart();
-  setError('');
-  isSoloAi = false;
-  myName = getCleanName();
-  const code = getCleanCode();
-  if (!code) return;
-  roomCode = code;
+// オンライン部屋作成
+document.getElementById('btnCreate').onclick = () => {
+  sfx.unlock();
+  const status = document.getElementById('titleStatus');
+  status.textContent = '部屋を作成中...';
   isHost = true;
-  document.getElementById('net-status').textContent = 'CREATING ROOM...';
+  isSolo = false;
+  conns = [];
+  roomCode = Math.floor(100 + Math.random() * 900).toString();
 
   if (peer) peer.destroy();
   peer = new Peer(PEER_PREFIX + roomCode);
 
   peer.on('open', (id) => {
     myId = id;
-    gameState = {
-      phase: 'lobby',
-      maxPlayers: 5,
-      round: 1,
-      players: [createPlayerObj(myId, myName, selectedSkinId, true, false)],
-      turnIndex: 0,
-      turnDirection: 1,
-      shells: [],
-      initialShellCount: 0,
-      sawActive: false,
-      aimTargetId: null,
-      winnerId: '',
-      winnerName: '',
-      elimCounter: 0
-    };
-    enterLobbyUI();
+    gameState.phase = 'lobby';
+    gameState.players = [makePlayer(myId, getMyName(), 0, false)];
+    status.textContent = '';
+    openLobby();
   });
 
   peer.on('connection', (conn) => {
-    conn.on('open', () => {
-      connections[conn.peer] = conn;
-    });
-    conn.on('data', (data) => handleHostReceive(conn.peer, data));
+    conn.on('data', (msg) => handleHostReceive(conn, msg));
     conn.on('close', () => {
-      delete connections[conn.peer];
+      conns = conns.filter(c => c !== conn);
       gameState.players = gameState.players.filter(p => p.id !== conn.peer);
-      broadcastState();
+      broadcastLobby();
     });
   });
 
-  peer.on('error', (err) => {
-    document.getElementById('net-status').textContent = 'ERROR';
-    if (err.type === 'unavailable-id') {
-      setError(`部屋番号 ${roomCode} は既に使用中です。「部屋に参加」を押すか別の番号にしてください。`);
-    } else {
-      setError('通信エラー: ' + err.type);
-    }
+  peer.on('error', () => {
+    status.textContent = '通信エラーが発生しました。もう一度お試しください。';
   });
-}
+};
 
-function joinRoom() {
-  ensureBgmStart();
-  setError('');
-  isSoloAi = false;
-  myName = getCleanName();
-  const code = getCleanCode();
-  if (!code) return;
-  roomCode = code;
+// オンライン部屋参加
+document.getElementById('btnJoin').onclick = () => {
+  sfx.unlock();
+  const code = document.getElementById('roomCodeInput').value.trim();
+  const status = document.getElementById('titleStatus');
+  if (!/^\d{3}$/.test(code)) {
+    status.textContent = '3桁の半角数字を入力してください';
+    return;
+  }
+  status.textContent = `部屋 ${code} に接続中...`;
   isHost = false;
-  document.getElementById('net-status').textContent = 'CONNECTING...';
+  isSolo = false;
+  roomCode = code;
 
   if (peer) peer.destroy();
   peer = new Peer();
-
   peer.on('open', (id) => {
     myId = id;
-    hostConn = peer.connect(PEER_PREFIX + roomCode, { reliable: true });
+    hostConn = peer.connect(PEER_PREFIX + code, { reliable: true });
     hostConn.on('open', () => {
-      hostConn.send({ type: 'join', name: myName, skinId: selectedSkinId });
-      enterLobbyUI();
+      hostConn.send({ type: 'join', name: getMyName() });
     });
-    hostConn.on('data', (data) => handleClientReceive(data));
+    hostConn.on('data', (msg) => handleClientReceive(msg));
     hostConn.on('close', () => {
-      alert('ホストとの接続が切断されました。');
+      alert('ホストとの接続が切れました');
       location.reload();
     });
   });
-
-  peer.on('error', (err) => {
-    document.getElementById('net-status').textContent = 'ERROR';
-    setError('接続失敗: 部屋が存在しないか通信エラーです (' + err.type + ')');
+  peer.on('error', () => {
+    status.textContent = '部屋が見つからないか満員です';
   });
-}
+};
 
-function sendToHost(payload) {
-  if (isHost) {
-    handleHostReceive(myId, payload);
-  } else if (hostConn && hostConn.open) {
-    hostConn.send(payload);
-  }
-}
-
-function broadcastState(extraEvent = null) {
-  if (!isHost) return;
-  if (!isSoloAi) {
-    const packet = { type: 'state', state: gameState, event: extraEvent };
-    Object.values(connections).forEach(c => {
-      if (c.open) c.send(packet);
-    });
-  }
-  applyStateUpdate(gameState, extraEvent);
-  scheduleAiTurnIfNeeded();
-}
-
-/* ==========================================================================
-   4. ロビーUI制御
-   ========================================================================== */
-function enterLobbyUI() {
-  document.getElementById('title-screen').classList.remove('active');
-  document.getElementById('lobby-screen').classList.add('active');
-  document.getElementById('display-room-id').textContent = roomCode;
-  renderLobby();
-}
-
-function renderLobby() {
-  const listEl = document.getElementById('lobby-player-list');
-  const kickEl = document.getElementById('lobby-kick-col');
-  const dotsEl = document.getElementById('lobby-slot-dots');
-  listEl.innerHTML = '';
-  kickEl.innerHTML = '';
-  dotsEl.innerHTML = '';
-
-  gameState.players.forEach((p) => {
-    const skinObj = MASK_SKINS.find(s => s.id === p.skinId) || MASK_SKINS[0];
-    const row = document.createElement('div');
-    row.className = 'player-row';
-    row.textContent = `${p.name} [${skinObj.name}]` + (p.isHostPlayer ? ' [HOST]' : '');
-    listEl.appendChild(row);
-
-    if (isHost && !p.isHostPlayer) {
-      const kb = document.createElement('button');
-      kb.className = 'kick-btn';
-      kb.textContent = 'キック';
-      kb.onclick = () => kickPlayer(p.id);
-      kickEl.appendChild(kb);
+function handleHostReceive(conn, msg) {
+  if (msg.type === 'join') {
+    if (gameState.phase !== 'lobby' || gameState.players.length >= 5) {
+      conn.send({ type: 'reject', reason: '満員または試合中です' });
+      return;
     }
-  });
-
-  for (let i = 0; i < gameState.maxPlayers; i++) {
-    const dot = document.createElement('div');
-    dot.className = 'slot-dot' + (i < gameState.players.length ? ' filled' : '');
-    dotsEl.appendChild(dot);
-  }
-
-  document.getElementById('display-max-players').textContent = gameState.maxPlayers;
-  const startBtn = document.getElementById('start-game-btn');
-  if (isHost) {
-    startBtn.style.display = 'inline-block';
-    startBtn.disabled = gameState.players.length < 2;
-    document.getElementById('lobby-wait-msg').textContent =
-      gameState.players.length < 2 ? '2人以上で開始可能' : 'まもなくゲーム開始！';
-  } else {
-    startBtn.style.display = 'none';
-    document.getElementById('lobby-wait-msg').textContent = 'ホストの開始を待機中...';
+    conns.push(conn);
+    gameState.players.push(makePlayer(conn.peer, msg.name, gameState.players.length, false));
+    broadcastLobby();
+  } else if (msg.type === 'input') {
+    const p = gameState.players.find(pl => pl.id === conn.peer);
+    if (p && p.alive) {
+      p.vx = msg.vx; p.vy = msg.vy; p.angle = msg.angle;
+    }
+  } else if (msg.type === 'action') {
+    const p = gameState.players.find(pl => pl.id === conn.peer);
+    if (p && p.alive) triggerAction(p, msg.act);
+  } else if (msg.type === 'chat') {
+    const p = gameState.players.find(pl => pl.id === conn.peer);
+    if (p) applyChat(p, msg.text);
   }
 }
 
-function copyRoomId() {
-  navigator.clipboard?.writeText(roomCode);
-  const t = document.getElementById('copy-toast');
-  t.textContent = '[COPIED!]';
-  setTimeout(() => t.textContent = '', 1500);
-}
-
-function cycleMaxPlayers() {
-  if (!isHost) return;
-  gameState.maxPlayers = gameState.maxPlayers >= 5 ? 2 : gameState.maxPlayers + 1;
-  while (gameState.players.length > gameState.maxPlayers) {
-    const kicked = gameState.players.pop();
-    if (connections[kicked.id]) connections[kicked.id].close();
-  }
-  broadcastState();
-}
-
-function kickPlayer(targetId) {
-  if (!isHost) return;
-  if (connections[targetId]) {
-    connections[targetId].send({ type: 'kicked' });
-    connections[targetId].close();
-  }
-  gameState.players = gameState.players.filter(p => p.id !== targetId);
-  broadcastState();
-}
-
-function leaveRoom() {
-  clearTimeout(aiThinkTimer);
-  clearTimeout(roundLoadingTimer);
-  if (peer) peer.destroy();
-  location.reload();
-}
-
-function hostStartGame() {
-  if (!isHost || gameState.players.length < 2) return;
-  resetMatchStats();
-  startNewRound();
-}
-
-function resetMatchStats() {
-  gameState.round = 1;
-  gameState.elimCounter = 0;
-  gameState.winnerId = '';
-  gameState.winnerName = '';
-  gameState.turnDirection = 1;
-
-  for (let i = gameState.players.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [gameState.players[i], gameState.players[j]] = [gameState.players[j], gameState.players[i]];
-  }
-
-  gameState.players.forEach(p => {
-    p.hp = 5;
-    p.alive = true;
-    p.slots = Array(8).fill(null);
-    p.lootPending = [];
-    p.handAction = 'idle';
-    p.damageDealt = 0;
-    p.survivedRound = 1;
-    p.elimOrder = 0;
-    p.skipNextTurn = false;
-    p.noItemsNextTurn = false;
-    p.rosaryActive = false;
-    p.aiKnownNext = null;
-  });
-
-  gameState.turnIndex = Math.floor(Math.random() * gameState.players.length);
-}
-
-function requestRematch() {
-  if (!isHost) return;
-  resetMatchStats();
-  startNewRound();
-}
-
-function requestBackToLobby() {
-  clearTimeout(aiThinkTimer);
-  clearTimeout(roundLoadingTimer);
-  setBgmTrack(LOBBY_BGM_VIDEO_ID);
-  if (isSoloAi) {
-    isSoloAi = false;
-    document.getElementById('result-modal').style.display = 'none';
-    document.getElementById('game-screen').classList.remove('active');
-    document.getElementById('title-screen').classList.add('active');
-    return;
-  }
-  if (isHost) {
+function handleClientReceive(msg) {
+  if (msg.type === 'reject') {
+    document.getElementById('titleStatus').textContent = msg.reason;
+  } else if (msg.type === 'lobby') {
     gameState.phase = 'lobby';
-    resetMatchStats();
-    broadcastState({ kind: 'back_to_lobby' });
+    gameState.players = msg.players;
+    openLobby();
+  } else if (msg.type === 'start') {
+    gameState.phase = 'playing';
+    showScreen('hud');
+  } else if (msg.type === 'state') {
+    gameState = msg.state;
+    updateHud();
+  } else if (msg.type === 'sfx') {
+    sfx.play(msg.name);
+    if (msg.name === 'hit' || msg.name === 'bomb') shakeTimer = 0.16;
+  } else if (msg.type === 'feed') {
+    addFeed(msg.html, msg.color);
+  } else if (msg.type === 'end') {
+    gameState = msg.state;
+    openResult();
+  }
+}
+
+function broadcastAll(payload) {
+  conns.forEach(c => { if (c.open) c.send(payload); });
+}
+
+function broadcastLobby() {
+  openLobby();
+  broadcastAll({ type: 'lobby', players: gameState.players });
+}
+
+function openLobby() {
+  showScreen('lobbyScreen');
+  document.getElementById('lobbyCode').textContent = roomCode;
+  const list = document.getElementById('lobbyPlayers');
+  list.innerHTML = gameState.players.map((p, i) => `
+    <div class="player-item">
+      <span><i class="dot" style="background:${p.color.main};box-shadow:0 0 8px ${p.color.main};"></i>${escapeHtml(p.name)}</span>
+      <span style="font-size:11px;color:#8ab4f8;">${i === 0 ? 'HOST' : 'READY'}</span>
+    </div>
+  `).join('');
+
+  const b4 = document.getElementById('btnStart4');
+  const bBot = document.getElementById('btnStartBot');
+  const wait = document.getElementById('lobbyWaitMsg');
+  if (isHost) {
+    wait.classList.add('hidden');
+    bBot.classList.remove('hidden');
+    b4.classList.toggle('hidden', gameState.players.length < 4);
   } else {
-    leaveRoom();
+    b4.classList.add('hidden');
+    bBot.classList.add('hidden');
+    wait.classList.remove('hidden');
   }
 }
 
-/* ==========================================================================
-   5. ホスト側ゲームロジック
-   ========================================================================== */
-let roundLoadingTimer = null;
+document.getElementById('btnStart4').onclick = () => startMatch(false);
+document.getElementById('btnStartBot').onclick = () => startMatch(true);
+document.getElementById('btnRematch').onclick = () => {
+  if (isHost) startMatch(isSolo || gameState.players.some(p => p.isBot));
+};
+document.getElementById('btnBackTitle').onclick = () => location.reload();
 
-function applyDamageOrFatal(player, dmg) {
-  player.hp = Math.max(0, player.hp - dmg);
-  if (player.hp <= 0 && player.alive) {
-    if (player.rosaryActive) {
-      player.rosaryActive = false;
-      player.hp = 2;
-      return 'rosary_revive';
-    } else {
-      player.alive = false;
-      gameState.elimCounter++;
-      player.elimOrder = gameState.elimCounter;
-      player.survivedRound = gameState.round;
-      return 'eliminated';
-    }
-  }
-  return 'damaged';
+/* =========================================================
+   5. ゲームロジック（ホスト権威シミュレーション）
+   ========================================================= */
+function makePlayer(id, name, colorIdx, isBot) {
+  const pad = 260;
+  return {
+    id, name, isBot,
+    color: COLORS[colorIdx % COLORS.length],
+    x: pad + Math.random() * (MAP_SIZE - pad * 2),
+    y: pad + Math.random() * (MAP_SIZE - pad * 2),
+    vx: 0, vy: 0, angle: 0,
+    hp: 100, maxHp: 100, alive: true,
+    atkCd: 0, dashCd: 0, dashTimer: 0,
+    speedTimer: 0, stunTimer: 0,
+    shield: false, poweredSword: false,
+    emote: '', emoteTimer: 0,
+    kills: 0, aiTimer: 0
+  };
 }
 
-function startNewRound() {
-  clearTimeout(roundLoadingTimer);
-  clearTimeout(aiThinkTimer);
-  const alivePlayers = gameState.players.filter(p => p.alive);
-  if (alivePlayers.length <= 1) {
-    const winner = alivePlayers[0] || null;
-    if (winner) {
-      winner.survivedRound = gameState.round;
+function startMatch(fillBots) {
+  const humans = gameState.players.filter(p => !p.isBot);
+  gameState.players = humans.map((p, idx) => makePlayer(p.id, p.name, idx, false));
+
+  if (fillBots) {
+    const botNames = ['VOLT-X', 'CYBER', 'NOVA', 'VIPER', 'ZERO'];
+    while (gameState.players.length < 5) {
+      const idx = gameState.players.length;
+      gameState.players.push(makePlayer('bot_' + idx, botNames[idx] + '(CPU)', idx, true));
     }
-    gameState.phase = 'gameover';
-    gameState.winnerId = winner ? winner.id : '';
-    gameState.winnerName = winner ? winner.name : 'DRAW';
-    broadcastState({
-      kind: 'gameover',
-      winnerId: gameState.winnerId,
-      winnerName: gameState.winnerName
+  }
+
+  gameState.phase = 'playing';
+  gameState.timeLeft = MATCH_TIME;
+  gameState.zoneRadius = MAP_SIZE * 0.72;
+  gameState.items = [];
+  gameState.traps = [];
+  gameState.effects = [];
+  gameState.winner = null;
+  itemSpawnTimer = 1.0;
+  zoneDmgTimer = 1.0;
+
+  for (let i = 0; i < 9; i++) spawnItem();
+
+  showScreen('hud');
+  broadcastAll({ type: 'start' });
+  sendFeed('⚡ バトル開始！同盟も裏切りも自由！', '#00f3ff');
+}
+
+function spawnItem() {
+  if (gameState.items.length >= 18) return;
+  const elapsed = MATCH_TIME - gameState.timeLeft;
+  // 3:30以降は回復アイテムを出現停止
+  const pool = elapsed >= 210 ? ITEM_SPECS.filter(i => i.type !== 'heal') : ITEM_SPECS;
+  const spec = pool[Math.floor(Math.random() * pool.length)];
+  const maxR = gameState.zoneRadius * 0.85;
+  const a = Math.random() * Math.PI * 2;
+  const d = Math.sqrt(Math.random()) * maxR;
+
+  gameState.items.push({
+    id: Math.random().toString(36).slice(2, 8),
+    ...spec,
+    x: MAP_SIZE / 2 + Math.cos(a) * d,
+    y: MAP_SIZE / 2 + Math.sin(a) * d
+  });
+}
+
+function playAndBroadcastSfx(name) {
+  sfx.play(name);
+  if (name === 'hit' || name === 'bomb') shakeTimer = 0.16;
+  broadcastAll({ type: 'sfx', name });
+}
+
+function sendFeed(html, color = '#00f3ff') {
+  addFeed(html, color);
+  broadcastAll({ type: 'feed', html, color });
+}
+
+function applyChat(p, text) {
+  p.emote = text;
+  p.emoteTimer = 3.5;
+  playAndBroadcastSfx('chat');
+  sendFeed(`<b style="color:${p.color.main}">${escapeHtml(p.name)}</b>: ${escapeHtml(text)}`, p.color.main);
+}
+
+function triggerAction(p, act) {
+  if (!p.alive || p.stunTimer > 0) return;
+  if (act === 'attack' && p.atkCd <= 0) {
+    p.atkCd = 0.7;
+    const dmg = p.poweredSword ? 40 : 20;
+    const powered = p.poweredSword;
+    p.poweredSword = false;
+
+    gameState.effects.push({
+      type: 'slash', x: p.x, y: p.y, angle: p.angle,
+      color: powered ? '#ff9500' : p.color.main, powered, ttl: 0.22
     });
+    playAndBroadcastSfx(powered ? 'powerSlash' : 'slash');
+
+    const range = 115; // 前方約2マス
+    let hit = false;
+    for (const t of gameState.players) {
+      if (t.id === p.id || !t.alive || t.dashTimer > 0) continue;
+      const dx = t.x - p.x, dy = t.y - p.y;
+      if (Math.hypot(dx, dy) <= range + 24) {
+        let diff = Math.abs(Math.atan2(dy, dx) - p.angle);
+        if (diff > Math.PI) diff = Math.PI * 2 - diff;
+        if (diff <= 0.98) {
+          hit = true;
+          damagePlayer(p, t, dmg);
+        }
+      }
+    }
+    if (hit) playAndBroadcastSfx('hit');
+  } else if (act === 'dash' && p.dashCd <= 0) {
+    p.dashTimer = 0.5;
+    p.dashCd = 3.0;
+    gameState.effects.push({ type: 'dash', x: p.x, y: p.y, angle: p.angle, color: p.color.main, ttl: 0.3 });
+    playAndBroadcastSfx('dash');
+  }
+}
+
+function damagePlayer(attacker, target, amount) {
+  if (!target.alive) return;
+  if (target.shield) {
+    target.shield = false;
+    gameState.effects.push({ type: 'ring', x: target.x, y: target.y, color: '#00f3ff', ttl: 0.4 });
+    playAndBroadcastSfx('shieldBreak');
+    return;
+  }
+  target.hp = Math.max(0, target.hp - amount);
+  gameState.effects.push({ type: 'text', x: target.x, y: target.y - 26, text: `-${amount}`, color: '#ff3b30', ttl: 0.7 });
+
+  if (target.hp <= 0) {
+    target.alive = false;
+    if (attacker) attacker.kills++;
+    gameState.effects.push({ type: 'ring', x: target.x, y: target.y, color: target.color.main, ttl: 0.7 });
+    playAndBroadcastSfx('ko');
+    const killerName = attacker ? attacker.name : '危険エリア';
+    sendFeed(`💀 <b>${escapeHtml(killerName)}</b> が <b>${escapeHtml(target.name)}</b> を撃破！`, '#ff007f');
+  }
+}
+
+function pickupItem(p, item) {
+  if (item.type === 'bomb') {
+    playAndBroadcastSfx('bomb');
+    gameState.effects.push({ type: 'bomb', x: p.x, y: p.y, ttl: 0.45 });
+    for (const t of gameState.players) {
+      if (t.id === p.id || !t.alive || t.dashTimer > 0) continue;
+      if (Math.hypot(t.x - p.x, t.y - p.y) <= 175) {
+        damagePlayer(p, t, 40);
+      }
+    }
+  } else if (item.type === 'heal') {
+    p.hp = Math.min(100, p.hp + 30);
+    playAndBroadcastSfx('heal');
+    gameState.effects.push({ type: 'text', x: p.x, y: p.y - 26, text: '+30', color: '#39ff14', ttl: 0.7 });
+  } else if (item.type === 'thunder') {
+    p.speedTimer = 2.0;
+    playAndBroadcastSfx('item');
+  } else if (item.type === 'shield') {
+    p.shield = true;
+    playAndBroadcastSfx('item');
+  } else if (item.type === 'trap') {
+    gameState.traps.push({ ownerId: p.id, x: p.x, y: p.y, color: p.color.main });
+    playAndBroadcastSfx('item');
+  } else if (item.type === 'sword') {
+    p.poweredSword = true;
+    playAndBroadcastSfx('item');
+  }
+}
+
+function updateBot(bot, dt) {
+  bot.aiTimer -= dt;
+  const cx = MAP_SIZE / 2, cy = MAP_SIZE / 2;
+  const distCenter = Math.hypot(bot.x - cx, bot.y - cy);
+
+  // エリア外に近づいたら中央へ戻る
+  if (distCenter > gameState.zoneRadius * 0.82) {
+    const a = Math.atan2(cy - bot.y, cx - bot.x);
+    bot.vx = Math.cos(a); bot.vy = Math.sin(a); bot.angle = a;
     return;
   }
 
-  alivePlayers.forEach(p => {
-    p.survivedRound = gameState.round;
-    p.aiKnownNext = null;
-    p.rosaryActive = false;
-  });
+  // 一番近い敵を探す
+  let nearest = null, minD = Infinity;
+  for (const other of gameState.players) {
+    if (other.id === bot.id || !other.alive) continue;
+    const d = Math.hypot(other.x - bot.x, other.y - bot.y);
+    if (d < minD) { minD = d; nearest = other; }
+  }
 
-  const total = Math.min(10, 5 + (gameState.round - 1));
-  const liveProb = gameState.round >= 5 ? 0.68 : 0.50;
-  let liveCount = 1;
-  let blankCount = 1;
-  for (let i = 2; i < total; i++) {
-    if (Math.random() < liveProb) {
-      liveCount++;
+  // 近くにアイテムがあれば優先取得
+  let nearItem = null, minItemD = 260;
+  for (const it of gameState.items) {
+    const d = Math.hypot(it.x - bot.x, it.y - bot.y);
+    if (d < minItemD) { minItemD = d; nearItem = it; }
+  }
+
+  if (nearItem && (!nearest || minD > 160)) {
+    const a = Math.atan2(nearItem.y - bot.y, nearItem.x - bot.x);
+    bot.vx = Math.cos(a); bot.vy = Math.sin(a); bot.angle = a;
+  } else if (nearest) {
+    const a = Math.atan2(nearest.y - bot.y, nearest.x - bot.x);
+    bot.angle = a;
+    if (minD > 95) {
+      bot.vx = Math.cos(a); bot.vy = Math.sin(a);
     } else {
-      blankCount++;
+      bot.vx = Math.cos(a + Math.PI / 2) * 0.6;
+      bot.vy = Math.sin(a + Math.PI / 2) * 0.6;
+      if (bot.atkCd <= 0) triggerAction(bot, 'attack');
+    }
+    if (minD < 140 && bot.dashCd <= 0 && Math.random() < 0.02) {
+      triggerAction(bot, 'dash');
+    }
+  }
+}
+
+function stepSimulation(dt) {
+  if (!isHost || gameState.phase !== 'playing') return;
+
+  const prevTime = gameState.timeLeft;
+  gameState.timeLeft = Math.max(0, gameState.timeLeft - dt);
+  const elapsed = MATCH_TIME - gameState.timeLeft;
+
+  // 時間経過イベント通知
+  if (prevTime > 240 && gameState.timeLeft <= 240) sendFeed('⚡ 1:00経過！アイテム大量出現！', '#ffd700');
+  if (prevTime > 180 && gameState.timeLeft <= 180) sendFeed('⚠️ 2:00経過！危険エリア縮小開始！', '#ff3b30');
+  if (prevTime > 90 && gameState.timeLeft <= 90) sendFeed('🔥 3:30経過！最終エリア＆回復停止！', '#ff007f');
+
+  // エリア縮小
+  if (elapsed >= 210) {
+    gameState.zoneRadius = Math.max(180, gameState.zoneRadius - 20 * dt);
+  } else if (elapsed >= 120) {
+    gameState.zoneRadius = Math.max(400, gameState.zoneRadius - 17 * dt);
+  }
+
+  // アイテム生成
+  itemSpawnTimer -= dt;
+  if (itemSpawnTimer <= 0) {
+    spawnItem();
+    itemSpawnTimer = elapsed >= 60 ? 2.0 : 4.0;
+  }
+
+  // エリア外ダメージ（1秒毎）
+  zoneDmgTimer -= dt;
+  const doZoneDmg = zoneDmgTimer <= 0;
+  if (doZoneDmg) zoneDmgTimer = 1.0;
+
+  for (const p of gameState.players) {
+    if (p.emoteTimer > 0) {
+      p.emoteTimer -= dt;
+      if (p.emoteTimer <= 0) p.emote = '';
+    }
+    if (!p.alive) continue;
+
+    if (p.atkCd > 0) p.atkCd = Math.max(0, p.atkCd - dt);
+    if (p.dashCd > 0) p.dashCd = Math.max(0, p.dashCd - dt);
+    if (p.dashTimer > 0) p.dashTimer = Math.max(0, p.dashTimer - dt);
+    if (p.speedTimer > 0) p.speedTimer = Math.max(0, p.speedTimer - dt);
+    if (p.stunTimer > 0) p.stunTimer = Math.max(0, p.stunTimer - dt);
+
+    if (p.isBot && p.stunTimer <= 0) updateBot(p, dt);
+
+    if (p.stunTimer <= 0) {
+      let spd = 255;
+      if (p.speedTimer > 0) spd *= 2.0;
+      if (p.dashTimer > 0) spd *= 2.4;
+      p.x = Math.max(28, Math.min(MAP_SIZE - 28, p.x + p.vx * spd * dt));
+      p.y = Math.max(28, Math.min(MAP_SIZE - 28, p.y + p.vy * spd * dt));
+    }
+
+    if (doZoneDmg) {
+      if (Math.hypot(p.x - MAP_SIZE / 2, p.y - MAP_SIZE / 2) > gameState.zoneRadius) {
+        damagePlayer(null, p, 5);
+      }
+    }
+
+    // 罠判定
+    for (let i = gameState.traps.length - 1; i >= 0; i--) {
+      const tr = gameState.traps[i];
+      if (tr.ownerId === p.id) continue;
+      if (Math.hypot(p.x - tr.x, p.y - tr.y) < 36) {
+        p.stunTimer = 1.0;
+        gameState.effects.push({ type: 'text', x: p.x, y: p.y - 24, text: 'STOP!', color: '#c77dff', ttl: 1.0 });
+        playAndBroadcastSfx('shieldBreak');
+        gameState.traps.splice(i, 1);
+        break;
+      }
+    }
+
+    // アイテム取得
+    for (let i = gameState.items.length - 1; i >= 0; i--) {
+      const it = gameState.items[i];
+      if (Math.hypot(p.x - it.x, p.y - it.y) < 42) {
+        pickupItem(p, it);
+        gameState.items.splice(i, 1);
+      }
     }
   }
 
-  const shells = [];
-  for (let i = 0; i < liveCount; i++) shells.push(true);
-  for (let i = 0; i < blankCount; i++) shells.push(false);
-  for (let i = shells.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shells[i], shells[j]] = [shells[j], shells[i]];
+  for (let i = gameState.effects.length - 1; i >= 0; i--) {
+    gameState.effects[i].ttl -= dt;
+    if (gameState.effects[i].ttl <= 0) gameState.effects.splice(i, 1);
   }
 
-  gameState.shells = shells;
-  gameState.initialShellCount = total;
-  gameState.sawActive = false;
-  gameState.aimTargetId = null;
-  gameState.players.forEach(p => { p.handAction = 'idle'; });
-
-  if (!gameState.players[gameState.turnIndex].alive) {
-    advanceTurnIndex();
+  // 勝敗判定
+  const alive = gameState.players.filter(p => p.alive);
+  if (alive.length <= 1 || gameState.timeLeft <= 0) {
+    gameState.phase = 'ended';
+    let win = alive[0] || gameState.players[0];
+    if (alive.length > 1) {
+      alive.sort((a, b) => b.hp - a.hp);
+      win = alive[0];
+    }
+    gameState.winner = win;
+    broadcastAll({ type: 'end', state: gameState });
+    openResult();
+    return;
   }
 
-  gameState.phase = 'loading';
-  broadcastState({
-    kind: 'round_load',
-    round: gameState.round,
-    live: liveCount,
-    blank: blankCount
-  });
+  updateHud();
+  broadcastAll({ type: 'state', state: gameState });
+}
 
-  const loadDurationMs = 1500 + total * 300;
-  roundLoadingTimer = setTimeout(() => {
-    if (gameState.phase !== 'loading') return;
+function openResult() {
+  showScreen('resultScreen');
+  const w = gameState.winner;
+  document.getElementById('winnerText').textContent = `👑 WINNER: ${w ? w.name : 'DRAW'}`;
+  const sorted = [...gameState.players].sort((a, b) => (b.alive - a.alive) || (b.hp - a.hp) || (b.kills - a.kills));
+  document.getElementById('resultStats').innerHTML = sorted.map((p, i) =>
+    `<div>${i + 1}位: <b style="color:${p.color.main}">${escapeHtml(p.name)}</b> (残HP: ${p.hp} / 撃破: ${p.kills})</div>`
+  ).join('');
+  document.getElementById('btnRematch').classList.toggle('hidden', !isHost);
+}
 
-    gameState.players.forEach(p => {
-      if (!p.alive) {
-        p.lootPending = [];
-        return;
-      }
-      const emptyCount = p.slots.filter(s => s === null).length;
-      const giveCount = Math.min(3, emptyCount);
-      const loot = [];
-      for (let i = 0; i < giveCount; i++) {
-        loot.push(rollWeightedItem());
-      }
+/* =========================================================
+   6. 入力制御（PCキーボード + スマホマルチタッチ仮想スティック）
+   ========================================================= */
+const keys = {};
+let stickVec = { x: 0, y: 0 };
+let stickTouchId = null;
+let stickOrigin = { x: 0, y: 0 };
 
-      if (p.isAi) {
-        let slotCursor = 0;
-        loot.forEach(item => {
-          while (slotCursor < 8 && p.slots[slotCursor] !== null) slotCursor++;
-          if (slotCursor < 8) {
-            p.slots[slotCursor] = item;
-            slotCursor++;
-          }
-        });
-        p.lootPending = [];
+window.addEventListener('keydown', (e) => {
+  keys[e.code] = true;
+  if (gameState.phase !== 'playing') return;
+  if (e.code === 'Space') sendAction('attack');
+  if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') sendAction('dash');
+});
+window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+
+const stickZone = document.getElementById('stickZone');
+stickZone.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  const t = e.changedTouches[0];
+  stickTouchId = t.identifier;
+  stickOrigin = { x: t.clientX, y: t.clientY };
+});
+stickZone.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  for (const t of e.changedTouches) {
+    if (t.identifier === stickTouchId) {
+      const dx = t.clientX - stickOrigin.x;
+      const dy = t.clientY - stickOrigin.y;
+      const dist = Math.hypot(dx, dy);
+      const maxR = 46;
+      if (dist > 6) {
+        const clamped = Math.min(dist, maxR) / maxR;
+        stickVec.x = (dx / dist) * clamped;
+        stickVec.y = (dy / dist) * clamped;
       } else {
-        p.lootPending = loot;
+        stickVec.x = 0; stickVec.y = 0;
       }
-    });
-
-    const anyLoot = gameState.players.some(p => p.alive && !p.isAi && p.lootPending.length > 0);
-    gameState.phase = anyLoot ? 'loot' : 'play';
-    broadcastState();
-  }, loadDurationMs);
-}
-
-function advanceTurnIndex(bannerLogs = []) {
-  const prevPlayer = gameState.players[gameState.turnIndex];
-  if (prevPlayer && prevPlayer.noItemsNextTurn) {
-    prevPlayer.noItemsNextTurn = false;
-  }
-
-  const n = gameState.players.length;
-  for (let step = 1; step <= n * 2; step++) {
-    const idx = ((gameState.turnIndex + step * gameState.turnDirection) % n + n) % n;
-    const candidate = gameState.players[idx];
-    if (!candidate || !candidate.alive) continue;
-
-    if (candidate.skipNextTurn) {
-      candidate.skipNextTurn = false;
-      bannerLogs.push(`⛓️ ${candidate.name} は手錠で1回ターンをスキップされた！`);
-      continue;
-    }
-
-    gameState.turnIndex = idx;
-    return;
-  }
-}
-
-function handleHostReceive(senderId, data) {
-  if (data.type === 'join') {
-    if (gameState.phase !== 'lobby' || gameState.players.length >= gameState.maxPlayers) {
-      if (connections[senderId]) {
-        connections[senderId].send({ type: 'kicked' });
-        connections[senderId].close();
-      }
-      return;
-    }
-    gameState.players.push(createPlayerObj(senderId, data.name, data.skinId, false, false));
-    broadcastState();
-    return;
-  }
-
-  const pIndex = gameState.players.findIndex(p => p.id === senderId);
-  if (pIndex === -1) return;
-  const player = gameState.players[pIndex];
-
-  if (data.type === 'look') {
-    player.lookYaw = data.yaw;
-    broadcastState();
-    return;
-  }
-
-  if (data.type === 'loot_done') {
-    player.slots = data.slots.slice(0, 8);
-    player.lootPending = [];
-    if (gameState.players.every(p => !p.alive || p.lootPending.length === 0)) {
-      gameState.phase = 'play';
-    }
-    broadcastState();
-    return;
-  }
-
-  if (gameState.phase !== 'play' || gameState.turnIndex !== pIndex) return;
-
-  if (data.type === 'aim') {
-    if (player.handAction === 'shoot') return;
-    gameState.aimTargetId = data.targetId;
-    player.handAction = data.targetId ? 'aim' : 'idle';
-    broadcastState();
-    return;
-  }
-
-  if (data.type === 'use_item') {
-    if (player.noItemsNextTurn) {
-      broadcastState({ kind: 'banner', text: `💧 ${player.name} は目薬の効果でこのターンはアイテムを使えない！` });
-      return;
-    }
-    executeItemUse(player, data.slotIndex, data.targetPlayerId, data.stealSlotIndex);
-    return;
-  }
-
-  if (data.type === 'shoot') {
-    executeShoot(player, data.targetId);
-    return;
-  }
-}
-
-function executeItemUse(player, slotIndex, targetPlayerId, stealSlotIndex) {
-  if (player.noItemsNextTurn) return;
-  const itemId = player.slots[slotIndex];
-  if (!itemId) return;
-
-  player.slots[slotIndex] = null;
-  player.handAction = 'item_' + itemId;
-
-  let actualItem = itemId;
-  let stealInfo = null;
-
-  if (itemId === 'adrenaline') {
-    const victim = gameState.players.find(p => p.id === targetPlayerId);
-    if (victim && victim.slots[stealSlotIndex] && victim.slots[stealSlotIndex] !== 'adrenaline') {
-      actualItem = victim.slots[stealSlotIndex];
-      victim.slots[stealSlotIndex] = null;
-      stealInfo = { from: victim.name, item: actualItem };
-      targetPlayerId = victim.id;
-    } else {
-      broadcastState({ kind: 'banner', text: `${player.name} のアドレナリンは不発に終わった` });
-      return;
     }
   }
-
-  let privateMsg = null;
-  let privateIsLive = null;
-  let bannerText = `${player.name} が【${ITEM_DEFS[actualItem].name}】を使用！`;
-  if (stealInfo) {
-    bannerText = `${player.name} が ${stealInfo.from} から【${ITEM_DEFS[actualItem].name}】を奪って使用！`;
-  }
-
-  switch (actualItem) {
-    case 'saw':
-      gameState.sawActive = true;
-      bannerText += '（このターン実弾ダメージ2倍！）';
-      break;
-    case 'magnifier': {
-      if (gameState.shells.length > 0) {
-        const nextShell = gameState.shells[0];
-        if (player.isAi) player.aiKnownNext = nextShell;
-        privateIsLive = nextShell;
-        privateMsg = nextShell ? '🔍 虫眼鏡: 次の弾は【実弾 (赤)】だ！' : '🔍 虫眼鏡: 次の弾は【空砲 (青)】だ！';
-      }
-      break;
-    }
-    case 'cigarette':
-      player.hp = Math.min(player.maxHp, player.hp + 1);
-      bannerText += '（ライフ +1）';
-      break;
-    case 'beer': {
-      const ejected = gameState.shells.shift();
-      player.aiKnownNext = null;
-      bannerText += ejected ? ' → 排莢された弾は【実弾(赤)】だった！' : ' → 排莢された弾は【空砲(青)】だった！';
-      break;
-    }
-    case 'medicine':
-      if (Math.random() < 0.5) {
-        player.hp = Math.min(player.maxHp, player.hp + 2);
-        bannerText += ' → 成功！ライフ +2！';
-      } else {
-        const outcome = applyDamageOrFatal(player, 1);
-        if (outcome === 'rosary_revive') {
-          bannerText += ' → 腐っていた！が、✝ ロザリオの加護で残機2個で復活！';
-        } else {
-          bannerText += ' → 腐っていた！ライフ -1！';
-        }
-      }
-      break;
-    case 'inverter':
-      if (gameState.shells.length > 0) {
-        gameState.shells[0] = !gameState.shells[0];
-        if (player.isAi && player.aiKnownNext !== null) {
-          player.aiKnownNext = !player.aiKnownNext;
-        }
-      }
-      bannerText += '（現在の弾性が反転した！）';
-      break;
-    case 'phone': {
-      if (gameState.shells.length > 0) {
-        const remIdx = Math.floor(Math.random() * gameState.shells.length);
-        const isLive = gameState.shells[remIdx];
-        if (player.isAi && remIdx === 0) player.aiKnownNext = isLive;
-        const consumedCount = Math.max(0, gameState.initialShellCount - gameState.shells.length);
-        const fromStartNumber = consumedCount + remIdx + 1;
-        privateIsLive = isLive;
-        privateMsg = `📱 着信:「最初から${fromStartNumber}番目の弾は【${isLive ? '実弾(赤)' : '空砲(青)'}】だ…」`;
-      }
-      break;
-    }
-    case 'handcuffs': {
-      const target = gameState.players.find(p => p.id === targetPlayerId && p.alive && p.id !== player.id);
-      if (target) {
-        target.skipNextTurn = true;
-        bannerText += `（⛓️ ${target.name} の次ターンを1回スキップ！）`;
-      }
-      break;
-    }
-    case 'remote': {
-      gameState.turnDirection *= -1;
-      bannerText += `（🎛️ ターン順番が【${gameState.turnDirection === 1 ? '時計回り' : '逆順'}】になった！）`;
-      break;
-    }
-    case 'eyedrops': {
-      const target = gameState.players.find(p => p.id === targetPlayerId && p.alive && p.id !== player.id);
-      if (target) {
-        target.noItemsNextTurn = true;
-        bannerText += `（💧 ${target.name} は次のターンアイテム使用不可！）`;
-      }
-      break;
-    }
-    case 'rosary': {
-      player.rosaryActive = true;
-      bannerText += '（✝ このラウンド中、HP0になっても残機2個で復活できる！）';
-      break;
+});
+const endStick = (e) => {
+  for (const t of e.changedTouches) {
+    if (t.identifier === stickTouchId) {
+      stickTouchId = null;
+      stickVec.x = 0; stickVec.y = 0;
     }
   }
+};
+stickZone.addEventListener('touchend', endStick);
+stickZone.addEventListener('touchcancel', endStick);
 
-  const aliveCount = gameState.players.filter(p => p.alive).length;
-  if (aliveCount <= 1) {
-    startNewRound();
-    return;
-  }
+document.getElementById('btnAtk').addEventListener('touchstart', (e) => { e.preventDefault(); sendAction('attack'); });
+document.getElementById('btnAtk').addEventListener('mousedown', () => sendAction('attack'));
+document.getElementById('btnDash').addEventListener('touchstart', (e) => { e.preventDefault(); sendAction('dash'); });
+document.getElementById('btnDash').addEventListener('mousedown', () => sendAction('dash'));
 
-  const extraLogs = [];
-  if (!player.alive) {
-    advanceTurnIndex(extraLogs);
-  }
-  const finalBanner = extraLogs.length > 0 ? `${bannerText} ／ ${extraLogs.join(' ')}` : bannerText;
-
-  if (gameState.shells.length === 0) {
-    gameState.round++;
-    broadcastState({ kind: 'banner', text: finalBanner });
-    setTimeout(() => startNewRound(), 1800);
-  } else {
-    broadcastState({ kind: 'item_fx', item: actualItem, actorId: player.id, text: finalBanner });
-    setTimeout(() => {
-      if (player.handAction && player.handAction.startsWith('item_')) {
-        player.handAction = 'idle';
-        broadcastState();
-      }
-    }, 900);
-  }
-
-  if (privateMsg && !player.isAi) {
-    if (player.id === myId) {
-      showSecretInspect(privateMsg, privateIsLive);
-    } else if (connections[player.id]) {
-      connections[player.id].send({ type: 'private_msg', text: privateMsg, isLive: privateIsLive });
+document.querySelectorAll('.chat-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const text = btn.dataset.chat;
+    if (isHost) {
+      const me = gameState.players.find(p => p.id === myId);
+      if (me) applyChat(me, text);
+    } else if (hostConn && hostConn.open) {
+      hostConn.send({ type: 'chat', text });
     }
-  }
-}
-
-function executeShoot(shooter, targetId) {
-  const target = gameState.players.find(p => p.id === targetId);
-  if (!target || !target.alive || gameState.shells.length === 0) return;
-
-  const isLive = gameState.shells.shift();
-  shooter.aiKnownNext = null;
-  const dmg = isLive ? (gameState.sawActive ? 2 : 1) : 0;
-  gameState.sawActive = false;
-  gameState.aimTargetId = targetId;
-  shooter.handAction = 'shoot';
-
-  const selfShot = (shooter.id === target.id);
-  let outcome = 'none';
-
-  if (isLive) {
-    if (!selfShot) {
-      shooter.damageDealt = (shooter.damageDealt || 0) + dmg;
-    }
-    outcome = applyDamageOrFatal(target, dmg);
-  }
-
-  let text = '';
-  if (isLive) {
-    text = `💥 ドォン！！【実弾(赤)】 ${target.name} に ${dmg} ダメージ！`;
-    if (outcome === 'rosary_revive') {
-      text += `（✝ ${target.name} はロザリオで残機2個復活！）`;
-    } else if (!target.alive) {
-      text += `（${target.name} 脱落！）`;
-    }
-  } else {
-    text = `カチッ…【空砲(青)】` + (selfShot ? `（${shooter.name} はもう一度自分のターン！）` : '');
-  }
-
-  const skipLogs = [];
-  if (!(selfShot && !isLive)) {
-    advanceTurnIndex(skipLogs);
-  }
-  if (skipLogs.length > 0) {
-    text += ' ／ ' + skipLogs.join(' ');
-  }
-
-  broadcastState({
-    kind: 'shoot_fx',
-    isLive,
-    shooterId: shooter.id,
-    targetId: target.id,
-    text
   });
+});
 
-  setTimeout(() => {
-    gameState.aimTargetId = null;
-    shooter.handAction = 'idle';
-    const alivePlayers = gameState.players.filter(p => p.alive);
-    if (alivePlayers.length <= 1) {
-      startNewRound();
-    } else if (gameState.shells.length === 0) {
-      gameState.round++;
-      startNewRound();
-    } else {
-      broadcastState();
-    }
-  }, 1900);
-}
-
-/* ==========================================================================
-   一人用モード AI 思考ルーチン
-   ========================================================================== */
-let aiThinkTimer = null;
-
-function scheduleAiTurnIfNeeded() {
-  clearTimeout(aiThinkTimer);
-  if (!isSoloAi || gameState.phase !== 'play') return;
-  const current = gameState.players[gameState.turnIndex];
-  if (!current || !current.alive || !current.isAi) return;
-  if (activeShootOverride) return;
-
-  aiThinkTimer = setTimeout(() => {
-    runAiStep(current);
-  }, 1150);
-}
-
-function runAiStep(ai) {
-  if (!isSoloAi || gameState.phase !== 'play') return;
-  const current = gameState.players[gameState.turnIndex];
-  if (!current || current.id !== ai.id || !ai.alive || gameState.shells.length === 0) return;
-
-  const enemies = gameState.players.filter(p => p.alive && p.id !== ai.id);
-  if (enemies.length === 0) return;
-
-  if (!ai.noItemsNextTurn) {
-    const rosIdx = ai.slots.indexOf('rosary');
-    if (rosIdx !== -1 && !ai.rosaryActive) {
-      executeItemUse(ai, rosIdx);
-      return;
-    }
-
-    if (ai.hp < ai.maxHp) {
-      const cigIdx = ai.slots.indexOf('cigarette');
-      if (cigIdx !== -1) {
-        executeItemUse(ai, cigIdx);
-        return;
-      }
-      if (ai.hp <= 2) {
-        const medIdx = ai.slots.indexOf('medicine');
-        if (medIdx !== -1) {
-          executeItemUse(ai, medIdx);
-          return;
-        }
-      }
-    }
-
-    const cuffIdx = ai.slots.indexOf('handcuffs');
-    if (cuffIdx !== -1) {
-      const unCuffed = enemies.filter(e => !e.skipNextTurn);
-      if (unCuffed.length > 0) {
-        const target = pickAiShootEnemy(unCuffed);
-        executeItemUse(ai, cuffIdx, target.id);
-        return;
-      }
-    }
-
-    const eyeIdx = ai.slots.indexOf('eyedrops');
-    if (eyeIdx !== -1) {
-      const itemRich = enemies.filter(e => !e.noItemsNextTurn && e.slots.some(s => s !== null));
-      if (itemRich.length > 0) {
-        executeItemUse(ai, eyeIdx, itemRich[0].id);
-        return;
-      }
-    }
-
-    const remIdx = ai.slots.indexOf('remote');
-    if (remIdx !== -1 && enemies.length >= 2 && Math.random() < 0.45) {
-      executeItemUse(ai, remIdx);
-      return;
-    }
-
-    if (ai.aiKnownNext === null && gameState.shells.length > 1) {
-      const magIdx = ai.slots.indexOf('magnifier');
-      if (magIdx !== -1) {
-        executeItemUse(ai, magIdx);
-        return;
-      }
-      const phoneIdx = ai.slots.indexOf('phone');
-      if (phoneIdx !== -1 && Math.random() < 0.7) {
-        executeItemUse(ai, phoneIdx);
-        return;
-      }
-    }
-
-    const adrIdx = ai.slots.indexOf('adrenaline');
-    if (adrIdx !== -1) {
-      let bestSteal = null;
-      const priority = ['rosary', 'cigarette', 'saw', 'handcuffs', 'magnifier', 'beer', 'inverter', 'eyedrops', 'phone', 'medicine'];
-      for (const targetItem of priority) {
-        for (const e of enemies) {
-          const sIdx = e.slots.indexOf(targetItem);
-          if (sIdx !== -1) {
-            if (targetItem === 'cigarette' && ai.hp >= ai.maxHp) continue;
-            bestSteal = { targetId: e.id, slotIndex: sIdx };
-            break;
-          }
-        }
-        if (bestSteal) break;
-      }
-      if (bestSteal) {
-        executeItemUse(ai, adrIdx, bestSteal.targetId, bestSteal.slotIndex);
-        return;
-      }
-    }
-  }
-
-  if (ai.aiKnownNext === false) {
-    if (!ai.noItemsNextTurn) {
-      const invIdx = ai.slots.indexOf('inverter');
-      if (invIdx !== -1) {
-        executeItemUse(ai, invIdx);
-        return;
-      }
-      const beerIdx = ai.slots.indexOf('beer');
-      if (beerIdx !== -1 && gameState.shells.length > 1) {
-        executeItemUse(ai, beerIdx);
-        return;
-      }
-    }
-    executeShoot(ai, ai.id);
-    return;
-  }
-
-  if (ai.aiKnownNext === true) {
-    if (!ai.noItemsNextTurn && !gameState.sawActive) {
-      const sawIdx = ai.slots.indexOf('saw');
-      if (sawIdx !== -1) {
-        executeItemUse(ai, sawIdx);
-        return;
-      }
-    }
-    const target = pickAiShootEnemy(enemies);
-    executeShoot(ai, target.id);
-    return;
-  }
-
-  const liveRem = gameState.shells.filter(Boolean).length;
-  const liveRatio = liveRem / gameState.shells.length;
-
-  if (!ai.noItemsNextTurn && liveRatio >= 0.6 && !gameState.sawActive) {
-    const sawIdx = ai.slots.indexOf('saw');
-    if (sawIdx !== -1) {
-      executeItemUse(ai, sawIdx);
-      return;
-    }
-  }
-
-  if (liveRatio < 0.45 && gameState.shells.length > 1) {
-    if (!ai.noItemsNextTurn) {
-      const beerIdx = ai.slots.indexOf('beer');
-      if (beerIdx !== -1 && Math.random() < 0.5) {
-        executeItemUse(ai, beerIdx);
-        return;
-      }
-    }
-    executeShoot(ai, ai.id);
-  } else {
-    const target = pickAiShootEnemy(enemies);
-    executeShoot(ai, target.id);
+function sendAction(act) {
+  if (gameState.phase !== 'playing') return;
+  if (isHost) {
+    const me = gameState.players.find(p => p.id === myId);
+    if (me) triggerAction(me, act);
+  } else if (hostConn && hostConn.open) {
+    hostConn.send({ type: 'action', act });
   }
 }
 
-function pickAiShootEnemy(enemies) {
-  const sorted = [...enemies].sort((a, b) => a.hp - b.hp);
-  return Math.random() < 0.75 ? sorted[0] : enemies[Math.floor(Math.random() * enemies.length)];
-}
+function processLocalInput() {
+  if (gameState.phase !== 'playing') return;
+  let vx = stickVec.x, vy = stickVec.y;
+  if (keys['KeyW'] || keys['ArrowUp']) vy -= 1;
+  if (keys['KeyS'] || keys['ArrowDown']) vy += 1;
+  if (keys['KeyA'] || keys['ArrowLeft']) vx -= 1;
+  if (keys['KeyD'] || keys['ArrowRight']) vx += 1;
 
-function handleClientReceive(data) {
-  if (data.type === 'kicked') {
-    alert('部屋からキックされたか、満員のため入室できませんでした。');
-    location.reload();
-  } else if (data.type === 'state') {
-    applyStateUpdate(data.state, data.event);
-  } else if (data.type === 'private_msg') {
-    showSecretInspect(data.text, data.isLive);
-  }
-}
-
-/* ==========================================================================
-   6. クライアント側UI＆3Dシーン同期
-   ========================================================================== */
-let threeInitialized = false;
-let cameraMode = 'front';
-let isAimingMode = false;
-let adrenalineStealSlot = null;
-let adrenalineFocusTargetId = null;
-let pendingPlayerTargetItem = null; // { slotIndex, itemId }（手錠・目薬の直接プレイヤー選択モード）
-let isChamberCutscene = false;
-let activeShootOverride = null;
-let hitKnockback = {};
-
-function applyStateUpdate(newState, event) {
-  gameState = newState;
-  updateBgmForGameState(gameState);
-
-  if (gameState.phase === 'lobby') {
-    document.getElementById('result-modal').style.display = 'none';
-    document.getElementById('game-screen').classList.remove('active');
-    document.getElementById('lobby-screen').classList.add('active');
-    renderLobby();
-    return;
-  }
-
-  document.getElementById('lobby-screen').classList.remove('active');
-  document.getElementById('game-screen').classList.add('active');
-
-  if (gameState.phase !== 'gameover') {
-    document.getElementById('result-modal').style.display = 'none';
-  }
-
-  if (!threeInitialized) {
-    initThreeScene();
-    threeInitialized = true;
-  }
-
-  const turnPlayer = gameState.players[gameState.turnIndex];
-  const isMyTurn = (gameState.phase === 'play' && turnPlayer && turnPlayer.id === myId);
-  if (!isMyTurn) {
-    isAimingMode = false;
-    adrenalineStealSlot = null;
-    adrenalineFocusTargetId = null;
-    pendingPlayerTargetItem = null;
-  }
-
-  update3DSceneFromState();
-  updateGameHUD();
-
-  if (event) {
-    if (event.kind === 'round_load') {
-      playChamberLoadAnimation(event.round, event.live, event.blank);
-    } else if (event.kind === 'banner' || event.kind === 'item_fx') {
-      showBanner(event.text, 2500);
-      if (event.item === 'cigarette' || event.item === 'medicine' || event.item === 'rosary') {
-        triggerFlash('rgba(57,255,20,0.22)');
-      }
-    } else if (event.kind === 'shoot_fx') {
-      activeShootOverride = { shooterId: event.shooterId, targetId: event.targetId };
-      clearTimeout(activeShootOverride._timer);
-      activeShootOverride._timer = setTimeout(() => { activeShootOverride = null; }, 1850);
-
-      shotgunRecoil = 0.32;
-      playShotSound(event.isLive);
-      showBanner(event.text, 2300);
-
-      if (event.isLive) {
-        if (event.targetId === myId) {
-          triggerFlash('rgba(255, 20, 20, 0.58)');
-          cameraShakeTime = 0.45;
-        } else {
-          hitKnockback[event.targetId] = 1.0;
-        }
-      }
-    } else if (event.kind === 'gameover') {
-      triggerMatchEndSequence(event.winnerId, event.winnerName);
-    }
-  }
+  const len = Math.hypot(vx, vy);
+  if (len > 1) { vx /= len; vy /= len; }
 
   const me = gameState.players.find(p => p.id === myId);
-  if (gameState.phase === 'loot' && me && me.alive && me.lootPending.length > 0) {
-    openLootModal(me);
-  } else {
-    document.getElementById('loot-modal').style.display = 'none';
-  }
-}
-
-function showBanner(text, duration = 2200) {
-  const el = document.getElementById('center-banner');
-  el.textContent = text;
-  el.style.display = 'block';
-  clearTimeout(el._timer);
-  el._timer = setTimeout(() => { el.style.display = 'none'; }, duration);
-}
-
-function showSecretInspect(text, isLive) {
-  const el = document.getElementById('secret-inspect-banner');
-  el.textContent = text;
-  if (isLive === true) {
-    el.style.borderColor = 'var(--danger)';
-    el.style.color = 'var(--danger)';
-    el.style.boxShadow = '0 0 24px rgba(255, 42, 42, 0.65)';
-  } else if (isLive === false) {
-    el.style.borderColor = 'var(--blank)';
-    el.style.color = 'var(--blank)';
-    el.style.boxShadow = '0 0 24px rgba(42, 157, 244, 0.65)';
-  } else {
-    el.style.borderColor = '#ffffff';
-    el.style.color = '#ffffff';
-  }
-  el.style.display = 'block';
-  clearTimeout(el._timer);
-  el._timer = setTimeout(() => { el.style.display = 'none'; }, 4400);
-}
-
-/* ==========================================================================
-   ラウンド開始時：込める球（実弾・空砲）をいったん見せて薬室へ込める自動進行シーン
-   ========================================================================== */
-let loadingShellMeshes = [];
-
-function playChamberLoadAnimation(round, liveCount, blankCount) {
-  const overlay = document.getElementById('shell-visual-overlay');
-  const title = document.getElementById('shell-visual-title');
-  const icons = document.getElementById('shell-visual-icons');
-  const legend = document.getElementById('shell-visual-legend');
-
-  isChamberCutscene = true;
-
-  title.textContent = `ROUND ${round} - 装填される弾（計 ${liveCount + blankCount} 発）`;
-  icons.innerHTML = '';
-
-  const displayList = [];
-  for (let i = 0; i < liveCount; i++) displayList.push(true);
-  for (let i = 0; i < blankCount; i++) displayList.push(false);
-
-  const iconEls = displayList.map(isLive => {
-    const s = document.createElement('div');
-    s.className = 'shell-cartridge ' + (isLive ? 'live' : 'blank');
-    icons.appendChild(s);
-    return s;
-  });
-
-  legend.innerHTML = `<span style="color:var(--danger);">■ 実弾(赤): ${liveCount}発</span> ／ <span style="color:var(--blank);">■ 空砲(青): ${blankCount}発</span>`;
-  overlay.style.display = 'flex';
-
-  loadingShellMeshes.forEach(m => scene.remove(m));
-  loadingShellMeshes = [];
-
-  displayList.forEach((isLive, idx) => {
-    const shellGroup = new THREE.Group();
-    const body = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.036, 0.036, 0.16, 14),
-      new THREE.MeshStandardMaterial({
-        color: isLive ? 0xff2a2a : 0x2a9df4,
-        emissive: isLive ? 0x770000 : 0x003b77,
-        roughness: 0.3
-      })
-    );
-    const rim = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.039, 0.039, 0.038, 14),
-      new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.85, roughness: 0.25 })
-    );
-    rim.position.y = -0.085;
-    shellGroup.add(body, rim);
-
-    const offset = (idx - (displayList.length - 1) / 2) * 0.125;
-    const localVec = new THREE.Vector3(offset, 1.46, -0.15);
-    localVec.applyAxisAngle(new THREE.Vector3(0, 1, 0), mySeatAngle);
-    shellGroup.position.copy(localVec);
-    scene.add(shellGroup);
-    loadingShellMeshes.push(shellGroup);
-
-    setTimeout(() => {
-      if (iconEls[idx]) iconEls[idx].classList.add('loaded');
-      playTone(isLive ? 320 : 520, 'triangle', 0.09, 0.16);
-      const startPos = shellGroup.position.clone();
-      const targetPos = new THREE.Vector3(0, 1.02, 0);
-      let step = 0;
-      const animTimer = setInterval(() => {
-        step += 0.14;
-        if (step >= 1) {
-          clearInterval(animTimer);
-          scene.remove(shellGroup);
-        } else {
-          shellGroup.position.lerpVectors(startPos, targetPos, step);
-          shellGroup.rotation.x += 0.25;
-        }
-      }, 20);
-    }, 950 + idx * 280);
-  });
-
-  clearTimeout(overlay._timer);
-  overlay._timer = setTimeout(() => {
-    overlay.style.display = 'none';
-    isChamberCutscene = false;
-    loadingShellMeshes.forEach(m => scene.remove(m));
-    loadingShellMeshes = [];
-  }, 1350 + displayList.length * 280);
-}
-
-/* ==========================================================================
-   勝敗決着演出＆ランキング表表示
-   ========================================================================== */
-function triggerMatchEndSequence(winnerId, winnerName) {
-  const isMeWinner = (winnerId && winnerId === myId);
-  playMatchResultSound(isMeWinner);
-
-  if (isMeWinner) {
-    triggerFlash('rgba(255, 215, 0, 0.42)');
-    showBanner(`🏆 YOU WIN!! 勝者: ${winnerName}`, 2400);
-  } else {
-    triggerFlash('rgba(255, 30, 30, 0.45)');
-    showBanner(`💀 YOU LOSE... 勝者: ${winnerName}`, 2400);
-  }
-
-  setTimeout(() => {
-    openResultModal(winnerId, winnerName);
-  }, 1500);
-}
-
-function openResultModal(winnerId, winnerName) {
-  const modal = document.getElementById('result-modal');
-  const titleEl = document.getElementById('result-banner-title');
-  const subEl = document.getElementById('result-subtitle');
-  const tbody = document.getElementById('ranking-tbody');
-  const rematchArea = document.getElementById('rematch-area');
-
-  const isMeWinner = (winnerId && winnerId === myId);
-  titleEl.textContent = isMeWinner ? '★ VICTORY — YOU WIN ★' : '✖ DEFEAT — YOU LOSE ✖';
-  titleEl.className = 'result-banner-title ' + (isMeWinner ? 'win' : 'lose');
-  subEl.textContent = `CHAMPION: ${winnerName}（最終ラウンド: ROUND ${gameState.round}）`;
-
-  const ranked = [...gameState.players].sort((a, b) => {
-    if (a.alive !== b.alive) return a.alive ? -1 : 1;
-    if ((b.elimOrder || 0) !== (a.elimOrder || 0)) return (b.elimOrder || 0) - (a.elimOrder || 0);
-    if (b.hp !== a.hp) return b.hp - a.hp;
-    return (b.damageDealt || 0) - (a.damageDealt || 0);
-  });
-
-  tbody.innerHTML = '';
-  ranked.forEach((p, idx) => {
-    const tr = document.createElement('tr');
-    if (idx === 0) tr.classList.add('rank-1');
-    if (p.id === myId) tr.classList.add('is-me');
-
-    const rankLabel = idx === 0 ? '👑 1位' : `${idx + 1}位`;
-    const hpStr = p.alive ? `⚡×${p.hp}` : '脱落 (⚡0)';
-    tr.innerHTML = `
-      <td>${rankLabel}</td>
-      <td>${p.name}${p.id === myId ? ' (あなた)' : ''}</td>
-      <td>${hpStr}</td>
-      <td>${p.damageDealt || 0}</td>
-      <td>ROUND ${p.survivedRound || 1}</td>
-    `;
-    tbody.appendChild(tr);
-  });
+  if (!me) return;
+  const angle = len > 0.05 ? Math.atan2(vy, vx) : me.angle;
 
   if (isHost) {
-    rematchArea.innerHTML = `<button class="btn" onclick="requestRematch()">▶ 再戦する（同じメンバーで再プレイ）</button>`;
-  } else {
-    rematchArea.innerHTML = `<span style="font-size:13px; opacity:0.85;">ホストの再戦操作を待機中...</span>`;
+    me.vx = vx; me.vy = vy; me.angle = angle;
+  } else if (hostConn && hostConn.open) {
+    hostConn.send({ type: 'input', vx, vy, angle });
   }
-
-  modal.style.display = 'flex';
 }
 
-function triggerFlash(color) {
-  const fx = document.getElementById('flash-fx');
-  fx.style.background = color;
-  fx.style.opacity = '1';
-  setTimeout(() => { fx.style.opacity = '0'; }, 240);
-}
-
-function updateGameHUD() {
-  document.getElementById('hud-round').textContent = `ROUND ${gameState.round}`;
-  const dirEl = document.getElementById('hud-dir-badge');
-  if (dirEl) {
-    dirEl.textContent = gameState.turnDirection === 1 ? '↻ 時計回り' : '↺ 逆順';
-    dirEl.style.color = gameState.turnDirection === 1 ? 'var(--neon)' : 'var(--gold)';
-  }
-
-  const ammoEl = document.getElementById('hud-ammo-count');
-  if (ammoEl) {
-    ammoEl.textContent = `残弾: ${gameState.shells.length}発`;
-  }
-
-  const turnPlayer = gameState.players[gameState.turnIndex];
-  const isMyTurn = (gameState.phase === 'play' && turnPlayer && turnPlayer.id === myId);
+/* =========================================================
+   7. HUD & サイバーネオン Canvas 描画
+   ========================================================= */
+function updateHud() {
   const me = gameState.players.find(p => p.id === myId);
+  const aliveCount = gameState.players.filter(p => p.alive).length;
+  document.getElementById('hudAlive').textContent = `${aliveCount} / ${gameState.players.length}`;
 
-  const focusedEnemy = adrenalineFocusTargetId
-    ? gameState.players.find(p => p.id === adrenalineFocusTargetId)
-    : null;
+  const m = Math.floor(gameState.timeLeft / 60).toString().padStart(2, '0');
+  const s = Math.floor(gameState.timeLeft % 60).toString().padStart(2, '0');
+  document.getElementById('hudTimer').textContent = `${m}:${s}`;
 
-  document.getElementById('hud-turn-info').textContent =
-    gameState.phase === 'loading' ? '弾薬装填中...' :
-    gameState.phase === 'loot' ? 'アイテム配置中...' :
-    gameState.phase === 'gameover' ? `決着！勝者: ${gameState.winnerName}` :
-    pendingPlayerTargetItem ? `🎯 【${ITEM_DEFS[pendingPlayerTargetItem.itemId].name}】を使う相手を直接タップ` :
-    adrenalineStealSlot !== null ? `💉 ${focusedEnemy ? focusedEnemy.name : '相手'}の3Dアイテムをタップ（下ボタン/スワイプで対象切替）` :
-    isAimingMode ? '🎯 撃つ相手(3D)をタップ または 自分を撃つ' :
-    (isMyTurn && me && me.noItemsNextTurn) ? '💧 目薬効果中（銃をタップして射撃のみ可能）' :
-    isMyTurn ? '★ あなたのターン（銃や手元アイテムを直接タップ） ★' : `${turnPlayer ? turnPlayer.name : ''} のターン`;
+  const elapsed = MATCH_TIME - gameState.timeLeft;
+  const phaseEl = document.getElementById('hudPhase');
+  if (elapsed >= 210) { phaseEl.textContent = '🔥 最終エリア（回復停止）'; phaseEl.style.color = '#ff007f'; }
+  else if (elapsed >= 120) { phaseEl.textContent = '⚠️ 危険エリア縮小中'; phaseEl.style.color = '#ff3b30'; }
+  else if (elapsed >= 60) { phaseEl.textContent = '⚡ アイテム大量出現'; phaseEl.style.color = '#ffd700'; }
+  else { phaseEl.textContent = '通常フェーズ'; phaseEl.style.color = '#c77dff'; }
 
-  const sawEl = document.getElementById('hud-saw-badge');
-  if (sawEl) {
-    sawEl.style.display = gameState.sawActive ? 'inline' : 'none';
+  if (!me) return;
+  document.getElementById('hudName').textContent = me.name;
+  document.getElementById('hudHpText').textContent = `${me.hp} / 100`;
+  document.getElementById('hudHpBar').style.width = `${me.hp}%`;
+
+  const buffs = [];
+  if (me.shield) buffs.push('<span class="buff-tag" style="color:#00f3ff;">🛡️ シールド</span>');
+  if (me.poweredSword) buffs.push('<span class="buff-tag" style="color:#ff9500;">⚔️ 強化剣(40)</span>');
+  if (me.speedTimer > 0) buffs.push('<span class="buff-tag" style="color:#ffd700;">⚡ 2倍速</span>');
+  if (me.stunTimer > 0) buffs.push('<span class="buff-tag" style="color:#ff3b30;">🕸️ 停止中</span>');
+  document.getElementById('hudBuffs').innerHTML = buffs.join('');
+
+  const atkMask = document.getElementById('atkCdMask');
+  if (me.atkCd > 0) { atkMask.classList.remove('hidden'); atkMask.textContent = me.atkCd.toFixed(1); }
+  else atkMask.classList.add('hidden');
+
+  const dashMask = document.getElementById('dashCdMask');
+  if (me.dashCd > 0) { dashMask.classList.remove('hidden'); dashMask.textContent = me.dashCd.toFixed(1); }
+  else dashMask.classList.add('hidden');
+}
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth * devicePixelRatio;
+  canvas.height = window.innerHeight * devicePixelRatio;
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function render() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  ctx.fillStyle = '#060711';
+  ctx.fillRect(0, 0, w, h);
+
+  const me = gameState.players.find(p => p.id === myId) || gameState.players[0];
+  let camX = MAP_SIZE / 2, camY = MAP_SIZE / 2;
+  if (me) { camX = me.x; camY = me.y; }
+
+  ctx.save();
+  let sx = 0, sy = 0;
+  if (shakeTimer > 0) {
+    sx = (Math.random() - 0.5) * 12;
+    sy = (Math.random() - 0.5) * 12;
+  }
+  ctx.translate(w / 2 - camX + sx, h / 2 - camY + sy);
+
+  // サイバーグリッド床
+  ctx.strokeStyle = 'rgba(0, 243, 255, 0.08)';
+  ctx.lineWidth = 1;
+  const grid = 60;
+  for (let x = 0; x <= MAP_SIZE; x += grid) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, MAP_SIZE); ctx.stroke();
+  }
+  for (let y = 0; y <= MAP_SIZE; y += grid) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(MAP_SIZE, y); ctx.stroke();
   }
 
-  const myHpEl = document.getElementById('hud-my-hp');
-  if (me && myHpEl) {
-    let boltsHtml = '';
-    for (let i = 0; i < me.maxHp; i++) {
-      boltsHtml += i < me.hp ? '<span>⚡</span>' : '<span class="hp-bolt-off">⚡</span>';
-    }
-    if (me.rosaryActive) boltsHtml += `<span class="status-pill">✝復活保険</span>`;
-    if (me.skipNextTurn) boltsHtml += `<span class="status-pill">⛓️次回休</span>`;
-    if (me.noItemsNextTurn) boltsHtml += `<span class="status-pill">💧道具封</span>`;
-    myHpEl.innerHTML = boltsHtml;
-  }
+  // 外周フレーム
+  ctx.strokeStyle = '#7b2cbf';
+  ctx.lineWidth = 6;
+  ctx.strokeRect(0, 0, MAP_SIZE, MAP_SIZE);
 
-  if (!isMyTurn && adrenalineStealSlot === null && !isAimingMode && !pendingPlayerTargetItem) {
-    document.getElementById('action-overlay').style.display = 'none';
-  }
-}
-
-/* ==========================================================================
-   7. アイテム配布ボックス（ドラッグ＆ドロップ + タップ両対応）
-   ========================================================================== */
-let tempLootItems = [];
-let tempSlots = [];
-let selectedLootIdx = null;
-
-function openLootModal(me) {
-  const modal = document.getElementById('loot-modal');
-  if (modal.style.display === 'flex') return;
-  tempLootItems = [...me.lootPending];
-  tempSlots = [...me.slots];
-  selectedLootIdx = 0;
-  modal.style.display = 'flex';
-  renderLootModal();
-}
-
-function renderLootModal() {
-  const boxRow = document.getElementById('loot-box-items');
-  const grid = document.getElementById('loot-slots-grid');
-  boxRow.innerHTML = '';
-  grid.innerHTML = '';
-
-  document.getElementById('loot-count-label').textContent = `未配置: ${tempLootItems.length}個`;
-
-  tempLootItems.forEach((itemId, idx) => {
-    const card = document.createElement('div');
-    card.className = 'item-card' + (selectedLootIdx === idx ? ' selected' : '');
-    card.draggable = true;
-    card.innerHTML = `<strong>${ITEM_DEFS[itemId].name}</strong><span style="font-size:10px;">ドラッグ/選択</span>`;
-    card.onclick = () => { selectedLootIdx = idx; renderLootModal(); };
-    card.ondragstart = (e) => {
-      selectedLootIdx = idx;
-      e.dataTransfer.setData('text/plain', String(idx));
-    };
-    boxRow.appendChild(card);
-  });
-
-  tempSlots.forEach((slotItem, sIdx) => {
-    const cell = document.createElement('div');
-    cell.className = 'slot-cell' + (slotItem ? ' occupied' : '');
-    cell.textContent = slotItem ? ITEM_DEFS[slotItem].name : `枠 ${sIdx + 1}`;
-    cell.ondragover = (e) => e.preventDefault();
-    cell.ondrop = (e) => {
-      e.preventDefault();
-      placeLootToSlot(sIdx);
-    };
-    cell.onclick = () => placeLootToSlot(sIdx);
-    grid.appendChild(cell);
-  });
-
-  document.getElementById('loot-done-btn').disabled = tempLootItems.length > 0;
-}
-
-function placeLootToSlot(slotIdx) {
-  if (selectedLootIdx === null || !tempLootItems[selectedLootIdx]) return;
-  if (tempSlots[slotIdx] !== null) return;
-  const [picked] = tempLootItems.splice(selectedLootIdx, 1);
-  tempSlots[slotIdx] = picked;
-  selectedLootIdx = tempLootItems.length > 0 ? 0 : null;
-  playTone(520, 'sine', 0.08, 0.12);
-  renderLootModal();
-}
-
-function finishLootPhase() {
-  if (tempLootItems.length > 0) return;
-  document.getElementById('loot-modal').style.display = 'none';
-  sendToHost({ type: 'loot_done', slots: tempSlots });
-}
-
-/* ==========================================================================
-   8. アイテム使用＆手錠・目薬・アドレナリンの直接選択UI
-   ========================================================================== */
-function openItemUseModal(slotIndex, itemId) {
-  const me = gameState.players.find(p => p.id === myId);
-  if (me && me.noItemsNextTurn) {
-    showBanner('💧 目薬の効果でこのターンはアイテムを使えません！', 2000);
-    return;
-  }
-
-  const def = ITEM_DEFS[itemId];
-  const modal = document.getElementById('item-confirm-modal');
-  document.getElementById('item-modal-title').textContent = `【${def.name}】を使用しますか？`;
-  document.getElementById('item-modal-desc').textContent = def.desc;
-  const extra = document.getElementById('item-modal-extra');
-  const useBtn = document.getElementById('item-modal-use-btn');
-  extra.innerHTML = '';
-
-  if (itemId === 'adrenaline') {
-    const aliveEnemies = gameState.players.filter(p => p.id !== myId && p.alive);
-    const hasAnyStealable = aliveEnemies.some(p => p.slots.some(s => s && s !== 'adrenaline'));
-    if (!hasAnyStealable) {
-      extra.innerHTML = '<div style="color:var(--danger); font-size:12px;">奪えるアイテムを持っている相手がいません</div>';
-      useBtn.style.display = 'none';
-    } else {
-      extra.innerHTML = '<div style="font-size:12px; color:#aaffaa;">「使用する」を押すと相手の目の前に視点が移動します。下のボタンや左右スワイプ・相手タップで全員のテーブルを見に行けます。</div>';
-      useBtn.style.display = 'inline-block';
-      useBtn.onclick = () => {
-        closeItemModal();
-        const firstWithItem = aliveEnemies.find(p => p.slots.some(s => s && s !== 'adrenaline')) || aliveEnemies[0];
-        startAdrenaline3DSelection(slotIndex, firstWithItem.id);
-      };
-    }
-  } else if (itemId === 'handcuffs' || itemId === 'eyedrops') {
-    const aliveEnemies = gameState.players.filter(p => p.id !== myId && p.alive);
-    if (aliveEnemies.length === 0) {
-      extra.innerHTML = '<div style="color:var(--danger); font-size:12px;">対象の相手がいません</div>';
-      useBtn.style.display = 'none';
-    } else {
-      extra.innerHTML = `<div style="font-size:12px; color:var(--gold);">「使用する」を押した後、使う相手を画面上で直接タップしてください。</div>`;
-      useBtn.style.display = 'inline-block';
-      useBtn.onclick = () => {
-        closeItemModal();
-        startDirectPlayerTargetSelection(slotIndex, itemId, aliveEnemies);
-      };
-    }
-  } else {
-    useBtn.style.display = 'inline-block';
-    useBtn.onclick = () => {
-      closeItemModal();
-      sendToHost({ type: 'use_item', slotIndex });
-    };
-  }
-
-  modal.style.display = 'flex';
-}
-
-/* 手錠・目薬の「使う人を直接タップして選ぶ」モード */
-function startDirectPlayerTargetSelection(slotIndex, itemId, aliveEnemies) {
-  pendingPlayerTargetItem = { slotIndex, itemId };
-  isAimingMode = false;
-  adrenalineStealSlot = null;
-  adrenalineFocusTargetId = null;
-
-  updateGameHUD();
-  update3DSceneFromState();
-
-  const overlay = document.getElementById('action-overlay');
-  overlay.innerHTML = '';
-  overlay.style.display = 'flex';
-
-  const icon = itemId === 'handcuffs' ? '⛓️' : '💧';
-  const hint = document.createElement('span');
-  hint.style.fontSize = '13px';
-  hint.style.color = 'var(--gold)';
-  hint.textContent = `${icon} 【${ITEM_DEFS[itemId].name}】を使う相手(3D)を直接タップ:`;
-  overlay.appendChild(hint);
-
-  aliveEnemies.forEach(e => {
-    const btn = document.createElement('button');
-    btn.className = 'btn btn-gold';
-    btn.style.padding = '4px 10px';
-    btn.style.fontSize = '12px';
-    btn.textContent = `${e.name} (⚡${e.hp})`;
-    btn.onclick = () => confirmDirectPlayerTarget(e.id);
-    overlay.appendChild(btn);
-  });
-
-  const cancel = document.createElement('button');
-  cancel.className = 'btn';
-  cancel.style.padding = '4px 10px';
-  cancel.textContent = 'キャンセル';
-  cancel.onclick = () => cancelDirectPlayerTarget();
-  overlay.appendChild(cancel);
-}
-
-function confirmDirectPlayerTarget(targetId) {
-  if (!pendingPlayerTargetItem) return;
-  const { slotIndex } = pendingPlayerTargetItem;
-  pendingPlayerTargetItem = null;
-  document.getElementById('action-overlay').style.display = 'none';
-  playTone(680, 'sine', 0.1, 0.16);
-  updateGameHUD();
-  update3DSceneFromState();
-  sendToHost({ type: 'use_item', slotIndex, targetPlayerId: targetId });
-}
-
-function cancelDirectPlayerTarget() {
-  pendingPlayerTargetItem = null;
-  document.getElementById('action-overlay').style.display = 'none';
-  updateGameHUD();
-  update3DSceneFromState();
-}
-
-function getAdrenalineCandidates() {
-  return gameState.players.filter(p => p.id !== myId && p.alive);
-}
-
-function focusAdrenalineTarget(targetId) {
-  const candidates = getAdrenalineCandidates();
-  if (candidates.length === 0) return;
-  const found = candidates.find(p => p.id === targetId) || candidates[0];
-  adrenalineFocusTargetId = found.id;
-  userYawOffset = 0;
-  playTone(540, 'sine', 0.06, 0.12);
-  renderAdrenalineOverlay();
-  updateGameHUD();
-  update3DSceneFromState();
-}
-
-function cycleAdrenalineTarget(dir) {
-  const candidates = getAdrenalineCandidates();
-  if (candidates.length === 0) return;
-  const curIdx = candidates.findIndex(p => p.id === adrenalineFocusTargetId);
-  const nextIdx = ((curIdx === -1 ? 0 : curIdx) + dir + candidates.length) % candidates.length;
-  focusAdrenalineTarget(candidates[nextIdx].id);
-}
-
-function renderAdrenalineOverlay() {
-  const candidates = getAdrenalineCandidates();
-  const overlay = document.getElementById('action-overlay');
-  overlay.innerHTML = '';
-  overlay.style.display = 'flex';
-
-  const hint = document.createElement('span');
-  hint.style.fontSize = '12px';
-  hint.textContent = '💉 見に行く相手を選択 & 3Dアイテムをタップ:';
-  overlay.appendChild(hint);
-
-  if (candidates.length > 1) {
-    const prevBtn = document.createElement('button');
-    prevBtn.className = 'btn';
-    prevBtn.style.padding = '4px 8px';
-    prevBtn.style.fontSize = '12px';
-    prevBtn.textContent = '◀ 前へ';
-    prevBtn.onclick = () => cycleAdrenalineTarget(-1);
-    overlay.appendChild(prevBtn);
-  }
-
-  candidates.forEach(p => {
-    const stealableCount = p.slots.filter(s => s && s !== 'adrenaline').length;
-    const pBtn = document.createElement('button');
-    pBtn.className = 'btn';
-    pBtn.style.padding = '4px 9px';
-    pBtn.style.fontSize = '12px';
-    if (p.id === adrenalineFocusTargetId) {
-      pBtn.style.background = 'var(--neon)';
-      pBtn.style.color = '#000';
-      pBtn.style.fontWeight = 'bold';
-    } else if (stealableCount === 0) {
-      pBtn.style.opacity = '0.55';
-    }
-    pBtn.textContent = `${p.name} (${stealableCount}個)`;
-    pBtn.onclick = () => focusAdrenalineTarget(p.id);
-    overlay.appendChild(pBtn);
-  });
-
-  if (candidates.length > 1) {
-    const nextBtn = document.createElement('button');
-    nextBtn.className = 'btn';
-    nextBtn.style.padding = '4px 8px';
-    nextBtn.style.fontSize = '12px';
-    nextBtn.textContent = '次へ ▶';
-    nextBtn.onclick = () => cycleAdrenalineTarget(1);
-    overlay.appendChild(nextBtn);
-  }
-
-  const cancel = document.createElement('button');
-  cancel.className = 'btn';
-  cancel.style.padding = '4px 10px';
-  cancel.style.fontSize = '12px';
-  cancel.textContent = 'キャンセル';
-  cancel.onclick = () => cancelAdrenalineSelection();
-  overlay.appendChild(cancel);
-}
-
-function startAdrenaline3DSelection(slotIndex, initialTargetId) {
-  const candidates = getAdrenalineCandidates();
-  if (candidates.length === 0) return;
-
-  adrenalineStealSlot = slotIndex;
-  isAimingMode = false;
-  pendingPlayerTargetItem = null;
-
-  const initTarget = candidates.find(p => p.id === initialTargetId)
-    || candidates.find(p => p.slots.some(s => s && s !== 'adrenaline'))
-    || candidates[0];
-  adrenalineFocusTargetId = initTarget.id;
-  userYawOffset = 0;
-
-  renderAdrenalineOverlay();
-  updateGameHUD();
-  update3DSceneFromState();
-}
-
-function cancelAdrenalineSelection() {
-  adrenalineStealSlot = null;
-  adrenalineFocusTargetId = null;
-  document.getElementById('action-overlay').style.display = 'none';
-  setCameraMode('front');
-  updateGameHUD();
-  update3DSceneFromState();
-}
-
-function closeItemModal() {
-  document.getElementById('item-confirm-modal').style.display = 'none';
-}
-
-function openShootTargetMenu() {
-  adrenalineStealSlot = null;
-  adrenalineFocusTargetId = null;
-  pendingPlayerTargetItem = null;
-  isAimingMode = true;
-  sendToHost({ type: 'aim', targetId: myId });
-  updateGameHUD();
-  update3DSceneFromState();
-
-  const overlay = document.getElementById('action-overlay');
-  overlay.innerHTML = '';
-  overlay.style.display = 'flex';
-
-  const hint = document.createElement('span');
-  hint.style.fontSize = '13px';
-  hint.textContent = '🎯 撃つ相手(3D)をタップ';
-  overlay.appendChild(hint);
-
-  const me = gameState.players.find(p => p.id === myId);
-  if (me && me.alive) {
-    const selfBtn = document.createElement('button');
-    selfBtn.className = 'btn';
-    selfBtn.textContent = `🔫 自分を撃つ`;
-    selfBtn.onclick = () => confirmShootTarget(myId);
-    overlay.appendChild(selfBtn);
-  }
-
-  const cancel = document.createElement('button');
-  cancel.className = 'btn';
-  cancel.textContent = '銃を置く';
-  cancel.onclick = () => cancelAimingMode();
-  overlay.appendChild(cancel);
-}
-
-function cancelAimingMode() {
-  isAimingMode = false;
-  document.getElementById('action-overlay').style.display = 'none';
-  sendToHost({ type: 'aim', targetId: null });
-  updateGameHUD();
-  update3DSceneFromState();
-}
-
-function confirmShootTarget(targetId) {
-  isAimingMode = false;
-  document.getElementById('action-overlay').style.display = 'none';
-  sendToHost({ type: 'shoot', targetId });
-}
-
-/* ==========================================================================
-   9. Three.js 精密背景・テーブル造形・シビアなアイテム当たり判定・視点制御
-   ========================================================================== */
-let scene, camera, renderer;
-let tableGroup, shotgunGroup, barrelMesh;
-let myLeftHand, myRightHand;
-let seatVisuals = {};
-let mySeatAngle = 0;
-let targetCamPos = new THREE.Vector3();
-let targetCamLook = new THREE.Vector3();
-let userYawOffset = 0;
-let cameraShakeTime = 0;
-let shotgunRecoil = 0;
-
-const raycaster = new THREE.Raycaster();
-const pointerNDC = new THREE.Vector2();
-let interactableMeshes = [];
-
-function createDetailedTableTopTexture() {
-  const c = document.createElement('canvas');
-  c.width = 1024; c.height = 1024;
-  const ctx = c.getContext('2d');
-
-  ctx.fillStyle = '#333b2f';
-  ctx.fillRect(0, 0, 1024, 1024);
-
-  for (let i = 0; i < 6500; i++) {
-    const x = Math.random() * 1024;
-    const y = Math.random() * 1024;
-    const r = 1 + Math.random() * 4;
-    ctx.fillStyle = Math.random() < 0.5 ? 'rgba(15, 18, 12, 0.25)' : 'rgba(95, 105, 82, 0.16)';
-    ctx.fillRect(x, y, r, r);
-  }
-
-  ctx.strokeStyle = '#1b1d19';
-  ctx.lineWidth = 42;
-  ctx.strokeRect(21, 21, 982, 982);
-
-  ctx.strokeStyle = 'rgba(218, 226, 208, 0.58)';
-  ctx.lineWidth = 4;
-  const step = 128;
-  for (let p = step; p < 1024; p += step) {
-    ctx.beginPath(); ctx.moveTo(p, 0); ctx.lineTo(p, 1024); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, p); ctx.lineTo(1024, p); ctx.stroke();
-  }
-
-  ctx.strokeStyle = 'rgba(225, 232, 215, 0.72)';
+  // 危険エリア（安全圏リング）
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(MAP_SIZE / 2, MAP_SIZE / 2, gameState.zoneRadius, 0, Math.PI * 2);
+  ctx.strokeStyle = '#ff007f';
   ctx.lineWidth = 5;
-  ctx.strokeRect(64, 64, 896, 896);
-  ctx.strokeRect(82, 82, 860, 860);
+  ctx.shadowColor = '#ff007f';
+  ctx.shadowBlur = 18;
+  ctx.stroke();
+  ctx.restore();
 
-  const tex = new THREE.CanvasTexture(c);
-  tex.anisotropy = 4;
-  return tex;
-}
-
-function createBrickWallTexture() {
-  const c = document.createElement('canvas');
-  c.width = 512; c.height = 512;
-  const ctx = c.getContext('2d');
-
-  ctx.fillStyle = '#171110';
-  ctx.fillRect(0, 0, 512, 512);
-
-  const rows = 16;
-  const cols = 8;
-  const bw = 512 / cols;
-  const bh = 512 / rows;
-
-  for (let r = 0; r < rows; r++) {
-    const offset = (r % 2) * (bw * 0.5);
-    for (let col = -1; col <= cols; col++) {
-      const shade = 28 + Math.floor(Math.random() * 24);
-      const red = shade + 16 + Math.floor(Math.random() * 14);
-      ctx.fillStyle = `rgb(${red}, ${shade}, ${Math.max(14, shade - 4)})`;
-      ctx.fillRect(col * bw + offset + 2, r * bh + 2, bw - 4, bh - 4);
-    }
+  // 設置された罠
+  for (const tr of gameState.traps) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(tr.x, tr.y, 22, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(199, 125, 255, 0.5)';
+    ctx.setLineDash([5, 5]);
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
   }
 
-  for (let i = 0; i < 2200; i++) {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
-    ctx.fillRect(Math.random() * 512, Math.random() * 512, 4, 4);
+  // アイテム描画
+  const pulse = 1 + Math.sin(performance.now() / 160) * 0.1;
+  for (const it of gameState.items) {
+    ctx.save();
+    ctx.translate(it.x, it.y);
+    ctx.scale(pulse, pulse);
+    ctx.beginPath();
+    ctx.arc(0, 0, 20, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(10, 14, 34, 0.9)';
+    ctx.fill();
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = it.color;
+    ctx.shadowColor = it.color;
+    ctx.shadowBlur = 14;
+    ctx.stroke();
+    ctx.font = '18px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(it.icon, 0, 1);
+    ctx.restore();
   }
 
-  const tex = new THREE.CanvasTexture(c);
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(8, 3);
-  return tex;
-}
+  // プレイヤー描画
+  for (const p of gameState.players) {
+    if (!p.alive) continue;
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    if (p.dashTimer > 0) ctx.globalAlpha = 0.45;
 
-function buildDetailedEnvironment(scene) {
-  const envGroup = new THREE.Group();
-  scene.add(envGroup);
+    // 攻撃方向インジケーター
+    ctx.save();
+    ctx.rotate(p.angle);
+    ctx.beginPath();
+    ctx.moveTo(28, 0);
+    ctx.lineTo(18, -8);
+    ctx.lineTo(18, 8);
+    ctx.closePath();
+    ctx.fillStyle = p.poweredSword ? '#ff9500' : p.color.main;
+    ctx.fill();
+    ctx.restore();
 
-  const brickTex = createBrickWallTexture();
-  const roomGeo = new THREE.CylinderGeometry(7.2, 7.2, 6.4, 20, 1, true);
-  const roomMat = new THREE.MeshStandardMaterial({
-    map: brickTex,
-    side: THREE.BackSide,
-    roughness: 0.92,
-    metalness: 0.1
-  });
-  const roomMesh = new THREE.Mesh(roomGeo, roomMat);
-  roomMesh.position.y = 2.6;
-  envGroup.add(roomMesh);
-
-  const floorMesh = new THREE.Mesh(
-    new THREE.CircleGeometry(7.3, 24),
-    new THREE.MeshStandardMaterial({ color: 0x121311, roughness: 0.95 })
-  );
-  floorMesh.rotation.x = -Math.PI / 2;
-  floorMesh.position.y = 0;
-  envGroup.add(floorMesh);
-
-  const ceilingMesh = new THREE.Mesh(
-    new THREE.CircleGeometry(7.3, 24),
-    new THREE.MeshStandardMaterial({ color: 0x0d0d0d, roughness: 0.9 })
-  );
-  ceilingMesh.rotation.x = Math.PI / 2;
-  ceilingMesh.position.y = 5.6;
-  envGroup.add(ceilingMesh);
-
-  const rustPipeMat = new THREE.MeshStandardMaterial({ color: 0x4f2a22, roughness: 0.65, metalness: 0.55 });
-  const darkMetalMat = new THREE.MeshStandardMaterial({ color: 0x222426, roughness: 0.55, metalness: 0.75 });
-  const rackBeigeMat = new THREE.MeshStandardMaterial({ color: 0x6b6458, roughness: 0.6, metalness: 0.35 });
-
-  for (let i = 0; i < 5; i++) {
-    const sector = new THREE.Group();
-    sector.rotation.y = i * ((Math.PI * 2) / 5);
-    envGroup.add(sector);
-
-    [-0.45, -0.15, 0.25, 0.55, 0.85].forEach((px, pIdx) => {
-      const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 5.6, 10), rustPipeMat);
-      pipe.position.set(px, 2.8, 6.75 - (pIdx % 2) * 0.08);
-      sector.add(pipe);
-
-      [1.4, 3.1, 4.4].forEach(fy => {
-        const flange = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.06, 10), darkMetalMat);
-        flange.position.set(px, fy, 6.75 - (pIdx % 2) * 0.08);
-        sector.add(flange);
-      });
-    });
-
-    [1.85, 2.45].forEach((vy, vIdx) => {
-      const valve = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.022, 8, 16), rustPipeMat);
-      valve.position.set(0.75 + vIdx * 0.22, vy, 6.62);
-      sector.add(valve);
-    });
-
-    const radGroup = new THREE.Group();
-    radGroup.position.set(-0.35, 0.9, 6.45);
-    for (let r = 0; r < 9; r++) {
-      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.78, 0.26), darkMetalMat);
-      fin.position.x = (r - 4) * 0.11;
-      radGroup.add(fin);
+    // シールドバリア
+    if (p.shield) {
+      ctx.beginPath();
+      ctx.arc(0, 0, 30, 0, Math.PI * 2);
+      ctx.strokeStyle = '#00f3ff';
+      ctx.lineWidth = 3;
+      ctx.stroke();
     }
-    sector.add(radGroup);
 
-    const spotHousing = new THREE.Group();
-    spotHousing.position.set(-2.35, 3.25, 5.75);
-    spotHousing.lookAt(0, 1.0, 0);
-    const canBody = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.28, 0.55, 14), darkMetalMat);
-    canBody.rotation.x = Math.PI / 2;
-    const lensGlow = new THREE.Mesh(
-      new THREE.CircleGeometry(0.26, 16),
-      new THREE.MeshBasicMaterial({ color: 0x1c1c1c })
-    );
-    lensGlow.position.z = 0.28;
-    spotHousing.add(canBody, lensGlow);
+    // 本体サークル
+    ctx.beginPath();
+    ctx.arc(0, 0, 22, 0, Math.PI * 2);
+    ctx.fillStyle = '#0b0f26';
+    ctx.fill();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = p.color.main;
+    ctx.shadowColor = p.color.main;
+    ctx.shadowBlur = 18;
+    ctx.stroke();
 
-    [
-      [0, 0.36, 0.35, 0.52, 0.26, -0.45, 0],
-      [0, -0.36, 0.35, 0.52, 0.26, 0.45, 0],
-      [-0.36, 0, 0.35, 0.26, 0.52, 0, 0.45],
-      [0.36, 0, 0.35, 0.26, 0.52, 0, -0.45]
-    ].forEach(([bx, by, bz, bw, bh, rx, ry]) => {
-      const flap = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, 0.025), darkMetalMat);
-      flap.position.set(bx, by, bz);
-      flap.rotation.set(rx, ry, 0);
-      spotHousing.add(flap);
-    });
-    sector.add(spotHousing);
+    // 名前とミニHPバー
+    ctx.shadowBlur = 0;
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(p.name, 0, -36);
 
-    const leftRack = new THREE.Group();
-    leftRack.position.set(-2.45, 1.35, 5.65);
-    leftRack.rotation.y = 0.32;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(-22, -31, 44, 5);
+    ctx.fillStyle = p.hp > 35 ? '#39ff14' : '#ff3b30';
+    ctx.fillRect(-22, -31, 44 * (p.hp / 100), 5);
 
-    const ampBottom = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.48, 0.72), darkMetalMat);
-    ampBottom.position.y = 0.24;
-    const ledStrip = new THREE.Mesh(
-      new THREE.BoxGeometry(0.95, 0.07, 0.02),
-      new THREE.MeshBasicMaterial({ color: 0x39ff14 })
-    );
-    ledStrip.position.set(0, 0.32, 0.365);
+    // 同盟・裏切りチャット吹き出し
+    if (p.emote) {
+      ctx.font = 'bold 12px sans-serif';
+      const tw = ctx.measureText(p.emote).width + 16;
+      ctx.fillStyle = 'rgba(18, 10, 42, 0.92)';
+      ctx.strokeStyle = p.color.main;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(-tw / 2, -66, tw, 22, 8);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#fff';
+      ctx.fillText(p.emote, 0, -51);
+    }
 
-    const meterTop = new THREE.Mesh(new THREE.BoxGeometry(0.96, 0.68, 0.64), rackBeigeMat);
-    meterTop.position.y = 0.82;
-    const dialScreen = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.56, 0.36),
-      new THREE.MeshBasicMaterial({ color: 0xb8c4a8 })
-    );
-    dialScreen.position.set(0.08, 0.88, 0.325);
-    leftRack.add(ampBottom, ledStrip, meterTop, dialScreen);
-    sector.add(leftRack);
+    ctx.restore();
+  }
 
-    const rightStack = new THREE.Group();
-    rightStack.position.set(2.35, 1.15, 5.75);
-    rightStack.rotation.y = -0.28;
+  // バトルエフェクト描画
+  for (const ef of gameState.effects) {
+    ctx.save();
+    if (ef.type === 'slash') {
+      ctx.translate(ef.x, ef.y);
+      ctx.rotate(ef.angle);
+      ctx.beginPath();
+      ctx.arc(0, 0, ef.powered ? 120 : 105, -0.95, 0.95);
+      ctx.strokeStyle = ef.color;
+      ctx.lineWidth = ef.powered ? 16 : 10;
+      ctx.shadowColor = ef.color;
+      ctx.shadowBlur = 20;
+      ctx.stroke();
+    } else if (ef.type === 'bomb') {
+      ctx.beginPath();
+      ctx.arc(ef.x, ef.y, 175 * (1 - ef.ttl / 0.45), 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 59, 48, 0.35)';
+      ctx.fill();
+      ctx.strokeStyle = '#ff9500';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+    } else if (ef.type === 'ring' || ef.type === 'dash') {
+      ctx.beginPath();
+      ctx.arc(ef.x, ef.y, 48 * (1 - ef.ttl), 0, Math.PI * 2);
+      ctx.strokeStyle = ef.color;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    } else if (ef.type === 'text') {
+      ctx.font = '900 18px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = ef.color;
+      ctx.fillText(ef.text, ef.x, ef.y - (1 - ef.ttl) * 28);
+    }
+    ctx.restore();
+  }
 
-    const spkCabinet = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.95, 0.72), darkMetalMat);
-    spkCabinet.position.set(0.45, 0.98, 0);
-    rightStack.add(spkCabinet);
+  ctx.restore();
 
-    [0.52, 1.44].forEach(wy => {
-      const coneOuter = new THREE.Mesh(
-        new THREE.TorusGeometry(0.32, 0.045, 10, 22),
-        new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.5 })
-      );
-      coneOuter.position.set(0.45, wy, 0.365);
-      const coneInner = new THREE.Mesh(
-        new THREE.CircleGeometry(0.28, 20),
-        new THREE.MeshBasicMaterial({ color: 0x0b0b0b })
-      );
-      coneInner.position.set(0.45, wy, 0.362);
-      rightStack.add(coneOuter, coneInner);
-    });
+  // 仮想スティックの視覚ガイド
+  if (stickTouchId !== null) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(stickOrigin.x, stickOrigin.y, 46, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(0, 243, 255, 0.45)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
 
-    const deckBox = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.85, 0.62), rackBeigeMat);
-    deckBox.position.set(-0.55, 0.42, 0.05);
-    const fanFrame = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.86, 0.2), darkMetalMat);
-    fanFrame.position.set(-0.55, 1.48, 0.25);
-    const fanRing = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.025, 8, 20), rackBeigeMat);
-    fanRing.position.set(-0.55, 1.48, 0.36);
-    rightStack.add(deckBox, fanFrame, fanRing);
-    sector.add(rightStack);
-
-    const cableCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-2.6, 4.9, 5.5),
-      new THREE.Vector3(-0.8, 3.85, 6.2),
-      new THREE.Vector3(1.1, 4.15, 6.1),
-      new THREE.Vector3(2.8, 5.0, 5.4)
-    ]);
-    const cableGeo = new THREE.TubeGeometry(cableCurve, 18, 0.032, 6, false);
-    const cableMesh = new THREE.Mesh(cableGeo, darkMetalMat);
-    sector.add(cableMesh);
+    ctx.beginPath();
+    ctx.arc(stickOrigin.x + stickVec.x * 46, stickOrigin.y + stickVec.y * 46, 20, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0, 243, 255, 0.65)';
+    ctx.fill();
+    ctx.restore();
   }
 }
 
-function initThreeScene() {
-  const canvas = document.getElementById('three-canvas');
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x090707);
-  scene.fog = new THREE.FogExp2(0x090707, 0.068);
-
-  camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 50);
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-  const ambient = new THREE.AmbientLight(0x544942, 1.55);
-  scene.add(ambient);
-
-  const overheadSpot = new THREE.SpotLight(0xffebd6, 2.5, 20, Math.PI / 2.8, 0.55);
-  overheadSpot.position.set(0, 5.1, 0);
-  scene.add(overheadSpot);
-
-  const backRimLight = new THREE.PointLight(0xffb88c, 0.75, 12);
-  backRimLight.position.set(0, 2.8, 0);
-  scene.add(backRimLight);
-
-  buildDetailedEnvironment(scene);
-
-  tableGroup = new THREE.Group();
-  scene.add(tableGroup);
-
-  const tableRadius = 2.58;
-  const topTex = createDetailedTableTopTexture();
-  const tableTopMat = new THREE.MeshStandardMaterial({
-    map: topTex,
-    roughness: 0.72,
-    metalness: 0.35
-  });
-  const tableSideMat = new THREE.MeshStandardMaterial({
-    color: 0x222520,
-    roughness: 0.75,
-    metalness: 0.55
-  });
-
-  const tableGeo = new THREE.CylinderGeometry(tableRadius, tableRadius * 0.92, 0.28, 10);
-  const tableMesh = new THREE.Mesh(tableGeo, [tableSideMat, tableTopMat, tableSideMat]);
-  tableMesh.position.y = 0.72;
-  tableGroup.add(tableMesh);
-
-  const outerRim = new THREE.Mesh(
-    new THREE.TorusGeometry(tableRadius * 0.96, 0.065, 8, 10),
-    new THREE.MeshStandardMaterial({ color: 0x1c1e1a, metalness: 0.75, roughness: 0.45 })
-  );
-  outerRim.rotation.x = Math.PI / 2;
-  outerRim.position.y = 0.86;
-  tableGroup.add(outerRim);
-
-  for (let b = 0; b < 10; b++) {
-    const ba = (b / 10) * Math.PI * 2;
-    const bolt = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.032, 0.032, 0.04, 8),
-      new THREE.MeshStandardMaterial({ color: 0x777c72, metalness: 0.85, roughness: 0.3 })
-    );
-    bolt.position.set(Math.sin(ba) * (tableRadius * 0.94), 0.875, Math.cos(ba) * (tableRadius * 0.94));
-    tableGroup.add(bolt);
-  }
-
-  const centerOuterRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.96, 0.075, 10, 32),
-    new THREE.MeshStandardMaterial({ color: 0x45473e, metalness: 0.65, roughness: 0.45 })
-  );
-  centerOuterRing.rotation.x = Math.PI / 2;
-  centerOuterRing.position.y = 0.88;
-  tableGroup.add(centerOuterRing);
-
-  const centerInnerDisc = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.86, 0.89, 0.06, 28),
-    new THREE.MeshStandardMaterial({ color: 0x353830, metalness: 0.5, roughness: 0.6 })
-  );
-  centerInnerDisc.position.y = 0.885;
-  tableGroup.add(centerInnerDisc);
-
-  const slitMat = new THREE.MeshBasicMaterial({ color: 0x161814 });
-  const slit1 = new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.01, 0.025), slitMat);
-  slit1.position.y = 0.918;
-  const slit2 = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.01, 1.66), slitMat);
-  slit2.position.y = 0.918;
-  tableGroup.add(slit1, slit2);
-
-  shotgunGroup = new THREE.Group();
-  shotgunGroup.position.set(0, 0.99, 0);
-
-  const stock = new THREE.Mesh(
-    new THREE.BoxGeometry(0.11, 0.14, 0.52),
-    new THREE.MeshStandardMaterial({ color: 0x4a2518, roughness: 0.7 })
-  );
-  stock.position.set(0, -0.02, -0.44);
-
-  const receiver = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1, 0.13, 0.44),
-    new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8, roughness: 0.3 })
-  );
-
-  const pump = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.048, 0.048, 0.26, 12),
-    new THREE.MeshStandardMaterial({ color: 0x3d2214, roughness: 0.75 })
-  );
-  pump.rotation.x = Math.PI / 2;
-  pump.position.set(0, -0.025, 0.34);
-
-  barrelMesh = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.032, 0.032, 0.95, 12),
-    new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.85, roughness: 0.25 })
-  );
-  barrelMesh.rotation.x = Math.PI / 2;
-  barrelMesh.position.set(0, 0.03, 0.45);
-
-  const shotgunHitbox = new THREE.Mesh(
-    new THREE.BoxGeometry(0.42, 0.34, 1.42),
-    new THREE.MeshBasicMaterial({ visible: false })
-  );
-  shotgunHitbox.userData = { interactType: 'shotgun' };
-  shotgunGroup.add(stock, receiver, pump, barrelMesh, shotgunHitbox);
-  scene.add(shotgunGroup);
-
-  myLeftHand = buildHandMesh();
-  myRightHand = buildHandMesh();
-  myLeftHand.visible = false;
-  myRightHand.visible = false;
-  scene.add(myLeftHand, myRightHand);
-
-  let dragging = false, movedDist = 0, startX = 0, prevX = 0, lastLookSend = 0;
-
-  canvas.addEventListener('pointerdown', (e) => {
-    dragging = true;
-    movedDist = 0;
-    startX = e.clientX;
-    prevX = e.clientX;
-  });
-
-  window.addEventListener('pointerup', (e) => {
-    if (!dragging) return;
-    dragging = false;
-    const totalDx = e.clientX - startX;
-    if (movedDist < 8) {
-      handle3DDirectTap(e.clientX, e.clientY);
-    } else if (adrenalineStealSlot !== null && Math.abs(totalDx) >= 48) {
-      // アドレナリン選択中は左右スワイプでも別の相手のテーブルへ切り替え可能
-      cycleAdrenalineTarget(totalDx < 0 ? 1 : -1);
-    }
-  });
-
-  window.addEventListener('pointermove', (e) => {
-    if (!dragging) return;
-    const dx = e.clientX - prevX;
-    movedDist += Math.abs(dx);
-    prevX = e.clientX;
-    if (adrenalineStealSlot !== null) return;
-    userYawOffset = Math.max(-1.15, Math.min(1.15, userYawOffset - dx * 0.005));
-    const now = Date.now();
-    if (now - lastLookSend > 120) {
-      lastLookSend = now;
-      sendToHost({ type: 'look', yaw: userYawOffset });
-    }
-  });
-
-  window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-  });
-
-  animate3D();
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
 }
 
-function handle3DDirectTap(clientX, clientY) {
-  const turnPlayer = gameState.players[gameState.turnIndex];
-  const isMyTurn = (gameState.phase === 'play' && turnPlayer && turnPlayer.id === myId);
-  if (!isMyTurn) return;
+// メインループ
+let lastTime = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - lastTime) / 1000);
+  lastTime = now;
 
-  const rect = renderer.domElement.getBoundingClientRect();
-  pointerNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-  pointerNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-
-  raycaster.setFromCamera(pointerNDC, camera);
-  const targets = [...interactableMeshes];
-  if (!isAimingMode && adrenalineStealSlot === null && !pendingPlayerTargetItem) {
-    shotgunGroup.children.forEach(c => {
-      if (c.userData && c.userData.interactType === 'shotgun') targets.push(c);
-    });
-  }
-
-  const hits = raycaster.intersectObjects(targets, false);
-  if (hits.length === 0) return;
-
-  let bestHit = hits[0];
-  let bestDistToCenter = Infinity;
-  const worldBoxCenter = new THREE.Vector3();
-  hits.forEach(h => {
-    h.object.getWorldPosition(worldBoxCenter);
-    const d = h.point.distanceTo(worldBoxCenter);
-    if (d < bestDistToCenter) {
-      bestDistToCenter = d;
-      bestHit = h;
-    }
-  });
-
-  const info = bestHit.object.userData;
-  if (!info || !info.interactType) return;
-
-  if (pendingPlayerTargetItem) {
-    if (info.interactType === 'target_player' && info.playerId !== myId) {
-      confirmDirectPlayerTarget(info.playerId);
-    }
-    return;
-  }
-
-  if (adrenalineStealSlot !== null) {
-    if (info.interactType === 'target_player' && info.playerId !== myId) {
-      focusAdrenalineTarget(info.playerId);
-      return;
-    }
-    if (info.interactType === 'enemy_item') {
-      if (info.itemId === 'adrenaline') {
-        showBanner('アドレナリン自体は盗めません！', 1600);
-        return;
-      }
-      const mySlot = adrenalineStealSlot;
-      adrenalineStealSlot = null;
-      adrenalineFocusTargetId = null;
-      document.getElementById('action-overlay').style.display = 'none';
-      setCameraMode('front');
-      playTone(720, 'sine', 0.1, 0.16);
-      sendToHost({
-        type: 'use_item',
-        slotIndex: mySlot,
-        targetPlayerId: info.playerId,
-        stealSlotIndex: info.slotIndex
-      });
-    }
-    return;
-  }
-
-  if (isAimingMode) {
-    if (info.interactType === 'target_player' && info.playerId !== myId) {
-      playShotSound(false);
-      confirmShootTarget(info.playerId);
-    }
-    return;
-  }
-
-  if (info.interactType === 'shotgun') {
-    playTone(440, 'triangle', 0.08, 0.15);
-    openShootTargetMenu();
-  } else if (info.interactType === 'my_item') {
-    playTone(620, 'sine', 0.08, 0.15);
-    openItemUseModal(info.slotIndex, info.itemId);
-  }
+  if (shakeTimer > 0) shakeTimer = Math.max(0, shakeTimer - dt);
+  processLocalInput();
+  stepSimulation(dt);
+  render();
+  requestAnimationFrame(loop);
 }
-
-function setCameraMode(mode) {
-  cameraMode = mode;
-  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-  const btn = document.getElementById('cam-btn-' + mode);
-  if (btn) btn.classList.add('active');
-  userYawOffset = 0;
-}
-
-function buildMaskMesh(skinId) {
-  const skin = MASK_SKINS.find(s => s.id === skinId) || MASK_SKINS[0];
-  const group = new THREE.Group();
-  const baseMat = new THREE.MeshStandardMaterial({
-    color: skin.body,
-    roughness: skin.id === 'gold' ? 0.3 : 0.65,
-    metalness: skin.id === 'gold' || skin.id === 'cyber' ? 0.75 : 0.35
-  });
-
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.48, 0.38), baseMat);
-  group.add(head);
-
-  const isGlowingEye = (skin.id === 'cyber' || skin.id === 'shadow' || skin.id === 'toxic' || skin.id === 'gold' || skin.id === 'crimson' || skin.id === 'frost');
-  const eyeMat = isGlowingEye
-    ? new THREE.MeshBasicMaterial({ color: skin.eye })
-    : new THREE.MeshStandardMaterial({ color: skin.eye });
-  const rimMat = new THREE.MeshStandardMaterial({ color: skin.rim, metalness: 0.8 });
-
-  if (skin.type === 'visor') {
-    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.11, 0.05), eyeMat);
-    visor.position.set(0, 0.06, 0.19);
-    const frame = new THREE.Mesh(new THREE.BoxGeometry(0.37, 0.14, 0.03), rimMat);
-    frame.position.set(0, 0.06, 0.185);
-    group.add(visor, frame);
-  } else {
-    [-0.1, 0.1].forEach(ex => {
-      const eye = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.06, 12), eyeMat);
-      eye.rotation.x = Math.PI / 2;
-      eye.position.set(ex, 0.06, 0.19);
-      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.068, 0.015, 8, 16), rimMat);
-      rim.position.set(ex, 0.06, 0.21);
-      group.add(eye, rim);
-    });
-  }
-
-  const accentMat = new THREE.MeshStandardMaterial({ color: skin.accent, roughness: 0.5, metalness: 0.5 });
-
-  if (skin.type === 'dual_filter') {
-    [-0.1, 0.1].forEach(fx => {
-      const filter = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.075, 0.12, 12), accentMat);
-      filter.rotation.x = Math.PI / 2;
-      filter.position.set(fx, -0.1, 0.22);
-      group.add(filter);
-    });
-  } else if (skin.type === 'horns') {
-    [-0.15, 0.15].forEach(hx => {
-      const horn = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.22, 8), accentMat);
-      horn.position.set(hx, 0.32, 0.05);
-      horn.rotation.z = hx < 0 ? 0.3 : -0.3;
-      group.add(horn);
-    });
-  } else if (skin.type === 'crown') {
-    const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.16, 0.12, 8), accentMat);
-    crown.position.set(0, 0.29, 0);
-    group.add(crown);
-  } else if (skin.type === 'skull') {
-    for (let tx = -0.09; tx <= 0.09; tx += 0.045) {
-      const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.07, 0.04), accentMat);
-      tooth.position.set(tx, -0.13, 0.19);
-      group.add(tooth);
-    }
-  } else {
-    const filter = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.085, 0.14, 12), accentMat);
-    filter.rotation.x = Math.PI / 2;
-    filter.position.set(0, -0.1, 0.22);
-    group.add(filter);
-  }
-
-  return group;
-}
-
-function buildHandMesh() {
-  const handGroup = new THREE.Group();
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0x8f7a6c, roughness: 0.8 });
-  const palm = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.06, 0.18), skinMat);
-  handGroup.add(palm);
-  for (let f = -1.5; f <= 1.5; f += 1) {
-    const finger = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.04, 0.11), skinMat);
-    finger.position.set(f * 0.032, -0.01, 0.12);
-    handGroup.add(finger);
-  }
-  return handGroup;
-}
-
-function buildItem3DMesh(itemId) {
-  const g = new THREE.Group();
-
-  switch (itemId) {
-    case 'saw': {
-      const blade = new THREE.Mesh(
-        new THREE.BoxGeometry(0.22, 0.008, 0.05),
-        new THREE.MeshStandardMaterial({ color: 0xc8d0d8, metalness: 0.88, roughness: 0.22 })
-      );
-      blade.position.set(0.02, 0.025, 0);
-      const handle = new THREE.Mesh(
-        new THREE.BoxGeometry(0.075, 0.032, 0.065),
-        new THREE.MeshStandardMaterial({ color: 0x7a3b1e, roughness: 0.8 })
-      );
-      handle.position.set(-0.10, 0.028, 0);
-      g.add(blade, handle);
-      break;
-    }
-    case 'magnifier': {
-      const rim = new THREE.Mesh(
-        new THREE.TorusGeometry(0.06, 0.011, 10, 20),
-        new THREE.MeshStandardMaterial({ color: 0xd0d0d0, metalness: 0.85, roughness: 0.2 })
-      );
-      rim.rotation.x = Math.PI / 2;
-      rim.position.set(-0.025, 0.02, 0);
-      const lens = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.055, 0.055, 0.008, 18),
-        new THREE.MeshStandardMaterial({ color: 0xaaddff, transparent: true, opacity: 0.45, roughness: 0.1 })
-      );
-      lens.position.set(-0.025, 0.02, 0);
-      const handle = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.012, 0.015, 0.11, 10),
-        new THREE.MeshStandardMaterial({ color: 0x1e1e1e, roughness: 0.6 })
-      );
-      handle.rotation.z = Math.PI / 2;
-      handle.position.set(0.08, 0.02, 0);
-      g.add(rim, lens, handle);
-      break;
-    }
-    case 'cigarette': {
-      const boxBottom = new THREE.Mesh(
-        new THREE.BoxGeometry(0.085, 0.032, 0.125),
-        new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 })
-      );
-      boxBottom.position.y = 0.016;
-      const boxTop = new THREE.Mesh(
-        new THREE.BoxGeometry(0.087, 0.034, 0.052),
-        new THREE.MeshStandardMaterial({ color: 0xc82323, roughness: 0.5 })
-      );
-      boxTop.position.set(0, 0.017, -0.038);
-      const stick = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.008, 0.008, 0.105, 8),
-        new THREE.MeshStandardMaterial({ color: 0xf7f7f7, roughness: 0.7 })
-      );
-      stick.rotation.x = Math.PI / 2;
-      stick.position.set(0.02, 0.038, 0.028);
-      g.add(boxBottom, boxTop, stick);
-      break;
-    }
-    case 'beer': {
-      const can = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.044, 0.044, 0.15, 16),
-        new THREE.MeshStandardMaterial({ color: 0xcfd6dc, metalness: 0.85, roughness: 0.25 })
-      );
-      can.position.y = 0.075;
-      const band = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.045, 0.045, 0.048, 16),
-        new THREE.MeshStandardMaterial({ color: 0x246b35, roughness: 0.5 })
-      );
-      band.position.y = 0.078;
-      const topRim = new THREE.Mesh(
-        new THREE.TorusGeometry(0.039, 0.005, 8, 16),
-        new THREE.MeshStandardMaterial({ color: 0xe0e0e0, metalness: 0.9 })
-      );
-      topRim.rotation.x = Math.PI / 2;
-      topRim.position.y = 0.151;
-      g.add(can, band, topRim);
-      break;
-    }
-    case 'medicine': {
-      const bottle = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.04, 0.04, 0.12, 14),
-        new THREE.MeshStandardMaterial({ color: 0xb87333, transparent: true, opacity: 0.85, roughness: 0.3 })
-      );
-      bottle.position.y = 0.06;
-      const label = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.0415, 0.0415, 0.062, 14),
-        new THREE.MeshStandardMaterial({ color: 0xebe6d8, roughness: 0.8 })
-      );
-      label.position.y = 0.06;
-      const cap = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.043, 0.043, 0.026, 14),
-        new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.5 })
-      );
-      cap.position.y = 0.13;
-      g.add(bottle, label, cap);
-      break;
-    }
-    case 'adrenaline': {
-      const barrel = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.019, 0.019, 0.13, 12),
-        new THREE.MeshStandardMaterial({ color: 0xddeeff, transparent: true, opacity: 0.55, roughness: 0.1 })
-      );
-      barrel.rotation.z = Math.PI / 2;
-      barrel.position.y = 0.025;
-      const liquid = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.015, 0.015, 0.085, 12),
-        new THREE.MeshStandardMaterial({ color: 0x39ff14, emissive: 0x1a8800, roughness: 0.3 })
-      );
-      liquid.rotation.z = Math.PI / 2;
-      liquid.position.set(0.014, 0.025, 0);
-      const plunger = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.008, 0.008, 0.075, 8),
-        new THREE.MeshStandardMaterial({ color: 0x333333 })
-      );
-      plunger.rotation.z = Math.PI / 2;
-      plunger.position.set(-0.085, 0.025, 0);
-      const needle = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.002, 0.002, 0.055, 6),
-        new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.95 })
-      );
-      needle.rotation.z = Math.PI / 2;
-      needle.position.set(0.09, 0.025, 0);
-      g.add(barrel, liquid, plunger, needle);
-      break;
-    }
-    case 'inverter': {
-      const body = new THREE.Mesh(
-        new THREE.BoxGeometry(0.125, 0.044, 0.145),
-        new THREE.MeshStandardMaterial({ color: 0x263829, metalness: 0.5, roughness: 0.5 })
-      );
-      body.position.y = 0.022;
-      const redNode = new THREE.Mesh(
-        new THREE.SphereGeometry(0.019, 10, 10),
-        new THREE.MeshStandardMaterial({ color: 0xff2a2a, emissive: 0x660000 })
-      );
-      redNode.position.set(-0.03, 0.047, 0.02);
-      const blueNode = new THREE.Mesh(
-        new THREE.SphereGeometry(0.019, 10, 10),
-        new THREE.MeshStandardMaterial({ color: 0x2a9df4, emissive: 0x003366 })
-      );
-      blueNode.position.set(0.03, 0.047, 0.02);
-      const ant = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.005, 0.005, 0.075, 6),
-        new THREE.MeshStandardMaterial({ color: 0xbbbbbb, metalness: 0.8 })
-      );
-      ant.position.set(0.042, 0.072, -0.048);
-      g.add(body, redNode, blueNode, ant);
-      break;
-    }
-    case 'phone': {
-      const body = new THREE.Mesh(
-        new THREE.BoxGeometry(0.082, 0.025, 0.16),
-        new THREE.MeshStandardMaterial({ color: 0x1c1c1e, roughness: 0.5 })
-      );
-      body.position.y = 0.013;
-      const screen = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.062, 0.052),
-        new THREE.MeshBasicMaterial({ color: 0x39ff14 })
-      );
-      screen.rotation.x = -Math.PI / 2;
-      screen.position.set(0, 0.026, -0.032);
-      const keypad = new THREE.Mesh(
-        new THREE.BoxGeometry(0.062, 0.006, 0.072),
-        new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.7 })
-      );
-      keypad.position.set(0, 0.026, 0.036);
-      const ant = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.006, 0.008, 0.042, 8),
-        new THREE.MeshStandardMaterial({ color: 0x111111 })
-      );
-      ant.rotation.x = Math.PI / 2;
-      ant.position.set(0.026, 0.014, -0.095);
-      g.add(body, screen, keypad, ant);
-      break;
-    }
-    case 'handcuffs': {
-      const metalMat = new THREE.MeshStandardMaterial({ color: 0xd0d8de, metalness: 0.9, roughness: 0.2 });
-      const ringL = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.01, 8, 18), metalMat);
-      ringL.rotation.x = Math.PI / 2;
-      ringL.position.set(-0.056, 0.016, 0);
-      const ringR = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.01, 8, 18), metalMat);
-      ringR.rotation.x = Math.PI / 2;
-      ringR.position.set(0.056, 0.016, 0);
-      const chain = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.012, 0.015), metalMat);
-      chain.position.set(0, 0.016, 0);
-      g.add(ringL, ringR, chain);
-      break;
-    }
-    case 'remote': {
-      const body = new THREE.Mesh(
-        new THREE.BoxGeometry(0.078, 0.024, 0.155),
-        new THREE.MeshStandardMaterial({ color: 0x22262b, roughness: 0.5 })
-      );
-      body.position.y = 0.012;
-      const led = new THREE.Mesh(
-        new THREE.SphereGeometry(0.011, 8, 8),
-        new THREE.MeshBasicMaterial({ color: 0xff2a2a })
-      );
-      led.position.set(0, 0.025, -0.052);
-      const btnPad = new THREE.Mesh(
-        new THREE.BoxGeometry(0.052, 0.006, 0.075),
-        new THREE.MeshStandardMaterial({ color: 0x39ff14 })
-      );
-      btnPad.position.set(0, 0.025, 0.014);
-      g.add(body, led, btnPad);
-      break;
-    }
-    case 'eyedrops': {
-      const bottle = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.03, 0.03, 0.082, 12),
-        new THREE.MeshStandardMaterial({ color: 0xdff7ff, transparent: true, opacity: 0.85 })
-      );
-      bottle.position.y = 0.041;
-      const liquid = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.026, 0.026, 0.042, 12),
-        new THREE.MeshStandardMaterial({ color: 0x2a9df4 })
-      );
-      liquid.position.y = 0.03;
-      const tip = new THREE.Mesh(
-        new THREE.ConeGeometry(0.026, 0.042, 12),
-        new THREE.MeshStandardMaterial({ color: 0xffffff })
-      );
-      tip.position.y = 0.102;
-      g.add(bottle, liquid, tip);
-      break;
-    }
-    case 'rosary': {
-      const goldMat = new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0x554400, metalness: 0.9, roughness: 0.2 });
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.008, 8, 18), goldMat);
-      ring.rotation.x = Math.PI / 2;
-      ring.position.set(0, 0.016, -0.032);
-      const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.017, 0.014, 0.09), goldMat);
-      crossV.position.set(0, 0.016, 0.045);
-      const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.014, 0.017), goldMat);
-      crossH.position.set(0, 0.016, 0.032);
-      g.add(ring, crossV, crossH);
-      break;
-    }
-  }
-  return g;
-}
-
-function update3DSceneFromState() {
-  const tagsContainer = document.getElementById('name-tags-container');
-  const stepAngle = (Math.PI * 2) / 5;
-  interactableMeshes = [];
-
-  Object.keys(seatVisuals).forEach(pid => {
-    if (!gameState.players.find(p => p.id === pid)) {
-      scene.remove(seatVisuals[pid].group);
-      seatVisuals[pid].nameTag.remove();
-      delete seatVisuals[pid];
-    }
-  });
-
-  gameState.players.forEach((p, idx) => {
-    const angle = idx * stepAngle;
-    if (p.id === myId) mySeatAngle = angle;
-
-    if (seatVisuals[p.id] && seatVisuals[p.id].skinId !== p.skinId) {
-      seatVisuals[p.id].group.remove(seatVisuals[p.id].headGroup);
-      const newHead = buildMaskMesh(p.skinId);
-      newHead.position.set(0, 1.52, 2.75);
-      newHead.rotation.y = Math.PI;
-      seatVisuals[p.id].group.add(newHead);
-      seatVisuals[p.id].headGroup = newHead;
-      seatVisuals[p.id].skinId = p.skinId;
-    }
-
-    if (!seatVisuals[p.id]) {
-      const group = new THREE.Group();
-      scene.add(group);
-
-      const sideConsole = new THREE.Mesh(
-        new THREE.BoxGeometry(0.42, 0.14, 0.16),
-        new THREE.MeshStandardMaterial({ color: 0x2a2d27, metalness: 0.6, roughness: 0.4 })
-      );
-      sideConsole.position.set(-0.62, 0.92, 2.18);
-      sideConsole.rotation.y = 0.25;
-      const consoleScreen = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.32, 0.08),
-        new THREE.MeshBasicMaterial({ color: 0x39ff14 })
-      );
-      consoleScreen.position.set(-0.62, 0.94, 2.098);
-      consoleScreen.rotation.set(-0.35, Math.PI + 0.25, 0);
-      group.add(sideConsole, consoleScreen);
-
-      const slotCenters = [];
-      const lineMat = new THREE.LineBasicMaterial({ color: 0xb8c4b0 });
-      [-1, 1].forEach(side => {
-        for (let r = 0; r < 2; r++) {
-          for (let c = 0; c < 2; c++) {
-            const cx = side * (0.58 + c * 0.30);
-            const cz = 1.46 + r * 0.30;
-            slotCenters.push(new THREE.Vector3(cx, 0.87, cz));
-            const rectGeo = new THREE.EdgesGeometry(new THREE.PlaneGeometry(0.24, 0.24));
-            const rect = new THREE.LineSegments(rectGeo, lineMat);
-            rect.rotation.x = -Math.PI / 2;
-            rect.position.set(cx, 0.865, cz);
-            group.add(rect);
-          }
-        }
-      });
-
-      const headGroup = buildMaskMesh(p.skinId);
-      headGroup.position.set(0, 1.52, 2.75);
-      headGroup.rotation.y = Math.PI;
-
-      const targetHitBox = new THREE.Mesh(
-        new THREE.BoxGeometry(0.75, 0.9, 0.75),
-        new THREE.MeshBasicMaterial({ visible: false })
-      );
-      targetHitBox.position.set(0, 1.45, 2.7);
-      targetHitBox.userData = { interactType: 'target_player', playerId: p.id };
-      group.add(targetHitBox);
-
-      const leftHand = buildHandMesh();
-      leftHand.position.set(-0.38, 1.05, 2.25);
-      leftHand.rotation.y = Math.PI;
-
-      const rightHand = buildHandMesh();
-      rightHand.position.set(0.38, 1.05, 2.25);
-      rightHand.rotation.y = Math.PI;
-
-      group.add(headGroup, leftHand, rightHand);
-
-      const nameTag = document.createElement('div');
-      nameTag.className = 'name-tag';
-      nameTag.onclick = () => {
-        if (adrenalineStealSlot !== null && p.alive && p.id !== myId) {
-          focusAdrenalineTarget(p.id);
-        } else if (pendingPlayerTargetItem && p.alive && p.id !== myId) {
-          confirmDirectPlayerTarget(p.id);
-        } else if (isAimingMode && p.alive && p.id !== myId) {
-          confirmShootTarget(p.id);
-        }
-      };
-      tagsContainer.appendChild(nameTag);
-
-      seatVisuals[p.id] = {
-        group,
-        headGroup,
-        skinId: p.skinId,
-        targetHitBox,
-        leftHand,
-        rightHand,
-        slotCenters,
-        itemMeshes: [],
-        nameTag
-      };
-    }
-
-    const vis = seatVisuals[p.id];
-    vis.group.rotation.y = angle;
-
-    const isMe = (p.id === myId);
-    vis.headGroup.visible = !isMe && p.alive;
-    vis.leftHand.visible = !isMe && p.alive;
-    vis.rightHand.visible = !isMe && p.alive;
-
-    if (!isMe && p.alive && (isAimingMode || pendingPlayerTargetItem || adrenalineStealSlot !== null)) {
-      interactableMeshes.push(vis.targetHitBox);
-    }
-
-    vis.itemMeshes.forEach(m => vis.group.remove(m));
-    vis.itemMeshes = [];
-    p.slots.forEach((itemId, sIdx) => {
-      if (itemId && vis.slotCenters[sIdx]) {
-        const m = buildItem3DMesh(itemId);
-        m.position.copy(vis.slotCenters[sIdx]);
-
-        if (adrenalineStealSlot !== null && !isMe && p.alive && itemId !== 'adrenaline') {
-          m.position.y += 0.06;
-          m.scale.set(1.22, 1.22, 1.22);
-        }
-
-        if (isMe && p.alive && adrenalineStealSlot === null && !pendingPlayerTargetItem && !isAimingMode) {
-          const hitBox = new THREE.Mesh(
-            new THREE.BoxGeometry(0.17, 0.17, 0.17),
-            new THREE.MeshBasicMaterial({ visible: false })
-          );
-          hitBox.position.y = 0.07;
-          hitBox.userData = { interactType: 'my_item', slotIndex: sIdx, itemId: itemId };
-          m.add(hitBox);
-          interactableMeshes.push(hitBox);
-        } else if (!isMe && p.alive && adrenalineStealSlot !== null) {
-          const enemyHitBox = new THREE.Mesh(
-            new THREE.BoxGeometry(0.18, 0.18, 0.18),
-            new THREE.MeshBasicMaterial({ visible: false })
-          );
-          enemyHitBox.position.y = 0.07;
-          enemyHitBox.userData = {
-            interactType: 'enemy_item',
-            playerId: p.id,
-            slotIndex: sIdx,
-            itemId: itemId
-          };
-          m.add(enemyHitBox);
-          interactableMeshes.push(enemyHitBox);
-        }
-
-        vis.group.add(m);
-        vis.itemMeshes.push(m);
-      }
-    });
-
-    const isTurn = (gameState.phase === 'play' && gameState.players[gameState.turnIndex]?.id === p.id);
-    const statusMarks = (p.rosaryActive ? '✝' : '') + (p.skipNextTurn ? '⛓️' : '') + (p.noItemsNextTurn ? '💧' : '');
-    let prefix = '';
-    if (isAimingMode && !isMe && p.alive) prefix = '🎯 ';
-    else if (pendingPlayerTargetItem && !isMe && p.alive) {
-      prefix = pendingPlayerTargetItem.itemId === 'handcuffs' ? '⛓️ ' : '💧 ';
-    } else if (adrenalineStealSlot !== null && !isMe && p.alive) {
-      prefix = p.id === adrenalineFocusTargetId ? '💉[確認中] ' : '💉 ';
-    }
-
-    vis.nameTag.textContent = `${prefix}${p.name} (⚡${p.hp})${statusMarks}`;
-    vis.nameTag.className = 'name-tag'
-      + (isTurn ? ' turn-active' : '')
-      + (!p.alive ? ' dead' : '')
-      + (isAimingMode && !isMe && p.alive ? ' aimable' : '')
-      + ((pendingPlayerTargetItem || adrenalineStealSlot !== null) && !isMe && p.alive ? ' item-targetable' : '');
-    vis.nameTag.style.display = isMe ? 'none' : 'block';
-  });
-
-  barrelMesh.scale.y = gameState.sawActive ? 0.55 : 1.0;
-}
-
-function getSeatPosition(playerIndex, radius = 2.2) {
-  const angle = playerIndex * ((Math.PI * 2) / 5);
-  return new THREE.Vector3(Math.sin(angle) * radius, 1.28, Math.cos(angle) * radius);
-}
-
-function animate3D() {
-  requestAnimationFrame(animate3D);
-  const t = performance.now() * 0.0025;
-
-  if (isChamberCutscene) {
-    const camX = Math.sin(mySeatAngle) * 1.85;
-    const camZ = Math.cos(mySeatAngle) * 1.85;
-    targetCamPos.set(camX, 1.75, camZ);
-    targetCamLook.set(0, 1.18, 0);
-  } else if (adrenalineStealSlot !== null && adrenalineFocusTargetId) {
-    const targetIdx = gameState.players.findIndex(p => p.id === adrenalineFocusTargetId);
-    if (targetIdx !== -1) {
-      const tAngle = targetIdx * ((Math.PI * 2) / 5);
-      targetCamPos.set(Math.sin(tAngle) * 0.55, 2.02, Math.cos(tAngle) * 0.55);
-      targetCamLook.set(Math.sin(tAngle) * 1.75, 0.88, Math.cos(tAngle) * 1.75);
-    }
-  } else if (gameState.phase === 'gameover' && gameState.winnerId && gameState.winnerId !== myId) {
-    const winIdx = gameState.players.findIndex(p => p.id === gameState.winnerId);
-    if (winIdx !== -1) {
-      const winAngle = winIdx * ((Math.PI * 2) / 5);
-      targetCamPos.set(Math.sin(winAngle) * 1.35, 1.55, Math.cos(winAngle) * 1.35);
-      targetCamLook.set(Math.sin(winAngle) * 2.75, 1.52, Math.cos(winAngle) * 2.75);
-    }
-  } else {
-    const dist = cameraMode === 'top' ? 0.4 : 2.95;
-    const height = cameraMode === 'top' ? 4.3 : 1.72;
-    const lookY = cameraMode === 'top' ? 0.85 : 1.22;
-
-    const camX = Math.sin(mySeatAngle) * dist;
-    const camZ = Math.cos(mySeatAngle) * dist;
-    targetCamPos.set(camX, height, camZ);
-
-    const lookYaw = mySeatAngle + Math.PI + userYawOffset;
-    targetCamLook.set(
-      camX + Math.sin(lookYaw) * 2.5,
-      lookY,
-      camZ + Math.cos(lookYaw) * 2.5
-    );
-  }
-
-  camera.position.lerp(targetCamPos, 0.14);
-  if (cameraShakeTime > 0) {
-    cameraShakeTime -= 0.016;
-    camera.position.x += (Math.random() - 0.5) * 0.16;
-    camera.position.y += (Math.random() - 0.5) * 0.16;
-  }
-  camera.lookAt(targetCamLook);
-
-  if (shotgunRecoil > 0) {
-    shotgunRecoil = Math.max(0, shotgunRecoil - 0.018);
-  }
-
-  let activeShooterIdx = gameState.turnIndex;
-  let activeTargetId = gameState.aimTargetId;
-
-  if (activeShootOverride) {
-    const sIdx = gameState.players.findIndex(p => p.id === activeShootOverride.shooterId);
-    if (sIdx !== -1) {
-      activeShooterIdx = sIdx;
-      activeTargetId = activeShootOverride.targetId;
-    }
-  }
-
-  const shooterPlayer = gameState.players[activeShooterIdx];
-  const isHeld = Boolean(activeShootOverride) || (shooterPlayer && (shooterPlayer.handAction === 'aim' || shooterPlayer.handAction === 'shoot' || (shooterPlayer.id === myId && isAimingMode)));
-
-  if (shotgunGroup) {
-    if (isHeld && activeShooterIdx >= 0 && activeShooterIdx < gameState.players.length) {
-      const holdPos = getSeatPosition(activeShooterIdx, 1.9);
-      holdPos.y = 1.28;
-      shotgunGroup.position.lerp(holdPos, 0.28);
-
-      let aimPos = new THREE.Vector3(0, 1.28, 0);
-      const effectiveTargetId = activeTargetId || (shooterPlayer && shooterPlayer.id === myId && isAimingMode ? myId : null);
-      if (effectiveTargetId) {
-        const tIdx = gameState.players.findIndex(p => p.id === effectiveTargetId);
-        if (tIdx !== -1) {
-          if (tIdx === activeShooterIdx) {
-            const selfAngle = activeShooterIdx * ((Math.PI * 2) / 5);
-            aimPos.set(Math.sin(selfAngle) * 3.1, 1.48, Math.cos(selfAngle) * 3.1);
-          } else {
-            aimPos = getSeatPosition(tIdx, 2.75);
-            aimPos.y = 1.50;
-          }
-        }
-      }
-
-      const dummy = new THREE.Object3D();
-      dummy.position.copy(shotgunGroup.position);
-      dummy.lookAt(aimPos);
-      shotgunGroup.quaternion.slerp(dummy.quaternion, activeShootOverride ? 0.55 : 0.25);
-
-      if (shotgunRecoil > 0) {
-        shotgunGroup.translateZ(-shotgunRecoil * 0.5);
-        shotgunGroup.rotateX(-shotgunRecoil * 0.45);
-      }
-
-      if (shooterPlayer && shooterPlayer.id === myId) {
-        myLeftHand.visible = true;
-        myRightHand.visible = true;
-        const leftGrip = new THREE.Vector3(-0.06, -0.04, 0.34).applyMatrix4(shotgunGroup.matrixWorld);
-        const rightGrip = new THREE.Vector3(0.06, -0.05, -0.18).applyMatrix4(shotgunGroup.matrixWorld);
-        myLeftHand.position.copy(leftGrip);
-        myRightHand.position.copy(rightGrip);
-        myLeftHand.quaternion.copy(shotgunGroup.quaternion);
-        myRightHand.quaternion.copy(shotgunGroup.quaternion);
-      } else {
-        myLeftHand.visible = false;
-        myRightHand.visible = false;
-      }
-    } else {
-      myLeftHand.visible = false;
-      myRightHand.visible = false;
-      shotgunGroup.position.lerp(new THREE.Vector3(0, 0.99, 0), 0.18);
-      const restYaw = (activeShooterIdx >= 0 ? activeShooterIdx : 0) * ((Math.PI * 2) / 5);
-      const restQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), restYaw);
-      shotgunGroup.quaternion.slerp(restQuat, 0.15);
-    }
-  }
-
-  gameState.players.forEach((p, idx) => {
-    const vis = seatVisuals[p.id];
-    if (!vis) return;
-
-    let kb = hitKnockback[p.id] || 0;
-    if (kb > 0) {
-      kb = Math.max(0, kb - 0.025);
-      hitKnockback[p.id] = kb;
-      vis.headGroup.position.set(0, 1.52 - kb * 0.18, 2.75 + kb * 0.45);
-      vis.headGroup.rotation.x = -kb * 0.65;
-      vis.headGroup.rotation.y = Math.PI + (p.lookYaw || 0);
-    } else {
-      vis.headGroup.position.set(0, 1.52 + Math.sin(t + idx) * 0.03, 2.75);
-      vis.headGroup.rotation.x = 0;
-      vis.headGroup.rotation.y = Math.PI + (p.lookYaw || 0);
-    }
-
-    const isThisShooter = (activeShootOverride && activeShootOverride.shooterId === p.id) || (p.handAction === 'aim' || p.handAction === 'shoot');
-    if (p.id !== myId && isThisShooter) {
-      const leftWorld = new THREE.Vector3(-0.06, -0.04, 0.34).applyMatrix4(shotgunGroup.matrixWorld);
-      const rightWorld = new THREE.Vector3(0.06, -0.05, -0.18).applyMatrix4(shotgunGroup.matrixWorld);
-      vis.group.worldToLocal(leftWorld);
-      vis.group.worldToLocal(rightWorld);
-      vis.leftHand.position.lerp(leftWorld, 0.38);
-      vis.rightHand.position.lerp(rightWorld, 0.38);
-    } else if (p.handAction && p.handAction.startsWith('item_')) {
-      vis.rightHand.position.set(0.1, 1.25 + Math.sin(t * 6) * 0.08, 1.95);
-    } else {
-      vis.leftHand.position.set(-0.38, 1.05 + Math.sin(t + idx) * 0.025 + kb * 0.3, 2.25 + kb * 0.25);
-      vis.rightHand.position.set(0.38, 1.05 + Math.cos(t + idx) * 0.025 + kb * 0.3, 2.25 + kb * 0.25);
-    }
-
-    if (p.id !== myId) {
-      const worldHeadPos = new THREE.Vector3(0, 1.92, 2.75);
-      worldHeadPos.applyAxisAngle(new THREE.Vector3(0, 1, 0), idx * ((Math.PI * 2) / 5));
-      worldHeadPos.project(camera);
-
-      if (worldHeadPos.z < 1) {
-        const sx = (worldHeadPos.x * 0.5 + 0.5) * window.innerWidth;
-        const sy = (-worldHeadPos.y * 0.5 + 0.5) * window.innerHeight;
-        vis.nameTag.style.left = sx + 'px';
-        vis.nameTag.style.top = sy + 'px';
-        vis.nameTag.style.display = 'block';
-      } else {
-        vis.nameTag.style.display = 'none';
-      }
-    }
-  });
-
-  renderer.render(scene, camera);
-}
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
