@@ -1,1350 +1,3551 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="theme-color" content="#070812" />
-  <title>VOLT - Online Battle Arena</title>
-  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; touch-action: none; }
-    html, body {
-      width: 100%; height: 100%; overflow: hidden;
-      background: #060711; color: #eef6ff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", sans-serif;
-    }
-    canvas { display: block; width: 100vw; height: 100vh; }
-
-    /* 共通ネオンUI */
-    .overlay {
-      position: fixed; inset: 0; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      background: radial-gradient(circle at center, rgba(16, 22, 54, 0.88), rgba(5, 6, 16, 0.96));
-      backdrop-filter: blur(8px); z-index: 20; padding: 16px;
-    }
-    .hidden { display: none !important; }
-
-    .logo-wrap { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
-    .logo-icon {
-      width: 58px; height: 58px; border-radius: 14px;
-      background: linear-gradient(135deg, #071929, #150b36);
-      border: 2px solid #00f3ff;
-      box-shadow: 0 0 22px rgba(0, 243, 255, 0.55), inset 0 0 12px rgba(138, 43, 226, 0.6);
-      display: flex; align-items: center; justify-content: center;
-    }
-    .title-text h1 {
-      font-size: 40px; font-weight: 900; letter-spacing: 5px; line-height: 1;
-      background: linear-gradient(90deg, #00f3ff, #9d4edd);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 0 12px rgba(0, 243, 255, 0.5));
-    }
-    .title-text p { font-size: 11px; letter-spacing: 2.5px; color: #8ab4f8; margin-top: 4px; }
-
-    .card {
-      width: 100%; max-width: 460px;
-      background: rgba(12, 16, 36, 0.85);
-      border: 1px solid rgba(0, 243, 255, 0.35);
-      border-radius: 16px; padding: 18px;
-      box-shadow: 0 0 30px rgba(0, 0, 0, 0.7), inset 0 0 20px rgba(98, 0, 234, 0.15);
-    }
-    .input-row { display: flex; gap: 8px; margin-bottom: 12px; }
-    input {
-      flex: 1; background: rgba(6, 9, 22, 0.9);
-      border: 1px solid rgba(0, 243, 255, 0.4); border-radius: 10px;
-      color: #fff; padding: 10px 14px; font-size: 15px; outline: none;
-      touch-action: auto; user-select: text; -webkit-user-select: text;
-    }
-    input:focus { border-color: #00f3ff; box-shadow: 0 0 12px rgba(0, 243, 255, 0.4); }
-
-    .btn {
-      border: none; border-radius: 10px; padding: 11px 16px;
-      font-size: 14px; font-weight: 800; letter-spacing: 1px; cursor: pointer;
-      color: #fff; transition: transform 0.08s, box-shadow 0.15s;
-    }
-    .btn:active { transform: scale(0.95); }
-    .btn-cyan {
-      background: linear-gradient(135deg, #00c6ff, #0072ff);
-      box-shadow: 0 0 16px rgba(0, 198, 255, 0.45);
-    }
-    .btn-purple {
-      background: linear-gradient(135deg, #7b2cbf, #5a189a);
-      border: 1px solid #c77dff;
-      box-shadow: 0 0 16px rgba(157, 78, 221, 0.45);
-    }
-    .btn-gold {
-      background: linear-gradient(135deg, #ff9e00, #ff5400);
-      box-shadow: 0 0 18px rgba(255, 110, 0, 0.5);
-    }
-    .btn-full { width: 100%; margin-bottom: 10px; font-size: 15px; padding: 13px; }
-    .status-msg { text-align: center; font-size: 12px; color: #ff6b8b; min-height: 18px; margin-top: 4px; }
-
-    /* ロビー */
-    .room-badge {
-      text-align: center; padding: 8px; border-radius: 10px;
-      background: rgba(0, 243, 255, 0.1); border: 1px dashed #00f3ff;
-      margin-bottom: 12px;
-    }
-    .room-badge span { font-size: 28px; font-weight: 900; color: #00f3ff; letter-spacing: 6px; }
-    .player-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
-    .player-item {
-      display: flex; align-items: center; justify-content: space-between;
-      background: rgba(255, 255, 255, 0.05); padding: 8px 12px; border-radius: 8px;
-      font-size: 14px; font-weight: 700;
-    }
-    .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
-
-    /* HUD */
-    #hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
-    .hud-top {
-      position: absolute; top: 10px; left: 14px; right: 14px;
-      display: flex; justify-content: space-between; align-items: flex-start;
-    }
-    .hud-box {
-      background: rgba(8, 12, 28, 0.78); border: 1px solid rgba(0, 243, 255, 0.35);
-      border-radius: 12px; padding: 7px 13px; backdrop-filter: blur(4px);
-    }
-    .timer { font-size: 22px; font-weight: 900; color: #00f3ff; letter-spacing: 2px; text-align: center; }
-    .phase-tag { font-size: 10px; color: #c77dff; text-align: center; font-weight: 700; }
-
-    .hp-bar-bg { width: 160px; height: 12px; background: rgba(255,255,255,0.12); border-radius: 6px; overflow: hidden; margin-top: 4px; }
-    .hp-bar-fill { height: 100%; background: linear-gradient(90deg, #00f3ff, #39ff14); transition: width 0.12s; }
-    .buff-icons { display: flex; gap: 6px; margin-top: 5px; font-size: 11px; font-weight: 800; }
-    .buff-tag { padding: 2px 6px; border-radius: 5px; background: rgba(255,255,255,0.12); }
-
-    /* キルログ & チャット */
-    .feed-area {
-      position: absolute; top: 72px; left: 14px;
-      display: flex; flex-direction: column; gap: 4px; max-width: 240px;
-    }
-    .feed-item {
-      background: rgba(8, 10, 24, 0.72); border-left: 3px solid #00f3ff;
-      padding: 4px 8px; border-radius: 4px; font-size: 11px;
-      animation: fadeIn 0.2s ease;
-    }
-    @keyframes fadeIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
-
-    /* クイックチャット（同盟・裏切り） */
-    .chat-bar {
-      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-      margin-top: 54px; display: flex; gap: 5px; pointer-events: auto; flex-wrap: wrap; justify-content: center;
-    }
-    .chat-btn {
-      background: rgba(18, 22, 48, 0.85); border: 1px solid rgba(157, 78, 221, 0.6);
-      color: #e0aaff; border-radius: 14px; padding: 4px 10px; font-size: 11px; font-weight: 700;
-      cursor: pointer;
-    }
-    .chat-btn:active { background: #7b2cbf; color: #fff; }
-
-    /* スマホ操作UI */
-    .touch-controls { position: absolute; inset: 0; pointer-events: none; }
-    #stickZone {
-      position: absolute; bottom: 18px; left: 18px;
-      width: 140px; height: 140px; pointer-events: auto;
-    }
-    .action-btns {
-      position: absolute; bottom: 22px; right: 24px;
-      display: flex; gap: 16px; align-items: flex-end; pointer-events: auto;
-    }
-    .act-btn {
-      border-radius: 50%; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; font-weight: 900;
-      color: #fff; cursor: pointer; position: relative; overflow: hidden;
-    }
-    #btnDash {
-      width: 68px; height: 68px;
-      background: radial-gradient(circle, rgba(123, 44, 191, 0.85), rgba(45, 12, 84, 0.9));
-      border: 2px solid #c77dff; box-shadow: 0 0 18px rgba(199, 125, 255, 0.5);
-      font-size: 12px;
-    }
-    #btnAtk {
-      width: 86px; height: 86px;
-      background: radial-gradient(circle, rgba(0, 198, 255, 0.85), rgba(0, 65, 130, 0.92));
-      border: 2.5px solid #00f3ff; box-shadow: 0 0 24px rgba(0, 243, 255, 0.6);
-      font-size: 15px;
-    }
-    .cd-mask {
-      position: absolute; inset: 0; background: rgba(0,0,0,0.68);
-      display: flex; align-items: center; justify-content: center; font-size: 14px;
-    }
-
-    /* 横画面推奨バナー（縦持ち時） */
-    #rotateHint {
-      display: none; position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%);
-      background: rgba(255, 0, 127, 0.85); color: #fff; font-size: 11px; font-weight: 700;
-      padding: 4px 12px; border-radius: 20px; z-index: 30; pointer-events: none;
-    }
-    @media (orientation: portrait) { #rotateHint { display: block; } }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Live or Die (LoD) Ver 1.5 - 3D Online</title>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root {
+    --bg: #0b0a0c;
+    --panel: rgba(22, 18, 20, 0.94);
+    --border: #5a2323;
+    --neon: #39ff14;
+    --danger: #ff2a2a;
+    --blank: #2a9df4;
+    --gold: #ffd700;
+    --text: #e6e0d8;
+  }
+  * {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    font-family: 'Courier New', 'Yu Gothic', monospace;
+  }
+  body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+    touch-action: none;
+  }
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+    z-index: 10;
+  }
+  .screen.active { display: flex; }
+  #title-screen {
+    background: radial-gradient(circle at center, #261010 0%, #070607 85%);
+  }
+  .title-logo {
+    font-size: clamp(32px, 6.2vw, 60px);
+    font-weight: 900;
+    letter-spacing: 5px;
+    color: #fff;
+    text-shadow: 0 0 18px var(--danger), 0 0 36px #700000;
+    margin-bottom: 4px;
+    text-align: center;
+  }
+  .version-tag {
+    display: inline-block;
+    background: rgba(255, 42, 42, 0.18);
+    border: 1px solid var(--danger);
+    color: #ff9c9c;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 2px 10px;
+    border-radius: 12px;
+    letter-spacing: 1.5px;
+    margin-bottom: 6px;
+  }
+  .title-sub {
+    color: #aaa;
+    font-size: 13px;
+    margin-bottom: 14px;
+    letter-spacing: 2px;
+    text-align: center;
+  }
+  .card-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.9);
+    border-radius: 8px;
+    padding: 16px 20px;
+    width: 100%;
+    max-width: 560px;
+    max-height: 88vh;
+    overflow-y: auto;
+  }
+  .input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  input[type="text"], select {
+    background: #141214;
+    border: 1px solid #444;
+    color: #fff;
+    padding: 9px 11px;
+    border-radius: 4px;
+    font-size: 14px;
+    flex: 1;
+    min-width: 110px;
+  }
+  input[type="text"]:focus, select:focus {
+    outline: none;
+    border-color: var(--neon);
+  }
+  .btn {
+    background: #2b1313;
+    color: #fff;
+    border: 1px solid var(--danger);
+    padding: 9px 14px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .btn:hover:not(:disabled) {
+    background: var(--danger);
+    color: #000;
+    box-shadow: 0 0 12px var(--danger);
+  }
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .btn-neon {
+    background: #122914;
+    border-color: var(--neon);
+    color: var(--neon);
+  }
+  .btn-neon:hover:not(:disabled) {
+    background: var(--neon);
+    color: #000;
+    box-shadow: 0 0 12px var(--neon);
+  }
+  .btn-gold {
+    background: #2c240c;
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+  .btn-gold:hover:not(:disabled) {
+    background: var(--gold);
+    color: #000;
+    box-shadow: 0 0 12px var(--gold);
+  }
+  .skin-selector-box {
+    margin-bottom: 14px;
+    padding: 10px;
+    background: rgba(10, 10, 12, 0.7);
+    border: 1px solid #383838;
+    border-radius: 6px;
+  }
+  .skin-selector-title {
+    font-size: 12px;
+    color: #ccc;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .skin-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+  .skin-card {
+    background: #18161a;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    padding: 6px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 10px;
+    color: #ccc;
+    text-align: center;
+  }
+  .skin-card:hover {
+    border-color: #888;
+    transform: translateY(-1px);
+  }
+  .skin-card.selected {
+    border: 2px solid var(--neon);
+    background: rgba(57, 255, 20, 0.14);
+    color: #fff;
+    box-shadow: 0 0 10px rgba(57, 255, 20, 0.35);
+  }
+  .skin-preview {
+    width: 34px;
+    height: 34px;
+    margin-bottom: 3px;
+  }
+  .room-badge {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--neon);
+    letter-spacing: 5px;
+    text-align: center;
+    padding: 8px;
+    background: #0d160e;
+    border: 1px dashed var(--neon);
+    border-radius: 6px;
+    margin-bottom: 12px;
+  }
+  .player-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 14px 0;
+  }
+  .player-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 10px;
+    background: #181416;
+    border: 1px solid #333;
+    margin-bottom: 6px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  .badge-host {
+    background: var(--danger);
+    color: #000;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: bold;
+  }
+  #game-screen {
+    padding: 0;
+    background: #000;
+  }
+  #three-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    z-index: 1;
+  }
+  .hud-top-left {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 20;
+    background: rgba(12, 10, 12, 0.82);
+    border: 1px solid #444;
+    padding: 8px 12px;
+    border-radius: 6px;
+    pointer-events: none;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .my-hp-row {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    margin-top: 3px;
+    font-size: 16px;
+    color: var(--neon);
+    text-shadow: 0 0 8px var(--neon);
+    flex-wrap: wrap;
+  }
+  .hp-bolt-off {
+    opacity: 0.22;
+    filter: grayscale(100%);
+    text-shadow: none;
+  }
+  .status-pill {
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: rgba(255, 215, 0, 0.16);
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    margin-left: 4px;
+  }
+  .hud-top-right {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  .ammo-counter-box {
+    background: rgba(12, 10, 12, 0.84);
+    border: 1px solid #555;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+    letter-spacing: 1px;
+    pointer-events: none;
+  }
+  .top-right-btns {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .hud-mini-btn {
+    background: rgba(18, 18, 22, 0.88);
+    border: 1px solid #666;
+    color: #eee;
+    padding: 6px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .hud-mini-btn:hover {
+    border-color: var(--neon);
+    color: var(--neon);
+  }
+  .hud-view-controls {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    z-index: 20;
+    display: flex;
+    gap: 6px;
+  }
+  .view-btn {
+    background: rgba(20, 20, 20, 0.85);
+    border: 1px solid #666;
+    color: #fff;
+    padding: 7px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .view-btn.active {
+    border-color: var(--neon);
+    color: var(--neon);
+  }
+  .name-tag {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    background: rgba(0, 0, 0, 0.82);
+    border: 1px solid #555;
+    padding: 3px 9px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    pointer-events: auto;
+    cursor: pointer;
+    z-index: 15;
+    transition: transform 0.12s, border-color 0.12s;
+  }
+  .name-tag.turn-active {
+    border-color: var(--neon);
+    box-shadow: 0 0 10px var(--neon);
+    color: var(--neon);
+  }
+  .name-tag.aimable {
+    border-color: var(--danger);
+    box-shadow: 0 0 12px var(--danger);
+    color: #fff;
+    background: rgba(130, 15, 15, 0.9);
+    transform: translate(-50%, -100%) scale(1.08);
+  }
+  .name-tag.item-targetable {
+    border-color: var(--gold);
+    box-shadow: 0 0 12px var(--gold);
+    color: #fff;
+    background: rgba(110, 88, 12, 0.92);
+    transform: translate(-50%, -100%) scale(1.08);
+  }
+  .name-tag.dead {
+    opacity: 0.4;
+    text-decoration: line-through;
+    pointer-events: none;
+  }
+  .action-overlay {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 25;
+    display: none;
+    gap: 8px;
+    align-items: center;
+    background: rgba(14, 12, 14, 0.92);
+    border: 1px solid var(--danger);
+    padding: 8px 14px;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.9);
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 92vw;
+  }
+  .center-banner {
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 30;
+    background: rgba(10, 10, 10, 0.92);
+    border: 2px solid var(--danger);
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: clamp(15px, 3vw, 22px);
+    font-weight: bold;
+    color: #fff;
+    text-align: center;
+    pointer-events: none;
+    display: none;
+    box-shadow: 0 0 30px rgba(255, 0, 0, 0.5);
+    max-width: 90vw;
+  }
+  .secret-inspect-banner {
+    position: absolute;
+    top: 32%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 32;
+    background: rgba(8, 12, 18, 0.95);
+    border: 2px solid var(--neon);
+    padding: 12px 22px;
+    border-radius: 8px;
+    font-size: clamp(15px, 2.8vw, 20px);
+    font-weight: bold;
+    text-align: center;
+    pointer-events: none;
+    display: none;
+    box-shadow: 0 0 24px rgba(57, 255, 20, 0.45);
+    max-width: 88vw;
+  }
+  .shell-visual-overlay {
+    position: absolute;
+    top: 46%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 35;
+    background: rgba(10, 10, 12, 0.93);
+    border: 2px solid #777;
+    padding: 16px 24px;
+    border-radius: 10px;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    pointer-events: none;
+    box-shadow: 0 0 35px rgba(0, 0, 0, 0.95);
+    min-width: 280px;
+  }
+  .shell-visual-title {
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    color: #eee;
+  }
+  .shell-icons-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 84vw;
+  }
+  .shell-cartridge {
+    width: 22px;
+    height: 54px;
+    border-radius: 4px 4px 2px 2px;
+    border-bottom: 10px solid #d4af37;
+    transition: transform 0.25s, opacity 0.25s;
+    box-shadow: 0 0 10px rgba(0,0,0,0.8);
+  }
+  .shell-cartridge.live {
+    background: linear-gradient(180deg, #ff4d4d 0%, #b30000 100%);
+    box-shadow: 0 0 12px rgba(255, 42, 42, 0.7);
+  }
+  .shell-cartridge.blank {
+    background: linear-gradient(180deg, #5bc0ff 0%, #005bb5 100%);
+    box-shadow: 0 0 12px rgba(42, 157, 244, 0.7);
+  }
+  .shell-cartridge.loaded {
+    transform: translateY(-16px) scale(0.75);
+    opacity: 0.25;
+  }
+  .modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.82);
+    z-index: 40;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal-box {
+    background: #181416;
+    border: 1px solid var(--danger);
+    border-radius: 8px;
+    padding: 18px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 86vh;
+    overflow-y: auto;
+    box-shadow: 0 0 30px #000;
+  }
+  .loot-box-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 10px;
+    background: #0e0c0d;
+    border: 1px dashed #666;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    min-height: 74px;
+  }
+  .item-card {
+    background: #251d1f;
+    border: 1px solid #888;
+    padding: 8px 10px;
+    border-radius: 5px;
+    cursor: grab;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    min-width: 78px;
+  }
+  .item-card.selected {
+    border-color: var(--neon);
+    box-shadow: 0 0 10px var(--neon);
+  }
+  .slots-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .slot-cell {
+    height: 60px;
+    background: #121412;
+    border: 1px solid #444;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    text-align: center;
+    cursor: pointer;
+    padding: 4px;
+  }
+  .slot-cell.occupied {
+    background: #1c241d;
+    border-color: var(--neon);
+  }
+  .guide-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .guide-item-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #121012;
+    border: 1px solid #353035;
+    border-radius: 6px;
+    padding: 8px 10px;
+  }
+  .guide-item-icon {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    background: #1d1b20;
+    border: 1px solid #4a4a4a;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .guide-item-text {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .guide-item-name {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--neon);
+    margin-bottom: 2px;
+  }
+  .result-banner-title {
+    font-size: clamp(24px, 5vw, 34px);
+    font-weight: 900;
+    text-align: center;
+    letter-spacing: 3px;
+    margin-bottom: 6px;
+  }
+  .result-banner-title.win {
+    color: var(--gold);
+    text-shadow: 0 0 18px rgba(255, 215, 0, 0.85);
+  }
+  .result-banner-title.lose {
+    color: var(--danger);
+    text-shadow: 0 0 18px rgba(255, 42, 42, 0.85);
+  }
+  .ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 16px 0;
+    font-size: 12px;
+  }
+  .ranking-table th, .ranking-table td {
+    border: 1px solid #3a3438;
+    padding: 7px 6px;
+    text-align: center;
+  }
+  .ranking-table th {
+    background: #261618;
+    color: #ddd;
+  }
+  .ranking-table tr.rank-1 {
+    background: rgba(255, 215, 0, 0.14);
+    color: var(--gold);
+    font-weight: bold;
+  }
+  .ranking-table tr.is-me {
+    outline: 1px solid var(--neon);
+  }
+  #flash-fx {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 35;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  @media (orientation: portrait) {
+    .hud-top-left { font-size: 11px; padding: 6px 9px; }
+    .skin-grid { grid-template-columns: repeat(5, 1fr); gap: 4px; }
+  }
+</style>
 </head>
 <body>
-  <canvas id="gameCanvas"></canvas>
-  <div id="rotateHint">📱 スマホは横画面にするとプレイしやすくなります</div>
 
-  <!-- タイトル画面 -->
-  <div id="titleScreen" class="overlay">
-    <div class="logo-wrap">
-      <div class="logo-icon">
-        <svg width="36" height="36" viewBox="0 0 100 100">
-          <defs>
-            <linearGradient id="vg" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#00f3ff"/>
-              <stop offset="100%" stop-color="#9d4edd"/>
-            </linearGradient>
-          </defs>
-          <polygon points="15,20 38,20 50,58 62,20 85,20 50,90" fill="url(#vg)"/>
-          <polygon points="43,15 57,15 50,42" fill="#ffffff"/>
-        </svg>
+<div id="flash-fx"></div>
+<div id="yt-bgm-host" style="position:fixed; width:1px; height:1px; opacity:0.001; pointer-events:none; overflow:hidden; left:-100px; top:-100px;"></div>
+
+<div id="title-screen" class="screen active">
+  <div class="title-logo">LIVE OR DIE</div>
+  <div class="version-tag">Ver 1.5</div>
+  <div class="title-sub">3D ONLINE BUCKSHOT ROULETTE</div>
+
+  <div class="card-box">
+    <div class="input-row">
+      <input type="text" id="player-name-input" placeholder="プレイヤー名（最大10文字）" maxlength="10" value="Player" />
+    </div>
+
+    <div class="skin-selector-box">
+      <div class="skin-selector-title">
+        <span>🎭 マスクスキン選択（特徴的な10種）</span>
+        <span id="selected-skin-label" style="color:var(--neon); font-weight:bold;">オオカミ</span>
       </div>
-      <div class="title-text">
-        <h1>VOLT</h1>
-        <p>ONLINE BATTLE ARENA</p>
+      <div class="skin-grid" id="title-skin-grid"></div>
+    </div>
+
+    <div style="margin-bottom: 12px; border-top: 1px solid #333; padding-top: 12px;">
+      <div style="font-size: 12px; color: #aaa; margin-bottom: 6px;">▼ 一人で対戦（AI戦）</div>
+      <div class="input-row" style="margin-bottom: 0;">
+        <select id="ai-count-select">
+          <option value="1">AI 1体（1 vs 1）</option>
+          <option value="2">AI 2体（3人戦）</option>
+          <option value="3" selected>AI 3体（4人戦）</option>
+          <option value="4">AI 4体（5人戦）</option>
+        </select>
+        <button class="btn btn-gold" onclick="startSoloAiMatch()">一人用で開始</button>
       </div>
     </div>
 
-    <div class="card">
-      <div class="input-row">
-        <input id="playerNameInput" type="text" maxlength="10" placeholder="プレイヤー名（例: VOLT）" />
+    <div style="margin-bottom: 12px; border-top: 1px solid #333; padding-top: 12px;">
+      <div style="font-size: 12px; color: #aaa; margin-bottom: 6px;">▼ オンライン部屋を作成（最大5人）</div>
+      <div class="input-row" style="margin-bottom: 0;">
+        <select id="max-players-select">
+          <option value="2">2人対戦</option>
+          <option value="3">3人対戦</option>
+          <option value="4">4人対戦</option>
+          <option value="5" selected>5人対戦</option>
+        </select>
+        <button class="btn btn-neon" onclick="createRoom()">部屋を作成</button>
       </div>
-      <button id="btnSolo" class="btn btn-gold btn-full">⚡ 1人で練習（CPU4体と即バトル）</button>
-      <button id="btnCreate" class="btn btn-cyan btn-full">🌐 オンライン部屋を作る（4〜5人）</button>
-      <div class="input-row" style="margin-bottom:0;">
-        <input id="roomCodeInput" type="tel" maxlength="3" placeholder="3桁の部屋番号（例: 482）" />
-        <button id="btnJoin" class="btn btn-purple">参加する</button>
+    </div>
+
+    <div style="border-top: 1px solid #333; padding-top: 12px;">
+      <div style="font-size: 12px; color: #aaa; margin-bottom: 6px;">▼ 既存の部屋に参加（4桁コード）</div>
+      <div class="input-row" style="margin-bottom: 0;">
+        <input type="text" id="room-code-input" placeholder="例: 4829" maxlength="4" inputmode="numeric" />
+        <button class="btn" onclick="joinRoom()">入室する</button>
       </div>
-      <div id="titleStatus" class="status-msg"></div>
+    </div>
+
+    <div id="conn-status" style="margin-top: 10px; font-size: 12px; color: var(--neon); text-align: center;"></div>
+  </div>
+</div>
+
+<div id="lobby-screen" class="screen">
+  <div class="card-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+      <span style="font-size:12px; color:#aaa;">ROOM CODE</span>
+      <span class="version-tag" style="margin-bottom:0;">Ver 1.5</span>
+    </div>
+    <div id="lobby-room-code" class="room-badge">----</div>
+    <div id="lobby-count-label" style="font-size: 13px; margin-bottom: 8px;">参加者: 1 / 5</div>
+    <ul id="lobby-player-list" class="player-list"></ul>
+
+    <div class="skin-selector-box" style="margin-bottom:10px;">
+      <div class="skin-selector-title">
+        <span>🎭 マスク変更</span>
+        <span id="lobby-skin-label" style="color:var(--neon); font-weight:bold;">オオカミ</span>
+      </div>
+      <div class="skin-grid" id="lobby-skin-grid"></div>
+    </div>
+
+    <div style="display: flex; gap: 8px; justify-content: space-between;">
+      <button class="btn" onclick="leaveRoom()">退出</button>
+      <button id="start-game-btn" class="btn btn-neon" style="display:none;" onclick="hostStartGame()">ゲーム開始</button>
+    </div>
+  </div>
+</div>
+
+<div id="game-screen" class="screen">
+  <canvas id="three-canvas"></canvas>
+
+  <div class="hud-top-left">
+    <div>
+      <strong id="hud-round" style="color:var(--danger);">ROUND 1</strong>
+      <span id="hud-dir-badge" style="margin-left:6px; font-size:11px; color:var(--neon);">↻ 時計回り</span>
+    </div>
+    <div id="hud-turn-info">待機中...</div>
+    <div id="hud-my-hp" class="my-hp-row"></div>
+    <div id="hud-saw-badge" style="display:none; color:var(--danger); font-weight:bold; font-size:12px;">🪚 ノコギリ発動中（ダメージ2倍）</div>
+  </div>
+
+  <div class="hud-top-right">
+    <div id="hud-ammo-count" class="ammo-counter-box">残弾: -発</div>
+    <div class="top-right-btns">
+      <button id="bgm-toggle-btn" class="hud-mini-btn" onclick="toggleBgmMute()">🔊 BGM: ON</button>
+      <button class="hud-mini-btn" onclick="openItemGuideModal()">📖 アイテム説明</button>
     </div>
   </div>
 
-  <!-- ロビー待機画面 -->
-  <div id="lobbyScreen" class="overlay hidden">
-    <div class="card">
-      <div class="room-badge">
-        <div style="font-size:11px; color:#8ab4f8;">部屋番号（友達に共有）</div>
-        <span id="lobbyCode">---</span>
-      </div>
-      <div id="lobbyPlayers" class="player-list"></div>
-      <button id="btnStart4" class="btn btn-cyan btn-full hidden">🔥 バトル開始（4〜5人）</button>
-      <button id="btnStartBot" class="btn btn-purple btn-full hidden">🤖 空き枠にCPUを入れて開始</button>
-      <div id="lobbyWaitMsg" style="text-align:center; font-size:13px; color:#8ab4f8;">ホストの開始を待っています...</div>
-    </div>
+  <div id="name-tags-container"></div>
+  <div id="center-banner" class="center-banner"></div>
+  <div id="secret-inspect-banner" class="secret-inspect-banner"></div>
+
+  <div id="shell-visual-overlay" class="shell-visual-overlay">
+    <div id="shell-visual-title" class="shell-visual-title">ROUND 1 - 装填される弾</div>
+    <div id="shell-visual-icons" class="shell-icons-row"></div>
+    <div id="shell-visual-legend" style="font-size:12px; color:#ccc;"></div>
   </div>
 
-  <!-- リザルト画面 -->
-  <div id="resultScreen" class="overlay hidden">
-    <div class="card" style="text-align:center;">
-      <div style="font-size:13px; color:#c77dff; letter-spacing:2px; font-weight:800;">MATCH FINISHED</div>
-      <h2 id="winnerText" style="font-size:30px; margin:10px 0; color:#00f3ff; text-shadow:0 0 16px rgba(0,243,255,0.7);">WINNER: ---</h2>
-      <div id="resultStats" style="font-size:13px; color:#cbd5e1; margin-bottom:18px; line-height:1.7;"></div>
-      <button id="btnRematch" class="btn btn-cyan btn-full">🔄 もう一度遊ぶ（再戦）</button>
-      <button id="btnBackTitle" class="btn btn-purple btn-full" style="margin-bottom:0;">🏠 タイトルへ戻る</button>
+  <div id="action-overlay" class="action-overlay"></div>
+
+  <div class="hud-view-controls">
+    <button id="cam-btn-front" class="view-btn active" onclick="setCameraMode('front')">正面視点</button>
+    <button id="cam-btn-top" class="view-btn" onclick="setCameraMode('top')">俯瞰視点</button>
+  </div>
+</div>
+
+<div id="loot-modal" class="modal-backdrop">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <strong style="color:var(--neon);">📦 アイテム支給ボックス</strong>
+      <span id="loot-count-label" style="font-size:12px;">残り: 0個</span>
+    </div>
+    <div style="font-size:12px; color:#bbb; margin-bottom:8px;">
+      下のアイテムを自分の8マスの空き枠へドラッグ＆ドロップ（またはタップ選択→枠タップ）してください。
+    </div>
+    <div id="loot-box-items" class="loot-box-row"></div>
+    <div id="loot-slots-grid" class="slots-grid"></div>
+    <button id="loot-done-btn" class="btn btn-neon" style="width:100%;" onclick="finishLootPhase()" disabled>配置完了</button>
+  </div>
+</div>
+
+<div id="item-confirm-modal" class="modal-backdrop">
+  <div class="modal-box" style="max-width: 390px;">
+    <h3 id="item-modal-title" style="margin:0 0 8px 0; color:var(--neon);">アイテム名</h3>
+    <p id="item-modal-desc" style="font-size:13px; line-height:1.5; margin:0 0 12px 0;"></p>
+    <div id="item-modal-extra" style="margin-bottom:12px;"></div>
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <button class="btn" onclick="closeItemModal()">閉じる</button>
+      <button id="item-modal-use-btn" class="btn btn-neon">使用する</button>
     </div>
   </div>
+</div>
 
-  <!-- 戦闘HUD -->
-  <div id="hud" class="hidden">
-    <div class="hud-top">
-      <div class="hud-box">
-        <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:800;">
-          <span id="hudName">PLAYER</span>
-          <span id="hudHpText">100 / 100</span>
-        </div>
-        <div class="hp-bar-bg"><div id="hudHpBar" class="hp-bar-fill" style="width:100%;"></div></div>
-        <div id="hudBuffs" class="buff-icons"></div>
-      </div>
-
-      <div class="hud-box">
-        <div id="hudTimer" class="timer">05:00</div>
-        <div id="hudPhase" class="phase-tag">通常フェーズ</div>
-      </div>
-
-      <div class="hud-box" style="text-align:right;">
-        <div style="font-size:11px; color:#8ab4f8;">生存者</div>
-        <div id="hudAlive" style="font-size:20px; font-weight:900; color:#39ff14;">5 / 5</div>
-      </div>
+<div id="item-guide-modal" class="modal-backdrop">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+      <strong style="color:var(--neon); font-size:16px;">📖 アイテム効果一覧</strong>
+      <button class="btn" style="padding:4px 10px;" onclick="closeItemGuideModal()">✕ 閉じる</button>
     </div>
+    <div id="item-guide-list" class="guide-list"></div>
+  </div>
+</div>
 
-    <div class="chat-bar">
-      <button class="chat-btn" data-chat="🤝 組もう！">🤝 組もう！</button>
-      <button class="chat-btn" data-chat="🎯 1位を狙おう">🎯 1位狙おう</button>
-      <button class="chat-btn" data-chat="😈 裏切ったな！">😈 裏切ったな！</button>
-      <button class="chat-btn" data-chat="🙏 ごめん！">🙏 ごめん！</button>
-      <button class="chat-btn" data-chat="👍 ナイス！">👍 ナイス！</button>
-    </div>
-
-    <div id="feedArea" class="feed-area"></div>
-
-    <div class="touch-controls">
-      <div id="stickZone"></div>
-      <div class="action-btns">
-        <div id="btnDash" class="act-btn">
-          <span>DASH</span>
-          <div id="dashCdMask" class="cd-mask hidden">3.0</div>
-        </div>
-        <div id="btnAtk" class="act-btn">
-          <span>ATTACK</span>
-          <div id="atkCdMask" class="cd-mask hidden">0.7</div>
-        </div>
-      </div>
+<div id="result-modal" class="modal-backdrop">
+  <div class="modal-box">
+    <div id="result-banner-title" class="result-banner-title win">YOU WIN</div>
+    <div id="result-subtitle" style="text-align:center; font-size:13px; color:#ccc; margin-bottom:8px;"></div>
+    <table class="ranking-table">
+      <thead>
+        <tr>
+          <th>順位</th>
+          <th>プレイヤー</th>
+          <th>最終状態</th>
+          <th>与ダメージ</th>
+          <th>到達ラウンド</th>
+        </tr>
+      </thead>
+      <tbody id="ranking-tbody"></tbody>
+    </table>
+    <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+      <div id="rematch-area"></div>
+      <button class="btn" onclick="leaveRoom()">タイトルへ戻る</button>
     </div>
   </div>
+</div>
 
 <script>
-/* =========================================================
-   1. PWA Manifest & Service Worker 動的登録（1ファイル完結用）
-   ========================================================= */
-(() => {
-  const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#070a19"/><polygon points="90,110 200,110 256,310 312,110 422,110 256,440" fill="#00f3ff"/><polygon points="220,80 292,80 256,220" fill="#9d4edd"/></svg>`;
-  const iconUrl = 'data:image/svg+xml;base64,' + btoa(iconSvg);
-  const manifest = {
-    name: 'VOLT - Online Battle Arena',
-    short_name: 'VOLT',
-    start_url: '.',
-    display: 'fullscreen',
-    orientation: 'landscape',
-    background_color: '#060711',
-    theme_color: '#060711',
-    icons: [{ src: iconUrl, sizes: '512x512', type: 'image/svg+xml' }]
-  };
-  const link = document.createElement('link');
-  link.rel = 'manifest';
-  link.href = 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify(manifest));
-  document.head.appendChild(link);
-})();
-
-/* =========================================================
-   2. Web Audio API シンセサイザー効果音エンジン
-   ========================================================= */
-class SoundFX {
-  constructor() { this.ctx = null; }
-  unlock() {
-    if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    if (this.ctx.state === 'suspended') this.ctx.resume();
-  }
-  play(type) {
-    this.unlock();
-    const ctx = this.ctx;
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    if (type === 'slash' || type === 'powerSlash') {
-      osc.type = type === 'powerSlash' ? 'sawtooth' : 'triangle';
-      osc.frequency.setValueAtTime(type === 'powerSlash' ? 520 : 380, now);
-      osc.frequency.exponentialRampToValueAtTime(75, now + 0.16);
-      gain.gain.setValueAtTime(0.28, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
-      osc.start(now); osc.stop(now + 0.17);
-    } else if (type === 'hit') {
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(170, now);
-      osc.frequency.exponentialRampToValueAtTime(42, now + 0.14);
-      gain.gain.setValueAtTime(0.35, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
-      osc.start(now); osc.stop(now + 0.15);
-    } else if (type === 'dash') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(220, now);
-      osc.frequency.exponentialRampToValueAtTime(680, now + 0.18);
-      gain.gain.setValueAtTime(0.22, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
-      osc.start(now); osc.stop(now + 0.19);
-    } else if (type === 'bomb') {
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(110, now);
-      osc.frequency.exponentialRampToValueAtTime(24, now + 0.45);
-      gain.gain.setValueAtTime(0.45, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
-      osc.start(now); osc.stop(now + 0.46);
-    } else if (type === 'heal') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(440, now);
-      osc.frequency.setValueAtTime(660, now + 0.09);
-      osc.frequency.setValueAtTime(880, now + 0.18);
-      gain.gain.setValueAtTime(0.22, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-      osc.start(now); osc.stop(now + 0.31);
-    } else if (type === 'item') {
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(587, now);
-      osc.frequency.setValueAtTime(880, now + 0.08);
-      gain.gain.setValueAtTime(0.22, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
-      osc.start(now); osc.stop(now + 0.23);
-    } else if (type === 'shieldBreak') {
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(920, now);
-      osc.frequency.exponentialRampToValueAtTime(240, now + 0.24);
-      gain.gain.setValueAtTime(0.26, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
-      osc.start(now); osc.stop(now + 0.25);
-    } else if (type === 'ko') {
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(260, now);
-      osc.frequency.exponentialRampToValueAtTime(35, now + 0.55);
-      gain.gain.setValueAtTime(0.4, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
-      osc.start(now); osc.stop(now + 0.56);
-    } else if (type === 'chat') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(740, now);
-      osc.frequency.setValueAtTime(980, now + 0.06);
-      gain.gain.setValueAtTime(0.14, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-      osc.start(now); osc.stop(now + 0.16);
-    }
-  }
-}
-const sfx = new SoundFX();
-
-/* =========================================================
-   3. ゲーム定数 & 状態管理
-   ========================================================= */
-const MAP_SIZE = 1500;
-const MATCH_TIME = 300; // 5分 (300秒)
-const COLORS = [
-  { main: '#00f3ff', glow: 'rgba(0, 243, 255, 0.55)' },
-  { main: '#ff007f', glow: 'rgba(255, 0, 127, 0.55)' },
-  { main: '#39ff14', glow: 'rgba(57, 255, 20, 0.55)' },
-  { main: '#ffd700', glow: 'rgba(255, 215, 0, 0.55)' },
-  { main: '#c77dff', glow: 'rgba(199, 125, 255, 0.55)' }
-];
-const ITEM_SPECS = [
-  { type: 'bomb', label: '爆弾', icon: '💣', color: '#ff3b30' },
-  { type: 'heal', label: '回復', icon: '💚', color: '#39ff14' },
-  { type: 'thunder', label: '雷', icon: '⚡', color: '#ffd700' },
-  { type: 'shield', label: 'シールド', icon: '🛡️', color: '#00f3ff' },
-  { type: 'trap', label: '罠', icon: '🕸️', color: '#c77dff' },
-  { type: 'sword', label: '強化剣', icon: '⚔️', color: '#ff9500' }
+const MASK_SKINS = [
+  { id: 'wolf',   name: 'オオカミ',   type: 'wolf',   body: 0x3b4048, accent: 0x8f99a8, eye: 0x39ff14, rim: 0x17191d },
+  { id: 'fox',    name: 'キツネ',     type: 'fox',    body: 0xd95b26, accent: 0xf7efe6, eye: 0xffd700, rim: 0x1a1412 },
+  { id: 'rabbit', name: 'ウサギ',     type: 'rabbit', body: 0xe6e2dc, accent: 0xff7da8, eye: 0xff2a55, rim: 0x4a4548 },
+  { id: 'owl',    name: 'フクロウ',   type: 'owl',    body: 0x5c4738, accent: 0xc8a97e, eye: 0xffb703, rim: 0x261d17 },
+  { id: 'oni',    name: '鬼マスク',   type: 'oni',    body: 0xa81c1c, accent: 0xf4c430, eye: 0xffee55, rim: 0x1c1414 },
+  { id: 'skull',  name: 'ドクロ',     type: 'skull',  body: 0xd9d2c5, accent: 0x1b1a1a, eye: 0xff2a2a, rim: 0x33302e },
+  { id: 'boar',   name: 'イノシシ',   type: 'boar',   body: 0x4d3324, accent: 0xf0ead6, eye: 0xff5500, rim: 0x1f140e },
+  { id: 'crow',   name: 'カラス',     type: 'crow',   body: 0x181920, accent: 0x363a4a, eye: 0x38bdf8, rim: 0x71717a },
+  { id: 'lion',   name: 'ライオン',   type: 'lion',   body: 0xd49b35, accent: 0x6b3410, eye: 0x39ff14, rim: 0x2b1506 },
+  { id: 'cyber',  name: 'サイバー',   type: 'visor',  body: 0x1d2633, accent: 0x00f0ff, eye: 0x00f0ff, rim: 0x64748b }
 ];
 
-let myId = 'local_p1';
-let isHost = true;
-let isSolo = false;
-let roomCode = '';
-let peer = null;
-let conns = []; // ホスト用: クライアント接続リスト
-let hostConn = null; // クライアント用: ホスト接続
+let selectedSkinId = 'wolf';
 
-let gameState = {
-  phase: 'title', // title | lobby | playing | ended
-  timeLeft: MATCH_TIME,
-  zoneRadius: MAP_SIZE * 0.72,
-  players: [],
-  items: [],
-  traps: [],
-  effects: [],
-  winner: null
-};
-
-let shakeTimer = 0;
-let itemSpawnTimer = 1;
-let zoneDmgTimer = 1;
-
-/* =========================================================
-   4. P2P オンライン通信 (PeerJS) & ロビー制御
-   ========================================================= */
-const PEER_PREFIX = 'volt-arena-room-2026-';
-
-function getMyName() {
-  const val = document.getElementById('playerNameInput').value.trim();
-  return val || 'VOLT_' + Math.floor(10 + Math.random() * 89);
+function buildSkinPreviewSvg(skin) {
+  switch (skin.type) {
+    case 'wolf':
+      return `<svg class="skin-preview" viewBox="0 0 64 64"><polygon points="14,24 20,4 28,20" fill="#3b4048" stroke="#17191d" stroke-width="2"/><polygon points="50,24 44,4 36,20" fill="#3b4048" stroke="#17191d" stroke-width="2"/><polygon points="16,20 20,38 24,54 40,54 44,38 48,20" fill="#3b4048" stroke="#8f99a8" stroke-width="2"/><polygon points="22,34 42,34 38,52 26,52" fill="#8f99a8"/><polygon points="21,26 29,29 22,31" fill="#39ff14"/><polygon points="43,26 35,29 42,31" fill="#39ff14"/><polygon points="29,40 35,40 32,45" fill="#111"/></svg>`;
+    case 'fox':
+      return `<svg class="skin-preview" viewBox="0 0 64 64"><polygon points="12,26 16,4 28,18" fill="#d95b26"/><polygon points="14,12 16,4 21,11" fill="#1a1412"/><polygon points="52,26 48,4 36,18" fill="#d95b26"/><polygon points="50,12 48,4 43,11" fill="#1a1412"/><polygon points="14,22 50,22 44,42 32,56 20,42" fill="#d95b26"/><polygon points="14,34 26,38 32,56 20,42" fill="#f7efe6"/><polygon points="50,34 38,38 32,56 44,42" fill="#f7efe6"/><line x1="21" y1="28" x2="28" y2="30" stroke="#ffd700" stroke-width="3"/><line x1="43" y1="28" x2="36" y2="30" stroke="#ffd700" stroke-width="3"/><circle cx="32" cy="51" r="3" fill="#111"/></svg>`;
+    case 'rabbit':
+      return `<svg class="skin-preview" viewBox="0 0 64 64"><rect x="20" y="3" width="7" height="24" rx="3.5" fill="#e6e2dc" stroke="#888" stroke-width="1.5"/><rect x="22" y="6" width="3" height="17" rx="1.5" fill="#ff7da8"/><polygon points="37,24 37,8 49,16 44,21" fill="#e6e2dc" stroke="#888" stroke-width="1.5"/><ellipse cx="32" cy="39" rx="16" ry="15" fill="#e6e2dc"/><circle cx="25" cy="36" r="3" fill="#ff2a55"/><circle cx="39" cy="36" r="3" fill="#ff2a55"/><polygon points="29,42 35,42 32,46" fill="#ff7da8"/><rect x="29" y="47" width="2.5" height="6" fill="#fff" stroke="#666" stroke-width="0.8"/><rect x="32.5" y="47" width="2.5" height="6" fill="#fff" stroke="#666" stroke-width="0.8"/></svg>`;
+    case 'owl':
+      return `<svg class="skin-preview" viewBox="0 0 64 64"><polygon points="14,18 18,7 26,16" fill="#5c4738"/><polygon points="50,18 46,7 38,16" fill="#5c4738"/><ellipse cx="32" cy="36" rx="18" ry="19" fill="#5c4738"/><circle cx="24" cy="33" r="8" fill="#c8a97e" stroke="#261d17" stroke-width="2"/><circle cx="40" cy="33" r="8" fill="#c8a97e" stroke="#261d17" stroke-width="2"/><circle cx="24" cy="33" r="4" fill="#ffb703"/><circle cx="40" cy="33" r="4" fill="#ffb703"/><polygon points="29,39 35,39 32,48" fill="#261d17"/></svg>`;
+    case 'oni':
+      return `<svg class="skin-preview" viewBox="0 0 64 64"><polygon points="18,22 22,4 27,20" fill="#f4c430"/><polygon points="46,22 42,4 37,20" fill="#f4c430"/><rect x="16" y="18" width="32" height="36" rx="7" fill="#a81c1c" stroke="#1c1414" stroke-width="2"/><polygon points="20,28 29,31 21,34" fill="#ffee55"/><polygon points="44,28 35,31 43,34" fill="#ffee55"/><rect x="21" y="42" width="22" height="6" fill="#1c1414"/><polygon points="23,48 25,40 27,48" fill="#fff"/><polygon points="37,48 39,40 41,48" fill="#fff"/></svg>`;
+    case 'skull':
+      return `<svg class="skin-preview" viewBox="0 0 64 64"><path d="M16,28 C16,13 48,13 48,28 C48,38 43,41 41,44 L41,54 L23,54 L23,44 C21,41 16,38 16,28 Z" fill="#d9d2c5"/><circle cx="24" cy="30" r="5.5" fill="#1b1a1a"/><circle cx="24" cy="30" r="2.2" fill="#ff2a2a"/><circle cx="40" cy="30" r="5.5" fill="#1b1a1a"/><circle cx="40" cy="30" r="2.2" fill="#ff2a2a"/><polygon points="32,35 29,42 35,42" fill="#1b1a1a"/><line x1="27" y1="47" x2="27" y2="54" stroke="#1b1a1a" stroke-width="2"/><line x1="32" y1="47" x2="32" y2="54" stroke="#1b1a1a" stroke-width="2"/><line x1="37" y1="47" x2="37" y2="54" stroke="#1b1a1a" stroke-width="2"/></svg>`;
+    case 'boar':
+      return `<svg class="skin-preview" viewBox="0 0 64 64"><rect x="29" y="6" width="6" height="12" fill="#1f140e"/><ellipse cx="32" cy="34" rx="18" ry="18" fill="#4d3324"/><circle cx="23" cy="27" r="2.8" fill="#ff5500"/><circle cx="41" cy="27" r="2.8" fill="#ff5500"/><ellipse cx="32" cy="40" rx="9" ry="7" fill="#8c6249" stroke="#1f140e" stroke-width="2"/><circle cx="29" cy="40" r="1.8" fill="#1f140e"/><circle cx="35" cy="40" r="1.8" fill="#1f140e"/><path d="M22,42 Q12,38 14,26 Q18,34 24,38 Z" fill="#f0ead6"/><path d="M42,42 Q52,38 50,26 Q46,34 40,38 Z" fill="#f0ead6"/></svg>`;
+    case 'crow':
+      return `<svg class="skin-preview" viewBox="0 0 64 64"><ellipse cx="32" cy="30" rx="16" ry="18" fill="#181920" stroke="#71717a" stroke-width="1.5"/><circle cx="24" cy="26" r="4" fill="#38bdf8"/><circle cx="40" cy="26" r="4" fill="#38bdf8"/><polygon points="25,33 39,33 32,58" fill="#363a4a" stroke="#71717a" stroke-width="1.5"/></svg>`;
+    case 'lion':
+      return `<svg class="skin-preview" viewBox="0 0 64 64"><circle cx="32" cy="33" r="24" fill="#6b3410" stroke="#2b1506" stroke-width="2"/><circle cx="32" cy="34" r="15" fill="#d49b35"/><circle cx="26" cy="30" r="2.6" fill="#39ff14"/><circle cx="38" cy="30" r="2.6" fill="#39ff14"/><polygon points="28,37 36,37 32,42" fill="#2b1506"/><path d="M26,45 Q32,48 38,45" stroke="#2b1506" stroke-width="2" fill="none"/></svg>`;
+    default:
+      return `<svg class="skin-preview" viewBox="0 0 64 64"><rect x="12" y="16" width="3" height="14" fill="#00f0ff"/><rect x="49" y="16" width="3" height="14" fill="#00f0ff"/><rect x="16" y="14" width="32" height="38" rx="6" fill="#1d2633" stroke="#64748b" stroke-width="2"/><rect x="19" y="25" width="26" height="8" rx="2" fill="#00f0ff"/><rect x="24" y="40" width="16" height="6" rx="1" fill="#64748b"/></svg>`;
+  }
 }
 
-function showScreen(id) {
-  ['titleScreen', 'lobbyScreen', 'resultScreen', 'hud'].forEach(s => {
-    document.getElementById(s).classList.toggle('hidden', s !== id);
+function renderSkinSelector(containerId, labelId) {
+  const grid = document.getElementById(containerId);
+  const label = document.getElementById(labelId);
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  const curSkin = MASK_SKINS.find(s => s.id === selectedSkinId) || MASK_SKINS[0];
+  if (label) label.textContent = curSkin.name;
+
+  MASK_SKINS.forEach(skin => {
+    const card = document.createElement('div');
+    card.className = 'skin-card' + (skin.id === selectedSkinId ? ' selected' : '');
+    card.innerHTML = `${buildSkinPreviewSvg(skin)}<span>${skin.name}</span>`;
+    card.onclick = () => {
+      selectedSkinId = skin.id;
+      renderSkinSelector('title-skin-grid', 'selected-skin-label');
+      renderSkinSelector('lobby-skin-grid', 'lobby-skin-label');
+      if (typeof gameState !== 'undefined' && gameState.phase === 'lobby') {
+        if (isHost) {
+          const me = gameState.players.find(p => p.id === myId);
+          if (me) {
+            me.skinId = selectedSkinId;
+            broadcastState();
+          }
+        } else {
+          sendToHost({ type: 'change_skin', skinId: selectedSkinId });
+        }
+      }
+    };
+    grid.appendChild(card);
   });
 }
 
-function addFeed(html, borderColor = '#00f3ff') {
-  const area = document.getElementById('feedArea');
-  const div = document.createElement('div');
-  div.className = 'feed-item';
-  div.style.borderLeftColor = borderColor;
-  div.innerHTML = html;
-  area.appendChild(div);
-  while (area.children.length > 5) area.removeChild(area.firstChild);
-  setTimeout(() => { if (div.parentNode) div.remove(); }, 4500);
-}
+const YT_VIDEO_ID = 'v69c18a51153a545a';
+const YT_FALLBACK_ID = '69c18a51153a545a';
+let ytPlayer = null;
+let bgmMuted = false;
 
-// 1人練習モード
-document.getElementById('btnSolo').onclick = () => {
-  sfx.unlock();
-  isHost = true;
-  isSolo = true;
-  myId = 'player_0';
-  gameState.players = [makePlayer(myId, getMyName(), 0, false)];
-  startMatch(true);
+(function loadYouTubeAPI() {
+  const tag = document.createElement('script');
+  tag.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+})();
+
+window.onYouTubeIframeAPIReady = function() {
+  ytPlayer = new YT.Player('yt-bgm-host', {
+    height: '1',
+    width: '1',
+    videoId: YT_VIDEO_ID,
+    playerVars: { autoplay: 0, loop: 1, playlist: YT_VIDEO_ID, controls: 0, playsinline: 1 },
+    events: {
+      onError: () => {
+        if (ytPlayer && ytPlayer.loadVideoById) {
+          ytPlayer.loadVideoById({ videoId: YT_FALLBACK_ID });
+        }
+      },
+      onStateChange: (e) => {
+        if (e.data === YT.PlayerState.ENDED && ytPlayer) ytPlayer.playVideo();
+      }
+    }
+  });
 };
 
-// オンライン部屋作成
-document.getElementById('btnCreate').onclick = () => {
-  sfx.unlock();
-  const status = document.getElementById('titleStatus');
-  status.textContent = '部屋を作成中...';
+function ensureBgmPlaying() {
+  if (bgmMuted) return;
+  if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
+    try {
+      ytPlayer.unMute();
+      ytPlayer.setVolume(45);
+      ytPlayer.playVideo();
+    } catch (e) {}
+  }
+}
+
+function updateBgmForGameState(state) {
+  if (!state) return;
+  if (state.phase === 'loading' || state.phase === 'loot' || state.phase === 'play') {
+    ensureBgmPlaying();
+  }
+}
+
+function toggleBgmMute() {
+  bgmMuted = !bgmMuted;
+  const btn = document.getElementById('bgm-toggle-btn');
+  if (bgmMuted) {
+    btn.textContent = '🔇 BGM: OFF';
+    if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') {
+      try { ytPlayer.pauseVideo(); } catch (e) {}
+    }
+  } else {
+    btn.textContent = '🔊 BGM: ON';
+    ensureBgmPlaying();
+  }
+}
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playTone(freq, type, duration, vol = 0.2) {
+  try {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+  } catch (e) {}
+}
+
+function playShotSound(isLive) {
+  try {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    if (isLive) {
+      const bufferSize = audioCtx.sampleRate * 0.45;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.1));
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.75, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.45);
+      noise.connect(gain);
+      gain.connect(audioCtx.destination);
+      noise.start();
+    } else {
+      playTone(880, 'square', 0.05, 0.22);
+      setTimeout(() => playTone(600, 'triangle', 0.06, 0.18), 55);
+    }
+  } catch (e) {}
+}
+
+function playMatchResultSound(isWin) {
+  if (isWin) {
+    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+      setTimeout(() => playTone(f, 'triangle', 0.28, 0.22), i * 110);
+    });
+  } else {
+    [220, 196, 174.61, 146.83].forEach((f, i) => {
+      setTimeout(() => playTone(f, 'sawtooth', 0.34, 0.2), i * 150);
+    });
+  }
+}
+
+const ITEM_DEFS = {
+  saw:        { name: '🪚 ノコギリ',     desc: '銃身を切断し、このターンの実弾ダメージを2倍にする。' },
+  magnifier:  { name: '🔍 虫眼鏡',       desc: '薬室に込められた「現在の次の弾」が実弾か空砲かを自分だけ確認する。' },
+  cigarette:  { name: '🚬 タバコ',       desc: 'ライフ（⚡）を1回復する（上限まで）。' },
+  beer:       { name: '🍺 ビール',       desc: 'ショットガンのポンプを引き、現在の弾を1発排莢して中身を公開する。' },
+  medicine:   { name: '💊 腐った薬',     desc: '50%の確率でライフを2回復するが、50%で腐っており1ダメージを受ける。' },
+  adrenaline: { name: '💉 アドレナリン', desc: '相手の目の前まで見に行き、相手のアイテムを1つ奪って即座に使用する（左右切替・全相手確認可能）。' },
+  inverter:   { name: '🔄 インバーター', desc: '現在薬室にある弾の性質（実弾 ⇔ 空砲）を逆転させる。' },
+  phone:      { name: '📱 携帯電話',     desc: '装填された弾のうち「最初から何番目の弾が実弾か空砲か」を1つ自分だけに告げる。' },
+  handcuffs:  { name: '⛓️ 手錠',         desc: '選んだ相手プレイヤー1人の次のターンを1回スキップさせる。' },
+  remote:     { name: '🎛️ リモコン',     desc: '全体のターン進行方向（時計回り ⇔ 逆順）を反転させる。' },
+  eyedrops:   { name: '💧 目薬',         desc: '選んだ相手プレイヤー1人は、次の自分のターンにアイテムを使えなくなる。' },
+  rosary:     { name: '✝ ロザリオ',     desc: 'このラウンド中、自分のHPが0になった瞬間に残機2個（⚡⚡）で復活できる。' }
+};
+
+const ITEM_POOL_WEIGHTED = [
+  'saw', 'saw', 'magnifier', 'magnifier', 'beer', 'beer',
+  'medicine', 'medicine', 'adrenaline', 'adrenaline', 'phone', 'phone',
+  'cigarette', 'remote', 'inverter', 'handcuffs', 'eyedrops', 'rosary'
+];
+
+function getItemGuideSvg(id) {
+  const icons = {
+    saw:        `<svg viewBox="0 0 48 48" width="38" height="38"><rect x="6" y="18" width="10" height="12" rx="2" fill="#8b4513"/><polygon points="16,20 42,20 42,27 38,25 34,27 30,25 26,27 22,25 16,27" fill="#d0d7de"/></svg>`,
+    magnifier:  `<svg viewBox="0 0 48 48" width="38" height="38"><circle cx="20" cy="20" r="11" fill="#88ccff" fill-opacity="0.35" stroke="#e0e0e0" stroke-width="3"/><line x1="28" y1="28" x2="41" y2="41" stroke="#6b4423" stroke-width="5" stroke-linecap="round"/></svg>`,
+    cigarette:  `<svg viewBox="0 0 48 48" width="38" height="38"><rect x="14" y="12" width="20" height="28" rx="2" fill="#fff" stroke="#888"/><rect x="14" y="12" width="20" height="10" fill="#d92626"/><line x1="30" y1="6" x2="30" y2="14" stroke="#fff" stroke-width="3"/></svg>`,
+    beer:       `<svg viewBox="0 0 48 48" width="38" height="38"><rect x="16" y="10" width="16" height="30" rx="3" fill="#cfd6dc"/><rect x="16" y="19" width="16" height="11" fill="#2b8a3e"/></svg>`,
+    medicine:   `<svg viewBox="0 0 48 48" width="38" height="38"><rect x="17" y="15" width="14" height="25" rx="3" fill="#b87333"/><rect x="19" y="9" width="10" height="6" fill="#eee"/><rect x="17" y="22" width="14" height="10" fill="#f5f0e1"/></svg>`,
+    adrenaline: `<svg viewBox="0 0 48 48" width="38" height="38"><line x1="6" y1="24" x2="15" y2="24" stroke="#aaa" stroke-width="3"/><rect x="15" y="19" width="18" height="10" fill="#39ff14" stroke="#fff" stroke-width="1.5"/><line x1="33" y1="24" x2="43" y2="24" stroke="#fff" stroke-width="2"/></svg>`,
+    inverter:   `<svg viewBox="0 0 48 48" width="38" height="38"><rect x="12" y="14" width="24" height="22" rx="3" fill="#2b3d2f" stroke="#888"/><circle cx="19" cy="24" r="4" fill="#ff2a2a"/><circle cx="29" cy="24" r="4" fill="#2a9df4"/></svg>`,
+    phone:      `<svg viewBox="0 0 48 48" width="38" height="38"><rect x="16" y="10" width="16" height="30" rx="3" fill="#222" stroke="#777"/><rect x="19" y="14" width="10" height="10" fill="#39ff14"/><line x1="29" y1="4" x2="29" y2="10" stroke="#999" stroke-width="2.5"/></svg>`,
+    handcuffs:  `<svg viewBox="0 0 48 48" width="38" height="38"><circle cx="15" cy="25" r="8" fill="none" stroke="#d0d8de" stroke-width="3.5"/><circle cx="33" cy="25" r="8" fill="none" stroke="#d0d8de" stroke-width="3.5"/><line x1="22" y1="25" x2="26" y2="25" stroke="#d0d8de" stroke-width="3"/></svg>`,
+    remote:     `<svg viewBox="0 0 48 48" width="38" height="38"><rect x="16" y="9" width="16" height="30" rx="3" fill="#2d3238" stroke="#888"/><circle cx="24" cy="14" r="2.5" fill="#ff2a2a"/><rect x="20" y="21" width="8" height="12" fill="#39ff14"/></svg>`,
+    eyedrops:   `<svg viewBox="0 0 48 48" width="38" height="38"><polygon points="24,8 29,18 19,18" fill="#fff"/><rect x="17" y="18" width="14" height="22" rx="4" fill="#7dd3fc"/></svg>`,
+    rosary:     `<svg viewBox="0 0 48 48" width="38" height="38"><circle cx="24" cy="16" r="7" fill="none" stroke="#ffd700" stroke-width="2.5"/><rect x="22" y="23" width="4" height="18" fill="#ffd700"/><rect x="16" y="28" width="16" height="4" fill="#ffd700"/></svg>`
+  };
+  return icons[id] || '';
+}
+
+function openItemGuideModal() {
+  const list = document.getElementById('item-guide-list');
+  list.innerHTML = '';
+  Object.keys(ITEM_DEFS).forEach(key => {
+    const def = ITEM_DEFS[key];
+    const row = document.createElement('div');
+    row.className = 'guide-item-row';
+    row.innerHTML = `<div class="guide-item-icon">${getItemGuideSvg(key)}</div><div class="guide-item-text"><div class="guide-item-name">${def.name}</div><div>${def.desc}</div></div>`;
+    list.appendChild(row);
+  });
+  document.getElementById('item-guide-modal').style.display = 'flex';
+}
+
+function closeItemGuideModal() {
+  document.getElementById('item-guide-modal').style.display = 'none';
+}
+
+const ROOM_PREFIX = 'lod-game-room-v15-';
+let peer = null;
+let isHost = false;
+let isSoloAi = false;
+let myId = '';
+let hostConn = null;
+let connections = {};
+let heartbeatTimer = null;
+
+let gameState = {
+  roomCode: '', maxPlayers: 5, phase: 'title', round: 1, players: [],
+  turnIndex: 0, turnDirection: 1, shells: [], initialShellCount: 0,
+  sawActive: false, aimTargetId: null, winnerId: null, winnerName: ''
+};
+
+let elimCounter = 0;
+let actionLock = false;
+
+window.addEventListener('DOMContentLoaded', () => {
+  renderSkinSelector('title-skin-grid', 'selected-skin-label');
+  renderSkinSelector('lobby-skin-grid', 'lobby-skin-label');
+});
+
+function setStatus(msg, isErr = false) {
+  const el = document.getElementById('conn-status');
+  el.style.color = isErr ? 'var(--danger)' : 'var(--neon)';
+  el.textContent = msg;
+}
+
+function startSoloAiMatch() {
+  ensureBgmPlaying();
+  const name = (document.getElementById('player-name-input').value.trim() || 'Player');
+  const aiCount = parseInt(document.getElementById('ai-count-select').value, 10) || 3;
+
   isHost = true;
-  isSolo = false;
-  conns = [];
-  roomCode = Math.floor(100 + Math.random() * 900).toString();
+  isSoloAi = true;
+  myId = 'solo-human';
+  elimCounter = 0;
+  actionLock = false;
 
-  if (peer) peer.destroy();
-  peer = new Peer(PEER_PREFIX + roomCode);
+  const aiNames = ['BOT_ALPHA', 'BOT_BRAVO', 'BOT_CHARLIE', 'BOT_DELTA'];
+  const players = [createPlayerObj(myId, name, selectedSkinId, true, false)];
+  const availableSkins = MASK_SKINS.filter(s => s.id !== selectedSkinId);
 
+  for (let i = 0; i < aiCount; i++) {
+    const botSkin = availableSkins[i % availableSkins.length].id;
+    players.push(createPlayerObj('ai-' + (i + 1), aiNames[i], botSkin, false, true));
+  }
+
+  gameState = {
+    roomCode: 'SOLO', maxPlayers: players.length, phase: 'loading', round: 1, players,
+    turnIndex: 0, turnDirection: 1, shells: [], initialShellCount: 0,
+    sawActive: false, aimTargetId: null, winnerId: null, winnerName: ''
+  };
+  startNewRound();
+}
+
+function createRoom() {
+  ensureBgmPlaying();
+  const name = (document.getElementById('player-name-input').value.trim() || 'Host');
+  const maxP = parseInt(document.getElementById('max-players-select').value, 10);
+  const code = String(Math.floor(1000 + Math.random() * 9000));
+
+  isHost = true;
+  isSoloAi = false;
+  setStatus('部屋を生成中...');
+
+  if (peer) { try { peer.destroy(); } catch (e) {} }
+
+  peer = new Peer(ROOM_PREFIX + code, { debug: 0 });
   peer.on('open', (id) => {
     myId = id;
-    gameState.phase = 'lobby';
-    gameState.players = [makePlayer(myId, getMyName(), 0, false)];
-    status.textContent = '';
-    openLobby();
+    gameState = {
+      roomCode: code, maxPlayers: maxP, phase: 'lobby', round: 1,
+      players: [createPlayerObj(myId, name, selectedSkinId, true, false)],
+      turnIndex: 0, turnDirection: 1, shells: [], initialShellCount: 0,
+      sawActive: false, aimTargetId: null, winnerId: null, winnerName: ''
+    };
+    startHeartbeat();
+    enterLobby();
   });
 
   peer.on('connection', (conn) => {
-    conn.on('data', (msg) => handleHostReceive(conn, msg));
-    conn.on('close', () => {
-      conns = conns.filter(c => c !== conn);
-      gameState.players = gameState.players.filter(p => p.id !== conn.peer);
-      broadcastLobby();
+    conn.on('open', () => { connections[conn.peer] = conn; });
+    conn.on('data', (data) => {
+      if (data && data.type === 'ping') return;
+      handleHostReceive(conn.peer, data);
     });
+    conn.on('close', () => {
+      delete connections[conn.peer];
+      const leaverIdx = gameState.players.findIndex(p => p.id === conn.peer);
+      if (leaverIdx !== -1) {
+        if (gameState.phase === 'lobby') {
+          gameState.players.splice(leaverIdx, 1);
+          broadcastState();
+        } else {
+          const leaver = gameState.players[leaverIdx];
+          leaver.hp = 0; leaver.alive = false; leaver.elimOrder = ++elimCounter; leaver.survivedRound = gameState.round;
+          if (gameState.turnIndex === leaverIdx) advanceTurnIndex();
+          broadcastState({ kind: 'banner', text: `⚠️ ${leaver.name} の接続が切れました` });
+        }
+      }
+    });
+    conn.on('error', () => {});
   });
 
-  peer.on('error', () => {
-    status.textContent = '通信エラーが発生しました。もう一度お試しください。';
+  peer.on('error', (err) => {
+    if (err.type === 'unavailable-id') createRoom();
+    else setStatus('接続エラー: ' + err.type, true);
   });
-};
+}
 
-// オンライン部屋参加
-document.getElementById('btnJoin').onclick = () => {
-  sfx.unlock();
-  const code = document.getElementById('roomCodeInput').value.trim();
-  const status = document.getElementById('titleStatus');
-  if (!/^\d{3}$/.test(code)) {
-    status.textContent = '3桁の半角数字を入力してください';
+function joinRoom() {
+  ensureBgmPlaying();
+  const name = (document.getElementById('player-name-input').value.trim() || 'Guest');
+  const code = document.getElementById('room-code-input').value.trim();
+  if (!/^\d{4}$/.test(code)) {
+    setStatus('4桁の数字コードを入力してください', true);
     return;
   }
-  status.textContent = `部屋 ${code} に接続中...`;
-  isHost = false;
-  isSolo = false;
-  roomCode = code;
 
-  if (peer) peer.destroy();
-  peer = new Peer();
+  isHost = false;
+  isSoloAi = false;
+  setStatus('部屋へ接続中...');
+
+  if (peer) { try { peer.destroy(); } catch (e) {} }
+
+  peer = new Peer({ debug: 0 });
   peer.on('open', (id) => {
     myId = id;
-    hostConn = peer.connect(PEER_PREFIX + code, { reliable: true });
+    hostConn = peer.connect(ROOM_PREFIX + code, { reliable: true });
     hostConn.on('open', () => {
-      hostConn.send({ type: 'join', name: getMyName() });
+      hostConn.send({ type: 'join', name, skinId: selectedSkinId });
+      startHeartbeat();
+      enterLobby();
     });
-    hostConn.on('data', (msg) => handleClientReceive(msg));
+    hostConn.on('data', (data) => {
+      if (data && data.type === 'pong') return;
+      handleClientReceive(data);
+    });
     hostConn.on('close', () => {
-      alert('ホストとの接続が切れました');
+      alert('ホストとの接続が切断されました。タイトルへ戻ります。');
       location.reload();
     });
+    hostConn.on('error', () => setStatus('通信エラーが発生しました', true));
   });
-  peer.on('error', () => {
-    status.textContent = '部屋が見つからないか満員です';
+
+  peer.on('error', (err) => setStatus('部屋が見つかりません (' + err.type + ')', true));
+}
+
+function startHeartbeat() {
+  clearInterval(heartbeatTimer);
+  heartbeatTimer = setInterval(() => {
+    if (isSoloAi) return;
+    if (isHost) {
+      Object.values(connections).forEach(conn => {
+        if (conn && conn.open) { try { conn.send({ type: 'pong' }); } catch (e) {} }
+      });
+    } else if (hostConn && hostConn.open) {
+      try { hostConn.send({ type: 'ping' }); } catch (e) {}
+    }
+  }, 5000);
+}
+
+function leaveRoom() {
+  clearInterval(heartbeatTimer);
+  if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
+  if (peer) { try { peer.destroy(); } catch (e) {} }
+  location.reload();
+}
+
+function enterLobby() {
+  document.getElementById('title-screen').classList.remove('active');
+  document.getElementById('game-screen').classList.remove('active');
+  document.getElementById('result-modal').style.display = 'none';
+  document.getElementById('lobby-screen').classList.add('active');
+  renderLobby();
+}
+
+function renderLobby() {
+  document.getElementById('lobby-room-code').textContent = gameState.roomCode;
+  document.getElementById('lobby-count-label').textContent = `参加者: ${gameState.players.length} / ${gameState.maxPlayers}人`;
+
+  const ul = document.getElementById('lobby-player-list');
+  ul.innerHTML = '';
+  gameState.players.forEach((p, idx) => {
+    const skinObj = MASK_SKINS.find(s => s.id === p.skinId) || MASK_SKINS[0];
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <span>${idx + 1}. <strong>${p.name}</strong> <span style="font-size:11px; color:#aaa;">[${skinObj.name}]</span> ${p.id === myId ? '(あなた)' : ''}</span>
+      <span>
+        ${p.isHost ? '<span class="badge-host">HOST</span>' : '<span style="font-size:11px;color:#aaa;">READY</span>'}
+        ${(isHost && !p.isHost) ? `<button class="btn" style="padding:2px 6px;font-size:11px;margin-left:6px;" onclick="kickPlayer('${p.id}')">キック</button>` : ''}
+      </span>
+    `;
+    ul.appendChild(li);
   });
-};
 
-function handleHostReceive(conn, msg) {
-  if (msg.type === 'join') {
-    if (gameState.phase !== 'lobby' || gameState.players.length >= 5) {
-      conn.send({ type: 'reject', reason: '満員または試合中です' });
-      return;
-    }
-    conns.push(conn);
-    gameState.players.push(makePlayer(conn.peer, msg.name, gameState.players.length, false));
-    broadcastLobby();
-  } else if (msg.type === 'input') {
-    const p = gameState.players.find(pl => pl.id === conn.peer);
-    if (p && p.alive) {
-      p.vx = msg.vx; p.vy = msg.vy; p.angle = msg.angle;
-    }
-  } else if (msg.type === 'action') {
-    const p = gameState.players.find(pl => pl.id === conn.peer);
-    if (p && p.alive) triggerAction(p, msg.act);
-  } else if (msg.type === 'chat') {
-    const p = gameState.players.find(pl => pl.id === conn.peer);
-    if (p) applyChat(p, msg.text);
-  }
-}
-
-function handleClientReceive(msg) {
-  if (msg.type === 'reject') {
-    document.getElementById('titleStatus').textContent = msg.reason;
-  } else if (msg.type === 'lobby') {
-    gameState.phase = 'lobby';
-    gameState.players = msg.players;
-    openLobby();
-  } else if (msg.type === 'start') {
-    gameState.phase = 'playing';
-    showScreen('hud');
-  } else if (msg.type === 'state') {
-    gameState = msg.state;
-    updateHud();
-  } else if (msg.type === 'sfx') {
-    sfx.play(msg.name);
-    if (msg.name === 'hit' || msg.name === 'bomb') shakeTimer = 0.16;
-  } else if (msg.type === 'feed') {
-    addFeed(msg.html, msg.color);
-  } else if (msg.type === 'end') {
-    gameState = msg.state;
-    openResult();
-  }
-}
-
-function broadcastAll(payload) {
-  conns.forEach(c => { if (c.open) c.send(payload); });
-}
-
-function broadcastLobby() {
-  openLobby();
-  broadcastAll({ type: 'lobby', players: gameState.players });
-}
-
-function openLobby() {
-  showScreen('lobbyScreen');
-  document.getElementById('lobbyCode').textContent = roomCode;
-  const list = document.getElementById('lobbyPlayers');
-  list.innerHTML = gameState.players.map((p, i) => `
-    <div class="player-item">
-      <span><i class="dot" style="background:${p.color.main};box-shadow:0 0 8px ${p.color.main};"></i>${escapeHtml(p.name)}</span>
-      <span style="font-size:11px;color:#8ab4f8;">${i === 0 ? 'HOST' : 'READY'}</span>
-    </div>
-  `).join('');
-
-  const b4 = document.getElementById('btnStart4');
-  const bBot = document.getElementById('btnStartBot');
-  const wait = document.getElementById('lobbyWaitMsg');
+  const startBtn = document.getElementById('start-game-btn');
   if (isHost) {
-    wait.classList.add('hidden');
-    bBot.classList.remove('hidden');
-    b4.classList.toggle('hidden', gameState.players.length < 4);
+    startBtn.style.display = 'inline-block';
+    startBtn.disabled = gameState.players.length < 2;
   } else {
-    b4.classList.add('hidden');
-    bBot.classList.add('hidden');
-    wait.classList.remove('hidden');
+    startBtn.style.display = 'none';
   }
 }
 
-document.getElementById('btnStart4').onclick = () => startMatch(false);
-document.getElementById('btnStartBot').onclick = () => startMatch(true);
-document.getElementById('btnRematch').onclick = () => {
-  if (isHost) startMatch(isSolo || gameState.players.some(p => p.isBot));
-};
-document.getElementById('btnBackTitle').onclick = () => location.reload();
+function kickPlayer(targetId) {
+  if (!isHost) return;
+  if (connections[targetId]) {
+    try { connections[targetId].send({ type: 'kicked' }); connections[targetId].close(); } catch (e) {}
+    delete connections[targetId];
+  }
+  gameState.players = gameState.players.filter(p => p.id !== targetId);
+  broadcastState();
+}
 
-/* =========================================================
-   5. ゲームロジック（ホスト権威シミュレーション）
-   ========================================================= */
-function makePlayer(id, name, colorIdx, isBot) {
-  const pad = 260;
+function sendToHost(payload) {
+  if (isHost) handleHostReceive(myId, payload);
+  else if (hostConn && hostConn.open) { try { hostConn.send(payload); } catch (e) {} }
+}
+
+function broadcastState(event = null) {
+  if (!isHost) return;
+  applyStateUpdate(gameState, event);
+  if (!isSoloAi) {
+    Object.values(connections).forEach(conn => {
+      if (conn && conn.open) {
+        try { conn.send({ type: 'state', state: gameState, event }); } catch (e) {}
+      }
+    });
+  }
+  scheduleAiTurnIfNeeded();
+}
+
+function createPlayerObj(id, name, skinId, hostFlag, aiFlag = false) {
   return {
-    id, name, isBot,
-    color: COLORS[colorIdx % COLORS.length],
-    x: pad + Math.random() * (MAP_SIZE - pad * 2),
-    y: pad + Math.random() * (MAP_SIZE - pad * 2),
-    vx: 0, vy: 0, angle: 0,
-    hp: 100, maxHp: 100, alive: true,
-    atkCd: 0, dashCd: 0, dashTimer: 0,
-    speedTimer: 0, stunTimer: 0,
-    shield: false, poweredSword: false,
-    emote: '', emoteTimer: 0,
-    kills: 0, aiTimer: 0
+    id, name, skinId: skinId || 'wolf', isHost: hostFlag, isAi: aiFlag,
+    hp: 4, maxHp: 4, alive: true, slots: Array(8).fill(null), lootPending: [],
+    lookYaw: 0, lookPitch: 0, handAction: 'idle',
+    skipNextTurn: false, noItemsNextTurn: false, rosaryActive: false,
+    damageDealt: 0, elimOrder: 0, survivedRound: 1, aiKnownNext: null
   };
 }
 
-function startMatch(fillBots) {
-  const humans = gameState.players.filter(p => !p.isBot);
-  gameState.players = humans.map((p, idx) => makePlayer(p.id, p.name, idx, false));
+function hostStartGame() {
+  if (!isHost || gameState.players.length < 2) return;
+  elimCounter = 0;
+  actionLock = false;
+  gameState.round = 1;
+  gameState.turnIndex = 0;
+  gameState.turnDirection = 1;
+  gameState.winnerId = null;
+  gameState.winnerName = '';
+  gameState.players.forEach(p => {
+    p.hp = 4; p.maxHp = 4; p.alive = true; p.slots = Array(8).fill(null); p.lootPending = [];
+    p.lookYaw = 0; p.lookPitch = 0; p.handAction = 'idle';
+    p.skipNextTurn = false; p.noItemsNextTurn = false; p.rosaryActive = false;
+    p.damageDealt = 0; p.elimOrder = 0; p.survivedRound = 1; p.aiKnownNext = null;
+  });
+  startNewRound();
+}
 
-  if (fillBots) {
-    const botNames = ['VOLT-X', 'CYBER', 'NOVA', 'VIPER', 'ZERO'];
-    while (gameState.players.length < 5) {
-      const idx = gameState.players.length;
-      gameState.players.push(makePlayer('bot_' + idx, botNames[idx] + '(CPU)', idx, true));
+function requestRematch() { if (isHost) hostStartGame(); }
+function rollWeightedItem() { return ITEM_POOL_WEIGHTED[Math.floor(Math.random() * ITEM_POOL_WEIGHTED.length)]; }
+
+function applyDamageOrFatal(target, dmg) {
+  target.hp = Math.max(0, target.hp - dmg);
+  if (target.hp === 0) {
+    if (target.rosaryActive) {
+      target.rosaryActive = false;
+      target.hp = Math.min(target.maxHp, 2);
+      target.alive = true;
+      return 'rosary_revive';
+    } else {
+      target.alive = false;
+      target.elimOrder = ++elimCounter;
+      target.survivedRound = gameState.round;
+      return 'eliminated';
+    }
+  }
+  return 'damaged';
+}
+
+function startNewRound() {
+  const alivePlayers = gameState.players.filter(p => p.alive);
+  if (alivePlayers.length <= 1) {
+    const winner = alivePlayers[0];
+    if (winner) winner.survivedRound = gameState.round;
+    gameState.phase = 'gameover';
+    gameState.winnerId = winner ? winner.id : null;
+    gameState.winnerName = winner ? winner.name : 'なし';
+    broadcastState({ kind: 'gameover', winnerId: gameState.winnerId, winnerName: gameState.winnerName });
+    return;
+  }
+
+  gameState.players.forEach(p => {
+    p.rosaryActive = false; p.aiKnownNext = null;
+    if (p.alive) p.survivedRound = gameState.round;
+  });
+
+  const round = gameState.round;
+  const total = Math.min(10, 2 + round);
+  let liveCount;
+
+  if (round >= 5) {
+    const minHighLive = Math.min(total - 1, Math.ceil(total * 0.55));
+    const maxHighLive = total - 1;
+    liveCount = minHighLive + Math.floor(Math.random() * Math.max(1, maxHighLive - minHighLive + 1));
+  } else {
+    const minLive = 1;
+    const maxLive = Math.max(1, Math.floor(total * 0.5));
+    liveCount = minLive + Math.floor(Math.random() * (maxLive - minLive + 1));
+  }
+  const blankCount = total - liveCount;
+
+  const shells = [];
+  for (let i = 0; i < liveCount; i++) shells.push(true);
+  for (let i = 0; i < blankCount; i++) shells.push(false);
+  for (let i = shells.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shells[i], shells[j]] = [shells[j], shells[i]];
+  }
+
+  gameState.shells = shells;
+  gameState.initialShellCount = total;
+  gameState.sawActive = false;
+  gameState.aimTargetId = null;
+  gameState.phase = 'loading';
+
+  if (!gameState.players[gameState.turnIndex] || !gameState.players[gameState.turnIndex].alive) {
+    gameState.turnIndex = gameState.players.findIndex(p => p.alive);
+  }
+
+  broadcastState({ kind: 'round_load', round, live: liveCount, blank: blankCount });
+
+  const loadDurationMs = 1550 + total * 280;
+  setTimeout(() => {
+    const itemsPerPlayer = Math.min(4, 1 + Math.floor((round + 1) / 2));
+    gameState.players.forEach(p => {
+      if (!p.alive) { p.lootPending = []; return; }
+      const emptyCount = p.slots.filter(s => s === null).length;
+      const grantCount = Math.min(itemsPerPlayer, emptyCount);
+      const loot = [];
+      for (let k = 0; k < grantCount; k++) loot.push(rollWeightedItem());
+      if (p.isAi) {
+        loot.forEach(itemId => {
+          const emptyIdx = p.slots.indexOf(null);
+          if (emptyIdx !== -1) p.slots[emptyIdx] = itemId;
+        });
+        p.lootPending = [];
+      } else {
+        p.lootPending = loot;
+      }
+    });
+
+    const anyLoot = gameState.players.some(p => p.alive && !p.isAi && p.lootPending.length > 0);
+    gameState.phase = anyLoot ? 'loot' : 'play';
+    broadcastState();
+  }, loadDurationMs);
+}
+
+function advanceTurnIndex(bannerLogs = []) {
+  const prevPlayer = gameState.players[gameState.turnIndex];
+  if (prevPlayer && prevPlayer.noItemsNextTurn) prevPlayer.noItemsNextTurn = false;
+
+  const n = gameState.players.length;
+  if (n === 0) return;
+  for (let step = 1; step <= n * 2; step++) {
+    const idx = ((gameState.turnIndex + step * gameState.turnDirection) % n + n) % n;
+    const candidate = gameState.players[idx];
+    if (!candidate || !candidate.alive) continue;
+    if (candidate.skipNextTurn) {
+      candidate.skipNextTurn = false;
+      bannerLogs.push(`⛓️ ${candidate.name} は手錠で1回ターンをスキップされた！`);
+      continue;
+    }
+    gameState.turnIndex = idx;
+    return;
+  }
+}
+
+function handleHostReceive(senderId, data) {
+  if (!data || typeof data !== 'object') return;
+
+  if (data.type === 'join') {
+    if (gameState.phase !== 'lobby' || gameState.players.length >= gameState.maxPlayers) {
+      if (connections[senderId]) {
+        try { connections[senderId].send({ type: 'kicked' }); connections[senderId].close(); } catch (e) {}
+      }
+      return;
+    }
+    if (!gameState.players.find(p => p.id === senderId)) {
+      gameState.players.push(createPlayerObj(senderId, data.name, data.skinId, false, false));
+    }
+    broadcastState();
+    return;
+  }
+
+  const pIndex = gameState.players.findIndex(p => p.id === senderId);
+  if (pIndex === -1) return;
+  const player = gameState.players[pIndex];
+
+  if (data.type === 'change_skin' && gameState.phase === 'lobby') {
+    if (MASK_SKINS.some(s => s.id === data.skinId)) {
+      player.skinId = data.skinId;
+      broadcastState();
+    }
+    return;
+  }
+
+  if (data.type === 'look') {
+    if (typeof data.yaw === 'number') player.lookYaw = data.yaw;
+    if (typeof data.pitch === 'number') player.lookPitch = data.pitch;
+    broadcastState();
+    return;
+  }
+
+  if (data.type === 'loot_done') {
+    if (Array.isArray(data.slots)) player.slots = data.slots.slice(0, 8);
+    player.lootPending = [];
+    if (gameState.players.every(p => !p.alive || p.lootPending.length === 0)) {
+      gameState.phase = 'play';
+    }
+    broadcastState();
+    return;
+  }
+
+  if (gameState.phase !== 'play' || gameState.turnIndex !== pIndex || actionLock) return;
+
+  if (data.type === 'aim') {
+    if (player.handAction === 'shoot') return;
+    gameState.aimTargetId = data.targetId;
+    player.handAction = data.targetId ? 'aim' : 'idle';
+    broadcastState();
+    return;
+  }
+
+  if (data.type === 'use_item') {
+    if (player.noItemsNextTurn) {
+      broadcastState({ kind: 'banner', text: `💧 ${player.name} は目薬の効果でこのターンはアイテムを使えない！` });
+      return;
+    }
+    executeItemUse(player, data.slotIndex, data.targetPlayerId, data.stealSlotIndex);
+    return;
+  }
+
+  if (data.type === 'shoot') {
+    executeShoot(player, data.targetId);
+    return;
+  }
+}
+
+function executeItemUse(player, slotIndex, targetPlayerId, stealSlotIndex) {
+  if (!player || player.noItemsNextTurn || actionLock) return;
+  const itemId = player.slots[slotIndex];
+  if (!itemId || !ITEM_DEFS[itemId]) return;
+
+  player.slots[slotIndex] = null;
+  player.handAction = 'item_' + itemId;
+
+  let actualItem = itemId;
+  let stealInfo = null;
+
+  if (itemId === 'adrenaline') {
+    const victim = gameState.players.find(p => p.id === targetPlayerId);
+    if (victim && victim.slots[stealSlotIndex] && victim.slots[stealSlotIndex] !== 'adrenaline') {
+      actualItem = victim.slots[stealSlotIndex];
+      victim.slots[stealSlotIndex] = null;
+      stealInfo = { from: victim.name, item: actualItem };
+      targetPlayerId = victim.id;
+    } else {
+      player.handAction = 'idle';
+      broadcastState({ kind: 'banner', text: `${player.name} のアドレナリンは不発に終わった` });
+      return;
     }
   }
 
-  gameState.phase = 'playing';
-  gameState.timeLeft = MATCH_TIME;
-  gameState.zoneRadius = MAP_SIZE * 0.72;
-  gameState.items = [];
-  gameState.traps = [];
-  gameState.effects = [];
-  gameState.winner = null;
-  itemSpawnTimer = 1.0;
-  zoneDmgTimer = 1.0;
+  let privateMsg = null;
+  let privateIsLive = null;
+  let bannerText = `${player.name} が【${ITEM_DEFS[actualItem].name}】を使用！`;
+  if (stealInfo) bannerText = `${player.name} が ${stealInfo.from} から【${ITEM_DEFS[actualItem].name}】を奪って使用！`;
 
-  for (let i = 0; i < 9; i++) spawnItem();
+  switch (actualItem) {
+    case 'saw':
+      gameState.sawActive = true;
+      bannerText += '（このターン実弾ダメージ2倍！）';
+      break;
+    case 'magnifier': {
+      if (gameState.shells.length > 0) {
+        const nextShell = gameState.shells[0];
+        if (player.isAi) player.aiKnownNext = nextShell;
+        privateIsLive = nextShell;
+        privateMsg = nextShell ? '🔍 虫眼鏡: 次の弾は【実弾 (赤)】だ！' : '🔍 虫眼鏡: 次の弾は【空砲 (青)】だ！';
+      }
+      break;
+    }
+    case 'cigarette':
+      player.hp = Math.min(player.maxHp, player.hp + 1);
+      bannerText += '（ライフ +1）';
+      break;
+    case 'beer': {
+      const ejected = gameState.shells.shift();
+      player.aiKnownNext = null;
+      bannerText += ejected ? ' → 排莢された弾は【実弾(赤)】だった！' : ' → 排莢された弾は【空砲(青)】だった！';
+      break;
+    }
+    case 'medicine':
+      if (Math.random() < 0.5) {
+        player.hp = Math.min(player.maxHp, player.hp + 2);
+        bannerText += ' → 成功！ライフ +2！';
+      } else {
+        const outcome = applyDamageOrFatal(player, 1);
+        bannerText += outcome === 'rosary_revive' ? ' → 腐っていた！が、✝ ロザリオの加護で残機2個で復活！' : ' → 腐っていた！ライフ -1！';
+      }
+      break;
+    case 'inverter':
+      if (gameState.shells.length > 0) {
+        gameState.shells[0] = !gameState.shells[0];
+        if (player.isAi && player.aiKnownNext !== null) player.aiKnownNext = !player.aiKnownNext;
+      }
+      bannerText += '（現在の弾性が反転した！）';
+      break;
+    case 'phone': {
+      if (gameState.shells.length > 0) {
+        const remIdx = Math.floor(Math.random() * gameState.shells.length);
+        const isLive = gameState.shells[remIdx];
+        if (player.isAi && remIdx === 0) player.aiKnownNext = isLive;
+        const consumedCount = Math.max(0, gameState.initialShellCount - gameState.shells.length);
+        const fromStartNumber = consumedCount + remIdx + 1;
+        privateIsLive = isLive;
+        privateMsg = `📱 着信:「最初から${fromStartNumber}番目の弾は【${isLive ? '実弾(赤)' : '空砲(青)'}】だ…」`;
+      }
+      break;
+    }
+    case 'handcuffs': {
+      const target = gameState.players.find(p => p.id === targetPlayerId && p.alive && p.id !== player.id);
+      if (target) {
+        target.skipNextTurn = true;
+        bannerText += `（⛓️ ${target.name} の次ターンを1回スキップ！）`;
+      }
+      break;
+    }
+    case 'remote':
+      gameState.turnDirection *= -1;
+      bannerText += `（🎛️ ターン順番が【${gameState.turnDirection === 1 ? '時計回り' : '逆順'}】になった！）`;
+      break;
+    case 'eyedrops': {
+      const target = gameState.players.find(p => p.id === targetPlayerId && p.alive && p.id !== player.id);
+      if (target) {
+        target.noItemsNextTurn = true;
+        bannerText += `（💧 ${target.name} は次のターンアイテム使用不可！）`;
+      }
+      break;
+    }
+    case 'rosary':
+      player.rosaryActive = true;
+      bannerText += '（✝ このラウンド中、HP0になっても残機2個で復活できる！）';
+      break;
+  }
 
-  showScreen('hud');
-  broadcastAll({ type: 'start' });
-  sendFeed('⚡ バトル開始！同盟も裏切りも自由！', '#00f3ff');
+  const aliveCount = gameState.players.filter(p => p.alive).length;
+  if (aliveCount <= 1) { startNewRound(); return; }
+
+  const extraLogs = [];
+  if (!player.alive) advanceTurnIndex(extraLogs);
+  const finalBanner = extraLogs.length > 0 ? `${bannerText} ／ ${extraLogs.join(' ')}` : bannerText;
+
+  if (gameState.shells.length === 0) {
+    actionLock = true;
+    gameState.round++;
+    broadcastState({ kind: 'banner', text: finalBanner });
+    setTimeout(() => { actionLock = false; startNewRound(); }, 1800);
+  } else {
+    broadcastState({ kind: 'item_fx', item: actualItem, actorId: player.id, text: finalBanner });
+    setTimeout(() => {
+      if (player.handAction && player.handAction.startsWith('item_')) {
+        player.handAction = 'idle';
+        broadcastState();
+      }
+    }, 900);
+  }
+
+  if (privateMsg && !player.isAi) {
+    if (player.id === myId) showSecretInspect(privateMsg, privateIsLive);
+    else if (connections[player.id]) {
+      try { connections[player.id].send({ type: 'private_msg', text: privateMsg, isLive: privateIsLive }); } catch (e) {}
+    }
+  }
 }
 
-function spawnItem() {
-  if (gameState.items.length >= 18) return;
-  const elapsed = MATCH_TIME - gameState.timeLeft;
-  // 3:30以降は回復アイテムを出現停止
-  const pool = elapsed >= 210 ? ITEM_SPECS.filter(i => i.type !== 'heal') : ITEM_SPECS;
-  const spec = pool[Math.floor(Math.random() * pool.length)];
-  const maxR = gameState.zoneRadius * 0.85;
-  const a = Math.random() * Math.PI * 2;
-  const d = Math.sqrt(Math.random()) * maxR;
+function executeShoot(shooter, targetId) {
+  const target = gameState.players.find(p => p.id === targetId);
+  if (!target || !target.alive || gameState.shells.length === 0 || actionLock) return;
 
-  gameState.items.push({
-    id: Math.random().toString(36).slice(2, 8),
-    ...spec,
-    x: MAP_SIZE / 2 + Math.cos(a) * d,
-    y: MAP_SIZE / 2 + Math.sin(a) * d
-  });
+  actionLock = true;
+  const isLive = gameState.shells.shift();
+  shooter.aiKnownNext = null;
+  const dmg = isLive ? (gameState.sawActive ? 2 : 1) : 0;
+  gameState.sawActive = false;
+  gameState.aimTargetId = targetId;
+  shooter.handAction = 'shoot';
+
+  const selfShot = (shooter.id === target.id);
+  let outcome = 'none';
+
+  if (isLive) {
+    if (!selfShot) shooter.damageDealt = (shooter.damageDealt || 0) + dmg;
+    outcome = applyDamageOrFatal(target, dmg);
+  }
+
+  let text = '';
+  if (isLive) {
+    text = `💥 ドォン！！【実弾(赤)】 ${target.name} に ${dmg} ダメージ！`;
+    if (outcome === 'rosary_revive') text += `（✝ ${target.name} はロザリオで残機2個復活！）`;
+    else if (!target.alive) text += `（${target.name} 脱落！）`;
+  } else {
+    text = `カチッ…【空砲(青)】` + (selfShot ? `（${shooter.name} はもう一度自分のターン！）` : '');
+  }
+
+  const skipLogs = [];
+  if (!(selfShot && !isLive)) advanceTurnIndex(skipLogs);
+  if (skipLogs.length > 0) text += ' ／ ' + skipLogs.join(' ');
+
+  broadcastState({ kind: 'shoot_fx', isLive, shooterId: shooter.id, targetId: target.id, text });
+
+  setTimeout(() => {
+    actionLock = false;
+    gameState.aimTargetId = null;
+    shooter.handAction = 'idle';
+    const alivePlayers = gameState.players.filter(p => p.alive);
+    if (alivePlayers.length <= 1) startNewRound();
+    else if (gameState.shells.length === 0) { gameState.round++; startNewRound(); }
+    else broadcastState();
+  }, 1900);
 }
 
-function playAndBroadcastSfx(name) {
-  sfx.play(name);
-  if (name === 'hit' || name === 'bomb') shakeTimer = 0.16;
-  broadcastAll({ type: 'sfx', name });
+let aiThinkTimer = null;
+
+function scheduleAiTurnIfNeeded() {
+  clearTimeout(aiThinkTimer);
+  if (!isSoloAi || gameState.phase !== 'play' || actionLock) return;
+  const current = gameState.players[gameState.turnIndex];
+  if (!current || !current.alive || !current.isAi || activeShootOverride) return;
+  aiThinkTimer = setTimeout(() => runAiStep(current), 1150);
 }
 
-function sendFeed(html, color = '#00f3ff') {
-  addFeed(html, color);
-  broadcastAll({ type: 'feed', html, color });
+function runAiStep(ai) {
+  if (!isSoloAi || gameState.phase !== 'play' || actionLock) return;
+  const current = gameState.players[gameState.turnIndex];
+  if (!current || current.id !== ai.id || !ai.alive || gameState.shells.length === 0) return;
+
+  const enemies = gameState.players.filter(p => p.alive && p.id !== ai.id);
+  if (enemies.length === 0) return;
+
+  if (!ai.noItemsNextTurn) {
+    const rosIdx = ai.slots.indexOf('rosary');
+    if (rosIdx !== -1 && !ai.rosaryActive) { executeItemUse(ai, rosIdx); return; }
+
+    if (ai.hp < ai.maxHp) {
+      const cigIdx = ai.slots.indexOf('cigarette');
+      if (cigIdx !== -1) { executeItemUse(ai, cigIdx); return; }
+      if (ai.hp <= 2) {
+        const medIdx = ai.slots.indexOf('medicine');
+        if (medIdx !== -1) { executeItemUse(ai, medIdx); return; }
+      }
+    }
+
+    const cuffIdx = ai.slots.indexOf('handcuffs');
+    if (cuffIdx !== -1) {
+      const unCuffed = enemies.filter(e => !e.skipNextTurn);
+      if (unCuffed.length > 0) { executeItemUse(ai, cuffIdx, pickAiShootEnemy(unCuffed).id); return; }
+    }
+
+    const eyeIdx = ai.slots.indexOf('eyedrops');
+    if (eyeIdx !== -1) {
+      const itemRich = enemies.filter(e => !e.noItemsNextTurn && e.slots.some(s => s !== null));
+      if (itemRich.length > 0) { executeItemUse(ai, eyeIdx, itemRich[0].id); return; }
+    }
+
+    const remIdx = ai.slots.indexOf('remote');
+    if (remIdx !== -1 && enemies.length >= 2 && Math.random() < 0.45) { executeItemUse(ai, remIdx); return; }
+
+    if (ai.aiKnownNext === null && gameState.shells.length > 1) {
+      const magIdx = ai.slots.indexOf('magnifier');
+      if (magIdx !== -1) { executeItemUse(ai, magIdx); return; }
+      const phoneIdx = ai.slots.indexOf('phone');
+      if (phoneIdx !== -1 && Math.random() < 0.7) { executeItemUse(ai, phoneIdx); return; }
+    }
+
+    const adrIdx = ai.slots.indexOf('adrenaline');
+    if (adrIdx !== -1) {
+      let bestSteal = null;
+      const priority = ['rosary', 'cigarette', 'saw', 'handcuffs', 'magnifier', 'beer', 'inverter', 'eyedrops', 'phone', 'medicine'];
+      for (const targetItem of priority) {
+        for (const e of enemies) {
+          const sIdx = e.slots.indexOf(targetItem);
+          if (sIdx !== -1) {
+            if (targetItem === 'cigarette' && ai.hp >= ai.maxHp) continue;
+            bestSteal = { targetId: e.id, slotIndex: sIdx };
+            break;
+          }
+        }
+        if (bestSteal) break;
+      }
+      if (bestSteal) { executeItemUse(ai, adrIdx, bestSteal.targetId, bestSteal.slotIndex); return; }
+    }
+  }
+
+  if (ai.aiKnownNext === false) {
+    if (!ai.noItemsNextTurn) {
+      const invIdx = ai.slots.indexOf('inverter');
+      if (invIdx !== -1) { executeItemUse(ai, invIdx); return; }
+      const beerIdx = ai.slots.indexOf('beer');
+      if (beerIdx !== -1 && gameState.shells.length > 1) { executeItemUse(ai, beerIdx); return; }
+    }
+    executeShoot(ai, ai.id);
+    return;
+  }
+
+  if (ai.aiKnownNext === true) {
+    if (!ai.noItemsNextTurn && !gameState.sawActive) {
+      const sawIdx = ai.slots.indexOf('saw');
+      if (sawIdx !== -1) { executeItemUse(ai, sawIdx); return; }
+    }
+    executeShoot(ai, pickAiShootEnemy(enemies).id);
+    return;
+  }
+
+  const liveRem = gameState.shells.filter(Boolean).length;
+  const liveRatio = liveRem / gameState.shells.length;
+
+  if (!ai.noItemsNextTurn && liveRatio >= 0.6 && !gameState.sawActive) {
+    const sawIdx = ai.slots.indexOf('saw');
+    if (sawIdx !== -1) { executeItemUse(ai, sawIdx); return; }
+  }
+
+  if (liveRatio < 0.45 && gameState.shells.length > 1) {
+    if (!ai.noItemsNextTurn) {
+      const beerIdx = ai.slots.indexOf('beer');
+      if (beerIdx !== -1 && Math.random() < 0.5) { executeItemUse(ai, beerIdx); return; }
+    }
+    executeShoot(ai, ai.id);
+  } else {
+    executeShoot(ai, pickAiShootEnemy(enemies).id);
+  }
 }
 
-function applyChat(p, text) {
-  p.emote = text;
-  p.emoteTimer = 3.5;
-  playAndBroadcastSfx('chat');
-  sendFeed(`<b style="color:${p.color.main}">${escapeHtml(p.name)}</b>: ${escapeHtml(text)}`, p.color.main);
+function pickAiShootEnemy(enemies) {
+  const sorted = [...enemies].sort((a, b) => a.hp - b.hp);
+  return Math.random() < 0.75 ? sorted[0] : enemies[Math.floor(Math.random() * enemies.length)];
 }
 
-function triggerAction(p, act) {
-  if (!p.alive || p.stunTimer > 0) return;
-  if (act === 'attack' && p.atkCd <= 0) {
-    p.atkCd = 0.7;
-    const dmg = p.poweredSword ? 40 : 20;
-    const powered = p.poweredSword;
-    p.poweredSword = false;
+function handleClientReceive(data) {
+  if (!data) return;
+  if (data.type === 'kicked') {
+    alert('部屋からキックされたか、満員のため入室できませんでした。');
+    location.reload();
+  } else if (data.type === 'state') {
+    applyStateUpdate(data.state, data.event);
+  } else if (data.type === 'private_msg') {
+    showSecretInspect(data.text, data.isLive);
+  }
+}
 
-    gameState.effects.push({
-      type: 'slash', x: p.x, y: p.y, angle: p.angle,
-      color: powered ? '#ff9500' : p.color.main, powered, ttl: 0.22
-    });
-    playAndBroadcastSfx(powered ? 'powerSlash' : 'slash');
+let threeInitialized = false;
+let cameraMode = 'front';
+let isAimingMode = false;
+let adrenalineStealSlot = null;
+let adrenalineFocusTargetId = null;
+let pendingPlayerTargetItem = null;
+let isChamberCutscene = false;
+let activeShootOverride = null;
+let hitKnockback = {};
 
-    const range = 115; // 前方約2マス
-    let hit = false;
-    for (const t of gameState.players) {
-      if (t.id === p.id || !t.alive || t.dashTimer > 0) continue;
-      const dx = t.x - p.x, dy = t.y - p.y;
-      if (Math.hypot(dx, dy) <= range + 24) {
-        let diff = Math.abs(Math.atan2(dy, dx) - p.angle);
-        if (diff > Math.PI) diff = Math.PI * 2 - diff;
-        if (diff <= 0.98) {
-          hit = true;
-          damagePlayer(p, t, dmg);
+function applyStateUpdate(newState, event) {
+  gameState = newState;
+  updateBgmForGameState(gameState);
+
+  if (gameState.phase === 'lobby') {
+    document.getElementById('result-modal').style.display = 'none';
+    document.getElementById('game-screen').classList.remove('active');
+    document.getElementById('lobby-screen').classList.add('active');
+    renderLobby();
+    return;
+  }
+
+  document.getElementById('lobby-screen').classList.remove('active');
+  document.getElementById('game-screen').classList.add('active');
+
+  if (gameState.phase !== 'gameover') {
+    document.getElementById('result-modal').style.display = 'none';
+  }
+
+  if (!threeInitialized) {
+    initThreeScene();
+    threeInitialized = true;
+  }
+
+  const turnPlayer = gameState.players[gameState.turnIndex];
+  const isMyTurn = (gameState.phase === 'play' && turnPlayer && turnPlayer.id === myId);
+  if (!isMyTurn) {
+    isAimingMode = false;
+    adrenalineStealSlot = null;
+    adrenalineFocusTargetId = null;
+    pendingPlayerTargetItem = null;
+  }
+
+  update3DSceneFromState();
+  updateGameHUD();
+
+  if (event) {
+    if (event.kind === 'round_load') {
+      playChamberLoadAnimation(event.round, event.live, event.blank);
+    } else if (event.kind === 'banner' || event.kind === 'item_fx') {
+      showBanner(event.text, 2500);
+      if (event.item === 'cigarette' || event.item === 'medicine' || event.item === 'rosary') {
+        triggerFlash('rgba(57,255,20,0.22)');
+      }
+    } else if (event.kind === 'shoot_fx') {
+      activeShootOverride = { shooterId: event.shooterId, targetId: event.targetId };
+      clearTimeout(activeShootOverride._timer);
+      activeShootOverride._timer = setTimeout(() => { activeShootOverride = null; }, 1850);
+
+      shotgunRecoil = 0.32;
+      playShotSound(event.isLive);
+      showBanner(event.text, 2300);
+
+      if (event.isLive) {
+        if (event.targetId === myId) {
+          triggerFlash('rgba(255, 20, 20, 0.58)');
+          cameraShakeTime = 0.45;
+        } else {
+          hitKnockback[event.targetId] = 1.0;
         }
       }
+    } else if (event.kind === 'gameover') {
+      triggerMatchEndSequence(event.winnerId, event.winnerName);
     }
-    if (hit) playAndBroadcastSfx('hit');
-  } else if (act === 'dash' && p.dashCd <= 0) {
-    p.dashTimer = 0.5;
-    p.dashCd = 3.0;
-    gameState.effects.push({ type: 'dash', x: p.x, y: p.y, angle: p.angle, color: p.color.main, ttl: 0.3 });
-    playAndBroadcastSfx('dash');
+  }
+
+  const me = gameState.players.find(p => p.id === myId);
+  if (gameState.phase === 'loot' && me && me.alive && me.lootPending.length > 0) {
+    openLootModal(me);
+  } else {
+    document.getElementById('loot-modal').style.display = 'none';
   }
 }
 
-function damagePlayer(attacker, target, amount) {
-  if (!target.alive) return;
-  if (target.shield) {
-    target.shield = false;
-    gameState.effects.push({ type: 'ring', x: target.x, y: target.y, color: '#00f3ff', ttl: 0.4 });
-    playAndBroadcastSfx('shieldBreak');
+function showBanner(text, duration = 2200) {
+  const el = document.getElementById('center-banner');
+  el.textContent = text;
+  el.style.display = 'block';
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => { el.style.display = 'none'; }, duration);
+}
+
+function showSecretInspect(text, isLive) {
+  const el = document.getElementById('secret-inspect-banner');
+  el.textContent = text;
+  if (isLive === true) {
+    el.style.borderColor = 'var(--danger)';
+    el.style.color = 'var(--danger)';
+    el.style.boxShadow = '0 0 24px rgba(255, 42, 42, 0.65)';
+  } else if (isLive === false) {
+    el.style.borderColor = 'var(--blank)';
+    el.style.color = 'var(--blank)';
+    el.style.boxShadow = '0 0 24px rgba(42, 157, 244, 0.65)';
+  } else {
+    el.style.borderColor = '#ffffff';
+    el.style.color = '#ffffff';
+  }
+  el.style.display = 'block';
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => { el.style.display = 'none'; }, 4400);
+}
+
+let loadingShellMeshes = [];
+
+function playChamberLoadAnimation(round, liveCount, blankCount) {
+  const overlay = document.getElementById('shell-visual-overlay');
+  const title = document.getElementById('shell-visual-title');
+  const icons = document.getElementById('shell-visual-icons');
+  const legend = document.getElementById('shell-visual-legend');
+
+  isChamberCutscene = true;
+
+  title.textContent = `ROUND ${round} - 装填される弾（計 ${liveCount + blankCount} 発）`;
+  icons.innerHTML = '';
+
+  const displayList = [];
+  for (let i = 0; i < liveCount; i++) displayList.push(true);
+  for (let i = 0; i < blankCount; i++) displayList.push(false);
+
+  const iconEls = displayList.map(isLive => {
+    const s = document.createElement('div');
+    s.className = 'shell-cartridge ' + (isLive ? 'live' : 'blank');
+    icons.appendChild(s);
+    return s;
+  });
+
+  legend.innerHTML = `<span style="color:var(--danger);">■ 実弾(赤): ${liveCount}発</span> ／ <span style="color:var(--blank);">■ 空砲(青): ${blankCount}発</span>`;
+  overlay.style.display = 'flex';
+
+  loadingShellMeshes.forEach(m => { if (scene) scene.remove(m); disposeObject3D(m); });
+  loadingShellMeshes = [];
+
+  displayList.forEach((isLive, idx) => {
+    const shellGroup = new THREE.Group();
+    const body = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.036, 0.036, 0.16, 12),
+      new THREE.MeshStandardMaterial({ color: isLive ? 0xff2a2a : 0x2a9df4, emissive: isLive ? 0x770000 : 0x003b77, roughness: 0.3 })
+    );
+    const rim = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.039, 0.039, 0.038, 12),
+      new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.85, roughness: 0.25 })
+    );
+    rim.position.y = -0.085;
+    shellGroup.add(body, rim);
+
+    const offset = (idx - (displayList.length - 1) / 2) * 0.125;
+    const localVec = new THREE.Vector3(offset, 1.46, -0.15);
+    localVec.applyAxisAngle(new THREE.Vector3(0, 1, 0), mySeatAngle);
+    shellGroup.position.copy(localVec);
+    if (scene) scene.add(shellGroup);
+    loadingShellMeshes.push(shellGroup);
+
+    setTimeout(() => {
+      if (iconEls[idx]) iconEls[idx].classList.add('loaded');
+      playTone(isLive ? 320 : 520, 'triangle', 0.09, 0.16);
+      const startPos = shellGroup.position.clone();
+      const targetPos = new THREE.Vector3(0, 1.02, 0);
+      let step = 0;
+      const animTimer = setInterval(() => {
+        step += 0.14;
+        if (step >= 1) {
+          clearInterval(animTimer);
+          if (scene) scene.remove(shellGroup);
+          disposeObject3D(shellGroup);
+        } else {
+          shellGroup.position.lerpVectors(startPos, targetPos, step);
+          shellGroup.rotation.x += 0.25;
+        }
+      }, 20);
+    }, 950 + idx * 280);
+  });
+
+  clearTimeout(overlay._timer);
+  overlay._timer = setTimeout(() => {
+    overlay.style.display = 'none';
+    isChamberCutscene = false;
+    loadingShellMeshes.forEach(m => { if (scene) scene.remove(m); disposeObject3D(m); });
+    loadingShellMeshes = [];
+  }, 1350 + displayList.length * 280);
+}
+
+function triggerMatchEndSequence(winnerId, winnerName) {
+  const isMeWinner = (winnerId && winnerId === myId);
+  playMatchResultSound(isMeWinner);
+
+  if (isMeWinner) {
+    triggerFlash('rgba(255, 215, 0, 0.42)');
+    showBanner(`🏆 YOU WIN!! 勝者: ${winnerName}`, 2400);
+  } else {
+    triggerFlash('rgba(255, 30, 30, 0.45)');
+    showBanner(`💀 YOU LOSE... 勝者: ${winnerName}`, 2400);
+  }
+
+  setTimeout(() => openResultModal(winnerId, winnerName), 1500);
+}
+
+function openResultModal(winnerId, winnerName) {
+  const modal = document.getElementById('result-modal');
+  const titleEl = document.getElementById('result-banner-title');
+  const subEl = document.getElementById('result-subtitle');
+  const tbody = document.getElementById('ranking-tbody');
+  const rematchArea = document.getElementById('rematch-area');
+
+  const isMeWinner = (winnerId && winnerId === myId);
+  titleEl.textContent = isMeWinner ? '★ VICTORY — YOU WIN ★' : '✖ DEFEAT — YOU LOSE ✖';
+  titleEl.className = 'result-banner-title ' + (isMeWinner ? 'win' : 'lose');
+  subEl.textContent = `CHAMPION: ${winnerName}（最終ラウンド: ROUND ${gameState.round}）`;
+
+  const ranked = [...gameState.players].sort((a, b) => {
+    if (a.alive !== b.alive) return a.alive ? -1 : 1;
+    if ((b.elimOrder || 0) !== (a.elimOrder || 0)) return (b.elimOrder || 0) - (a.elimOrder || 0);
+    if (b.hp !== a.hp) return b.hp - a.hp;
+    return (b.damageDealt || 0) - (a.damageDealt || 0);
+  });
+
+  tbody.innerHTML = '';
+  ranked.forEach((p, idx) => {
+    const tr = document.createElement('tr');
+    if (idx === 0) tr.classList.add('rank-1');
+    if (p.id === myId) tr.classList.add('is-me');
+    const rankLabel = idx === 0 ? '👑 1位' : `${idx + 1}位`;
+    const hpStr = p.alive ? `⚡×${p.hp}` : '脱落 (⚡0)';
+    tr.innerHTML = `<td>${rankLabel}</td><td>${p.name}${p.id === myId ? ' (あなた)' : ''}</td><td>${hpStr}</td><td>${p.damageDealt || 0}</td><td>ROUND ${p.survivedRound || 1}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  rematchArea.innerHTML = isHost
+    ? `<button class="btn" onclick="requestRematch()">▶ 再戦する（同じメンバーで再プレイ）</button>`
+    : `<span style="font-size:13px; opacity:0.85;">ホストの再戦操作を待機中...</span>`;
+
+  modal.style.display = 'flex';
+}
+
+function triggerFlash(color) {
+  const fx = document.getElementById('flash-fx');
+  fx.style.background = color;
+  fx.style.opacity = '1';
+  setTimeout(() => { fx.style.opacity = '0'; }, 240);
+}
+
+function updateGameHUD() {
+  document.getElementById('hud-round').textContent = `ROUND ${gameState.round}`;
+  const dirEl = document.getElementById('hud-dir-badge');
+  if (dirEl) {
+    dirEl.textContent = gameState.turnDirection === 1 ? '↻ 時計回り' : '↺ 逆順';
+    dirEl.style.color = gameState.turnDirection === 1 ? 'var(--neon)' : 'var(--gold)';
+  }
+
+  const ammoEl = document.getElementById('hud-ammo-count');
+  if (ammoEl) ammoEl.textContent = `残弾: ${gameState.shells.length}発`;
+
+  const turnPlayer = gameState.players[gameState.turnIndex];
+  const isMyTurn = (gameState.phase === 'play' && turnPlayer && turnPlayer.id === myId);
+  const me = gameState.players.find(p => p.id === myId);
+  const focusedEnemy = adrenalineFocusTargetId ? gameState.players.find(p => p.id === adrenalineFocusTargetId) : null;
+
+  document.getElementById('hud-turn-info').textContent =
+    gameState.phase === 'loading' ? '弾薬装填中...' :
+    gameState.phase === 'loot' ? 'アイテム配置中...' :
+    gameState.phase === 'gameover' ? `決着！勝者: ${gameState.winnerName}` :
+    pendingPlayerTargetItem ? `🎯 【${ITEM_DEFS[pendingPlayerTargetItem.itemId].name}】を使う相手を直接タップ` :
+    adrenalineStealSlot !== null ? `💉 ${focusedEnemy ? focusedEnemy.name : '相手'}の3Dアイテムをタップ（下ボタン/スワイプで対象切替）` :
+    isAimingMode ? '🎯 撃つ相手(3D)をタップ または 自分を撃つ' :
+    (isMyTurn && me && me.noItemsNextTurn) ? '💧 目薬効果中（銃をタップして射撃のみ可能）' :
+    isMyTurn ? '★ あなたのターン（銃や手元アイテムを直接タップ） ★' : `${turnPlayer ? turnPlayer.name : ''} のターン`;
+
+  const sawEl = document.getElementById('hud-saw-badge');
+  if (sawEl) sawEl.style.display = gameState.sawActive ? 'inline' : 'none';
+
+  const myHpEl = document.getElementById('hud-my-hp');
+  if (me && myHpEl) {
+    let boltsHtml = '';
+    for (let i = 0; i < me.maxHp; i++) {
+      boltsHtml += i < me.hp ? '<span>⚡</span>' : '<span class="hp-bolt-off">⚡</span>';
+    }
+    if (me.rosaryActive) boltsHtml += `<span class="status-pill">✝復活保険</span>`;
+    if (me.skipNextTurn) boltsHtml += `<span class="status-pill">⛓️次回休</span>`;
+    if (me.noItemsNextTurn) boltsHtml += `<span class="status-pill">💧道具封</span>`;
+    myHpEl.innerHTML = boltsHtml;
+  }
+
+  if (!isMyTurn && adrenalineStealSlot === null && !isAimingMode && !pendingPlayerTargetItem) {
+    document.getElementById('action-overlay').style.display = 'none';
+  }
+}
+
+let tempLootItems = [];
+let tempSlots = [];
+let selectedLootIdx = null;
+
+function openLootModal(me) {
+  const modal = document.getElementById('loot-modal');
+  if (modal.style.display === 'flex') return;
+  tempLootItems = [...me.lootPending];
+  tempSlots = [...me.slots];
+  selectedLootIdx = 0;
+  modal.style.display = 'flex';
+  renderLootModal();
+}
+
+function renderLootModal() {
+  const boxRow = document.getElementById('loot-box-items');
+  const grid = document.getElementById('loot-slots-grid');
+  boxRow.innerHTML = '';
+  grid.innerHTML = '';
+
+  document.getElementById('loot-count-label').textContent = `未配置: ${tempLootItems.length}個`;
+
+  tempLootItems.forEach((itemId, idx) => {
+    const card = document.createElement('div');
+    card.className = 'item-card' + (selectedLootIdx === idx ? ' selected' : '');
+    card.draggable = true;
+    card.innerHTML = `<strong>${ITEM_DEFS[itemId].name}</strong><span style="font-size:10px;">ドラッグ/選択</span>`;
+    card.onclick = () => { selectedLootIdx = idx; renderLootModal(); };
+    card.ondragstart = (e) => { selectedLootIdx = idx; e.dataTransfer.setData('text/plain', String(idx)); };
+    boxRow.appendChild(card);
+  });
+
+  tempSlots.forEach((slotItem, sIdx) => {
+    const cell = document.createElement('div');
+    cell.className = 'slot-cell' + (slotItem ? ' occupied' : '');
+    cell.textContent = slotItem ? ITEM_DEFS[slotItem].name : `枠 ${sIdx + 1}`;
+    cell.ondragover = (e) => e.preventDefault();
+    cell.ondrop = (e) => { e.preventDefault(); placeLootToSlot(sIdx); };
+    cell.onclick = () => placeLootToSlot(sIdx);
+    grid.appendChild(cell);
+  });
+
+  document.getElementById('loot-done-btn').disabled = tempLootItems.length > 0;
+}
+
+function placeLootToSlot(slotIdx) {
+  if (selectedLootIdx === null || !tempLootItems[selectedLootIdx]) return;
+  if (tempSlots[slotIdx] !== null) return;
+  const [picked] = tempLootItems.splice(selectedLootIdx, 1);
+  tempSlots[slotIdx] = picked;
+  selectedLootIdx = tempLootItems.length > 0 ? 0 : null;
+  playTone(520, 'sine', 0.08, 0.12);
+  renderLootModal();
+}
+
+function finishLootPhase() {
+  if (tempLootItems.length > 0) return;
+  document.getElementById('loot-modal').style.display = 'none';
+  sendToHost({ type: 'loot_done', slots: tempSlots });
+}
+
+function openItemUseModal(slotIndex, itemId) {
+  const me = gameState.players.find(p => p.id === myId);
+  if (me && me.noItemsNextTurn) {
+    showBanner('💧 目薬の効果でこのターンはアイテムを使えません！', 2000);
     return;
   }
-  target.hp = Math.max(0, target.hp - amount);
-  gameState.effects.push({ type: 'text', x: target.x, y: target.y - 26, text: `-${amount}`, color: '#ff3b30', ttl: 0.7 });
 
-  if (target.hp <= 0) {
-    target.alive = false;
-    if (attacker) attacker.kills++;
-    gameState.effects.push({ type: 'ring', x: target.x, y: target.y, color: target.color.main, ttl: 0.7 });
-    playAndBroadcastSfx('ko');
-    const killerName = attacker ? attacker.name : '危険エリア';
-    sendFeed(`💀 <b>${escapeHtml(killerName)}</b> が <b>${escapeHtml(target.name)}</b> を撃破！`, '#ff007f');
-  }
-}
+  const def = ITEM_DEFS[itemId];
+  const modal = document.getElementById('item-confirm-modal');
+  document.getElementById('item-modal-title').textContent = `【${def.name}】を使用しますか？`;
+  document.getElementById('item-modal-desc').textContent = def.desc;
+  const extra = document.getElementById('item-modal-extra');
+  const useBtn = document.getElementById('item-modal-use-btn');
+  extra.innerHTML = '';
 
-function pickupItem(p, item) {
-  if (item.type === 'bomb') {
-    playAndBroadcastSfx('bomb');
-    gameState.effects.push({ type: 'bomb', x: p.x, y: p.y, ttl: 0.45 });
-    for (const t of gameState.players) {
-      if (t.id === p.id || !t.alive || t.dashTimer > 0) continue;
-      if (Math.hypot(t.x - p.x, t.y - p.y) <= 175) {
-        damagePlayer(p, t, 40);
-      }
-    }
-  } else if (item.type === 'heal') {
-    p.hp = Math.min(100, p.hp + 30);
-    playAndBroadcastSfx('heal');
-    gameState.effects.push({ type: 'text', x: p.x, y: p.y - 26, text: '+30', color: '#39ff14', ttl: 0.7 });
-  } else if (item.type === 'thunder') {
-    p.speedTimer = 2.0;
-    playAndBroadcastSfx('item');
-  } else if (item.type === 'shield') {
-    p.shield = true;
-    playAndBroadcastSfx('item');
-  } else if (item.type === 'trap') {
-    gameState.traps.push({ ownerId: p.id, x: p.x, y: p.y, color: p.color.main });
-    playAndBroadcastSfx('item');
-  } else if (item.type === 'sword') {
-    p.poweredSword = true;
-    playAndBroadcastSfx('item');
-  }
-}
-
-function updateBot(bot, dt) {
-  bot.aiTimer -= dt;
-  const cx = MAP_SIZE / 2, cy = MAP_SIZE / 2;
-  const distCenter = Math.hypot(bot.x - cx, bot.y - cy);
-
-  // エリア外に近づいたら中央へ戻る
-  if (distCenter > gameState.zoneRadius * 0.82) {
-    const a = Math.atan2(cy - bot.y, cx - bot.x);
-    bot.vx = Math.cos(a); bot.vy = Math.sin(a); bot.angle = a;
-    return;
-  }
-
-  // 一番近い敵を探す
-  let nearest = null, minD = Infinity;
-  for (const other of gameState.players) {
-    if (other.id === bot.id || !other.alive) continue;
-    const d = Math.hypot(other.x - bot.x, other.y - bot.y);
-    if (d < minD) { minD = d; nearest = other; }
-  }
-
-  // 近くにアイテムがあれば優先取得
-  let nearItem = null, minItemD = 260;
-  for (const it of gameState.items) {
-    const d = Math.hypot(it.x - bot.x, it.y - bot.y);
-    if (d < minItemD) { minItemD = d; nearItem = it; }
-  }
-
-  if (nearItem && (!nearest || minD > 160)) {
-    const a = Math.atan2(nearItem.y - bot.y, nearItem.x - bot.x);
-    bot.vx = Math.cos(a); bot.vy = Math.sin(a); bot.angle = a;
-  } else if (nearest) {
-    const a = Math.atan2(nearest.y - bot.y, nearest.x - bot.x);
-    bot.angle = a;
-    if (minD > 95) {
-      bot.vx = Math.cos(a); bot.vy = Math.sin(a);
+  if (itemId === 'adrenaline') {
+    const aliveEnemies = gameState.players.filter(p => p.id !== myId && p.alive);
+    const hasAnyStealable = aliveEnemies.some(p => p.slots.some(s => s && s !== 'adrenaline'));
+    if (!hasAnyStealable) {
+      extra.innerHTML = '<div style="color:var(--danger); font-size:12px;">奪えるアイテムを持っている相手がいません</div>';
+      useBtn.style.display = 'none';
     } else {
-      bot.vx = Math.cos(a + Math.PI / 2) * 0.6;
-      bot.vy = Math.sin(a + Math.PI / 2) * 0.6;
-      if (bot.atkCd <= 0) triggerAction(bot, 'attack');
+      extra.innerHTML = '<div style="font-size:12px; color:#aaffaa;">「使用する」を押すと相手の目の前に視点が移動します。下のボタンや左右スワイプ・相手タップで全員のテーブルを見に行けます。</div>';
+      useBtn.style.display = 'inline-block';
+      useBtn.onclick = () => {
+        closeItemModal();
+        const firstWithItem = aliveEnemies.find(p => p.slots.some(s => s && s !== 'adrenaline')) || aliveEnemies[0];
+        startAdrenaline3DSelection(slotIndex, firstWithItem.id);
+      };
     }
-    if (minD < 140 && bot.dashCd <= 0 && Math.random() < 0.02) {
-      triggerAction(bot, 'dash');
+  } else if (itemId === 'handcuffs' || itemId === 'eyedrops') {
+    const aliveEnemies = gameState.players.filter(p => p.id !== myId && p.alive);
+    if (aliveEnemies.length === 0) {
+      extra.innerHTML = '<div style="color:var(--danger); font-size:12px;">対象の相手がいません</div>';
+      useBtn.style.display = 'none';
+    } else {
+      extra.innerHTML = `<div style="font-size:12px; color:var(--gold);">「使用する」を押した後、使う相手を画面上で直接タップしてください。</div>`;
+      useBtn.style.display = 'inline-block';
+      useBtn.onclick = () => {
+        closeItemModal();
+        startDirectPlayerTargetSelection(slotIndex, itemId, aliveEnemies);
+      };
     }
+  } else {
+    useBtn.style.display = 'inline-block';
+    useBtn.onclick = () => {
+      closeItemModal();
+      sendToHost({ type: 'use_item', slotIndex });
+    };
   }
+
+  modal.style.display = 'flex';
 }
 
-function stepSimulation(dt) {
-  if (!isHost || gameState.phase !== 'playing') return;
+function startDirectPlayerTargetSelection(slotIndex, itemId, aliveEnemies) {
+  pendingPlayerTargetItem = { slotIndex, itemId };
+  isAimingMode = false;
+  adrenalineStealSlot = null;
+  adrenalineFocusTargetId = null;
 
-  const prevTime = gameState.timeLeft;
-  gameState.timeLeft = Math.max(0, gameState.timeLeft - dt);
-  const elapsed = MATCH_TIME - gameState.timeLeft;
+  updateGameHUD();
+  update3DSceneFromState();
 
-  // 時間経過イベント通知
-  if (prevTime > 240 && gameState.timeLeft <= 240) sendFeed('⚡ 1:00経過！アイテム大量出現！', '#ffd700');
-  if (prevTime > 180 && gameState.timeLeft <= 180) sendFeed('⚠️ 2:00経過！危険エリア縮小開始！', '#ff3b30');
-  if (prevTime > 90 && gameState.timeLeft <= 90) sendFeed('🔥 3:30経過！最終エリア＆回復停止！', '#ff007f');
+  const overlay = document.getElementById('action-overlay');
+  overlay.innerHTML = '';
+  overlay.style.display = 'flex';
 
-  // エリア縮小
-  if (elapsed >= 210) {
-    gameState.zoneRadius = Math.max(180, gameState.zoneRadius - 20 * dt);
-  } else if (elapsed >= 120) {
-    gameState.zoneRadius = Math.max(400, gameState.zoneRadius - 17 * dt);
-  }
+  const icon = itemId === 'handcuffs' ? '⛓️' : '💧';
+  const hint = document.createElement('span');
+  hint.style.fontSize = '13px';
+  hint.style.color = 'var(--gold)';
+  hint.textContent = `${icon} 【${ITEM_DEFS[itemId].name}】を使う相手(3D)を直接タップ:`;
+  overlay.appendChild(hint);
 
-  // アイテム生成
-  itemSpawnTimer -= dt;
-  if (itemSpawnTimer <= 0) {
-    spawnItem();
-    itemSpawnTimer = elapsed >= 60 ? 2.0 : 4.0;
-  }
+  aliveEnemies.forEach(e => {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-gold';
+    btn.style.padding = '4px 10px';
+    btn.style.fontSize = '12px';
+    btn.textContent = `${e.name} (⚡${e.hp})`;
+    btn.onclick = () => confirmDirectPlayerTarget(e.id);
+    overlay.appendChild(btn);
+  });
 
-  // エリア外ダメージ（1秒毎）
-  zoneDmgTimer -= dt;
-  const doZoneDmg = zoneDmgTimer <= 0;
-  if (doZoneDmg) zoneDmgTimer = 1.0;
-
-  for (const p of gameState.players) {
-    if (p.emoteTimer > 0) {
-      p.emoteTimer -= dt;
-      if (p.emoteTimer <= 0) p.emote = '';
-    }
-    if (!p.alive) continue;
-
-    if (p.atkCd > 0) p.atkCd = Math.max(0, p.atkCd - dt);
-    if (p.dashCd > 0) p.dashCd = Math.max(0, p.dashCd - dt);
-    if (p.dashTimer > 0) p.dashTimer = Math.max(0, p.dashTimer - dt);
-    if (p.speedTimer > 0) p.speedTimer = Math.max(0, p.speedTimer - dt);
-    if (p.stunTimer > 0) p.stunTimer = Math.max(0, p.stunTimer - dt);
-
-    if (p.isBot && p.stunTimer <= 0) updateBot(p, dt);
-
-    if (p.stunTimer <= 0) {
-      let spd = 255;
-      if (p.speedTimer > 0) spd *= 2.0;
-      if (p.dashTimer > 0) spd *= 2.4;
-      p.x = Math.max(28, Math.min(MAP_SIZE - 28, p.x + p.vx * spd * dt));
-      p.y = Math.max(28, Math.min(MAP_SIZE - 28, p.y + p.vy * spd * dt));
-    }
-
-    if (doZoneDmg) {
-      if (Math.hypot(p.x - MAP_SIZE / 2, p.y - MAP_SIZE / 2) > gameState.zoneRadius) {
-        damagePlayer(null, p, 5);
-      }
-    }
-
-    // 罠判定
-    for (let i = gameState.traps.length - 1; i >= 0; i--) {
-      const tr = gameState.traps[i];
-      if (tr.ownerId === p.id) continue;
-      if (Math.hypot(p.x - tr.x, p.y - tr.y) < 36) {
-        p.stunTimer = 1.0;
-        gameState.effects.push({ type: 'text', x: p.x, y: p.y - 24, text: 'STOP!', color: '#c77dff', ttl: 1.0 });
-        playAndBroadcastSfx('shieldBreak');
-        gameState.traps.splice(i, 1);
-        break;
-      }
-    }
-
-    // アイテム取得
-    for (let i = gameState.items.length - 1; i >= 0; i--) {
-      const it = gameState.items[i];
-      if (Math.hypot(p.x - it.x, p.y - it.y) < 42) {
-        pickupItem(p, it);
-        gameState.items.splice(i, 1);
-      }
-    }
-  }
-
-  for (let i = gameState.effects.length - 1; i >= 0; i--) {
-    gameState.effects[i].ttl -= dt;
-    if (gameState.effects[i].ttl <= 0) gameState.effects.splice(i, 1);
-  }
-
-  // 勝敗判定
-  const alive = gameState.players.filter(p => p.alive);
-  if (alive.length <= 1 || gameState.timeLeft <= 0) {
-    gameState.phase = 'ended';
-    let win = alive[0] || gameState.players[0];
-    if (alive.length > 1) {
-      alive.sort((a, b) => b.hp - a.hp);
-      win = alive[0];
-    }
-    gameState.winner = win;
-    broadcastAll({ type: 'end', state: gameState });
-    openResult();
-    return;
-  }
-
-  updateHud();
-  broadcastAll({ type: 'state', state: gameState });
+  const cancel = document.createElement('button');
+  cancel.className = 'btn';
+  cancel.style.padding = '4px 10px';
+  cancel.textContent = 'キャンセル';
+  cancel.onclick = () => cancelDirectPlayerTarget();
+  overlay.appendChild(cancel);
 }
 
-function openResult() {
-  showScreen('resultScreen');
-  const w = gameState.winner;
-  document.getElementById('winnerText').textContent = `👑 WINNER: ${w ? w.name : 'DRAW'}`;
-  const sorted = [...gameState.players].sort((a, b) => (b.alive - a.alive) || (b.hp - a.hp) || (b.kills - a.kills));
-  document.getElementById('resultStats').innerHTML = sorted.map((p, i) =>
-    `<div>${i + 1}位: <b style="color:${p.color.main}">${escapeHtml(p.name)}</b> (残HP: ${p.hp} / 撃破: ${p.kills})</div>`
-  ).join('');
-  document.getElementById('btnRematch').classList.toggle('hidden', !isHost);
+function confirmDirectPlayerTarget(targetId) {
+  if (!pendingPlayerTargetItem) return;
+  const { slotIndex } = pendingPlayerTargetItem;
+  pendingPlayerTargetItem = null;
+  document.getElementById('action-overlay').style.display = 'none';
+  playTone(680, 'sine', 0.1, 0.16);
+  updateGameHUD();
+  update3DSceneFromState();
+  sendToHost({ type: 'use_item', slotIndex, targetPlayerId: targetId });
 }
 
-/* =========================================================
-   6. 入力制御（PCキーボード + スマホマルチタッチ仮想スティック）
-   ========================================================= */
-const keys = {};
-let stickVec = { x: 0, y: 0 };
-let stickTouchId = null;
-let stickOrigin = { x: 0, y: 0 };
+function cancelDirectPlayerTarget() {
+  pendingPlayerTargetItem = null;
+  document.getElementById('action-overlay').style.display = 'none';
+  updateGameHUD();
+  update3DSceneFromState();
+}
 
-window.addEventListener('keydown', (e) => {
-  keys[e.code] = true;
-  if (gameState.phase !== 'playing') return;
-  if (e.code === 'Space') sendAction('attack');
-  if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') sendAction('dash');
-});
-window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+function getAdrenalineCandidates() {
+  return gameState.players.filter(p => p.id !== myId && p.alive);
+}
 
-const stickZone = document.getElementById('stickZone');
-stickZone.addEventListener('touchstart', (e) => {
-  e.preventDefault();
-  const t = e.changedTouches[0];
-  stickTouchId = t.identifier;
-  stickOrigin = { x: t.clientX, y: t.clientY };
-});
-stickZone.addEventListener('touchmove', (e) => {
-  e.preventDefault();
-  for (const t of e.changedTouches) {
-    if (t.identifier === stickTouchId) {
-      const dx = t.clientX - stickOrigin.x;
-      const dy = t.clientY - stickOrigin.y;
-      const dist = Math.hypot(dx, dy);
-      const maxR = 46;
-      if (dist > 6) {
-        const clamped = Math.min(dist, maxR) / maxR;
-        stickVec.x = (dx / dist) * clamped;
-        stickVec.y = (dy / dist) * clamped;
-      } else {
-        stickVec.x = 0; stickVec.y = 0;
-      }
-    }
+function focusAdrenalineTarget(targetId) {
+  const candidates = getAdrenalineCandidates();
+  if (candidates.length === 0) return;
+  const found = candidates.find(p => p.id === targetId) || candidates[0];
+  adrenalineFocusTargetId = found.id;
+  userYawOffset = 0;
+  userPitchOffset = 0;
+  playTone(540, 'sine', 0.06, 0.12);
+  renderAdrenalineOverlay();
+  updateGameHUD();
+  update3DSceneFromState();
+}
+
+function cycleAdrenalineTarget(dir) {
+  const candidates = getAdrenalineCandidates();
+  if (candidates.length === 0) return;
+  const curIdx = candidates.findIndex(p => p.id === adrenalineFocusTargetId);
+  const nextIdx = ((curIdx === -1 ? 0 : curIdx) + dir + candidates.length) % candidates.length;
+  focusAdrenalineTarget(candidates[nextIdx].id);
+}
+
+function renderAdrenalineOverlay() {
+  const candidates = getAdrenalineCandidates();
+  const overlay = document.getElementById('action-overlay');
+  overlay.innerHTML = '';
+  overlay.style.display = 'flex';
+
+  const hint = document.createElement('span');
+  hint.style.fontSize = '12px';
+  hint.textContent = '💉 見に行く相手を選択 & 3Dアイテムをタップ:';
+  overlay.appendChild(hint);
+
+  if (candidates.length > 1) {
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'btn';
+    prevBtn.style.padding = '4px 8px';
+    prevBtn.style.fontSize = '12px';
+    prevBtn.textContent = '◀ 前へ';
+    prevBtn.onclick = () => cycleAdrenalineTarget(-1);
+    overlay.appendChild(prevBtn);
   }
-});
-const endStick = (e) => {
-  for (const t of e.changedTouches) {
-    if (t.identifier === stickTouchId) {
-      stickTouchId = null;
-      stickVec.x = 0; stickVec.y = 0;
+
+  candidates.forEach(p => {
+    const stealableCount = p.slots.filter(s => s && s !== 'adrenaline').length;
+    const pBtn = document.createElement('button');
+    pBtn.className = 'btn';
+    pBtn.style.padding = '4px 9px';
+    pBtn.style.fontSize = '12px';
+    if (p.id === adrenalineFocusTargetId) {
+      pBtn.style.background = 'var(--neon)';
+      pBtn.style.color = '#000';
+      pBtn.style.fontWeight = 'bold';
+    } else if (stealableCount === 0) {
+      pBtn.style.opacity = '0.55';
     }
+    pBtn.textContent = `${p.name} (${stealableCount}個)`;
+    pBtn.onclick = () => focusAdrenalineTarget(p.id);
+    overlay.appendChild(pBtn);
+  });
+
+  if (candidates.length > 1) {
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn';
+    nextBtn.style.padding = '4px 8px';
+    nextBtn.style.fontSize = '12px';
+    nextBtn.textContent = '次へ ▶';
+    nextBtn.onclick = () => cycleAdrenalineTarget(1);
+    overlay.appendChild(nextBtn);
   }
-};
-stickZone.addEventListener('touchend', endStick);
-stickZone.addEventListener('touchcancel', endStick);
 
-document.getElementById('btnAtk').addEventListener('touchstart', (e) => { e.preventDefault(); sendAction('attack'); });
-document.getElementById('btnAtk').addEventListener('mousedown', () => sendAction('attack'));
-document.getElementById('btnDash').addEventListener('touchstart', (e) => { e.preventDefault(); sendAction('dash'); });
-document.getElementById('btnDash').addEventListener('mousedown', () => sendAction('dash'));
+  const cancel = document.createElement('button');
+  cancel.className = 'btn';
+  cancel.style.padding = '4px 10px';
+  cancel.style.fontSize = '12px';
+  cancel.textContent = 'キャンセル';
+  cancel.onclick = () => cancelAdrenalineSelection();
+  overlay.appendChild(cancel);
+}
 
-document.querySelectorAll('.chat-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const text = btn.dataset.chat;
-    if (isHost) {
-      const me = gameState.players.find(p => p.id === myId);
-      if (me) applyChat(me, text);
-    } else if (hostConn && hostConn.open) {
-      hostConn.send({ type: 'chat', text });
+function startAdrenaline3DSelection(slotIndex, initialTargetId) {
+  const candidates = getAdrenalineCandidates();
+  if (candidates.length === 0) return;
+
+  adrenalineStealSlot = slotIndex;
+  isAimingMode = false;
+  pendingPlayerTargetItem = null;
+
+  const initTarget = candidates.find(p => p.id === initialTargetId)
+    || candidates.find(p => p.slots.some(s => s && s !== 'adrenaline'))
+    || candidates[0];
+  adrenalineFocusTargetId = initTarget.id;
+  userYawOffset = 0;
+  userPitchOffset = 0;
+
+  renderAdrenalineOverlay();
+  updateGameHUD();
+  update3DSceneFromState();
+}
+
+function cancelAdrenalineSelection() {
+  adrenalineStealSlot = null;
+  adrenalineFocusTargetId = null;
+  document.getElementById('action-overlay').style.display = 'none';
+  setCameraMode('front');
+  updateGameHUD();
+  update3DSceneFromState();
+}
+
+function closeItemModal() { document.getElementById('item-confirm-modal').style.display = 'none'; }
+
+function openShootTargetMenu() {
+  adrenalineStealSlot = null;
+  adrenalineFocusTargetId = null;
+  pendingPlayerTargetItem = null;
+  isAimingMode = true;
+  sendToHost({ type: 'aim', targetId: myId });
+  updateGameHUD();
+  update3DSceneFromState();
+
+  const overlay = document.getElementById('action-overlay');
+  overlay.innerHTML = '';
+  overlay.style.display = 'flex';
+
+  const hint = document.createElement('span');
+  hint.style.fontSize = '13px';
+  hint.textContent = '🎯 撃つ相手(3D)をタップ';
+  overlay.appendChild(hint);
+
+  const me = gameState.players.find(p => p.id === myId);
+  if (me && me.alive) {
+    const selfBtn = document.createElement('button');
+    selfBtn.className = 'btn';
+    selfBtn.textContent = `🔫 自分を撃つ`;
+    selfBtn.onclick = () => confirmShootTarget(myId);
+    overlay.appendChild(selfBtn);
+  }
+
+  const cancel = document.createElement('button');
+  cancel.className = 'btn';
+  cancel.textContent = '銃を置く';
+  cancel.onclick = () => cancelAimingMode();
+  overlay.appendChild(cancel);
+}
+
+function cancelAimingMode() {
+  isAimingMode = false;
+  document.getElementById('action-overlay').style.display = 'none';
+  sendToHost({ type: 'aim', targetId: null });
+  updateGameHUD();
+  update3DSceneFromState();
+}
+
+function confirmShootTarget(targetId) {
+  isAimingMode = false;
+  document.getElementById('action-overlay').style.display = 'none';
+  sendToHost({ type: 'shoot', targetId });
+}
+
+let scene, camera, renderer;
+let tableGroup, shotgunGroup, barrelMesh;
+let myLeftHand, myRightHand;
+let seatVisuals = {};
+let mySeatAngle = 0;
+let targetCamPos = new THREE.Vector3();
+let targetCamLook = new THREE.Vector3();
+let userYawOffset = 0;
+let userPitchOffset = 0;
+let cameraShakeTime = 0;
+let shotgunRecoil = 0;
+let animFrameId = null;
+
+const raycaster = new THREE.Raycaster();
+const pointerNDC = new THREE.Vector2();
+let interactableMeshes = [];
+
+function disposeObject3D(obj) {
+  if (!obj) return;
+  obj.traverse(child => {
+    if (child.geometry) child.geometry.dispose();
+    if (child.material) {
+      const mats = Array.isArray(child.material) ? child.material : [child.material];
+      mats.forEach(m => {
+        if (m.map) m.map.dispose();
+        m.dispose();
+      });
     }
   });
-});
+}
 
-function sendAction(act) {
-  if (gameState.phase !== 'playing') return;
-  if (isHost) {
-    const me = gameState.players.find(p => p.id === myId);
-    if (me) triggerAction(me, act);
-  } else if (hostConn && hostConn.open) {
-    hostConn.send({ type: 'action', act });
+function createDetailedTableTopTexture() {
+  const c = document.createElement('canvas');
+  c.width = 1024; c.height = 1024;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#333b2f';
+  ctx.fillRect(0, 0, 1024, 1024);
+  for (let i = 0; i < 6500; i++) {
+    const x = Math.random() * 1024, y = Math.random() * 1024, r = 1 + Math.random() * 4;
+    ctx.fillStyle = Math.random() < 0.5 ? 'rgba(15, 18, 12, 0.25)' : 'rgba(95, 105, 82, 0.16)';
+    ctx.fillRect(x, y, r, r);
+  }
+  ctx.strokeStyle = '#1b1d19'; ctx.lineWidth = 42; ctx.strokeRect(21, 21, 982, 982);
+  ctx.strokeStyle = 'rgba(218, 226, 208, 0.58)'; ctx.lineWidth = 4;
+  for (let p = 128; p < 1024; p += 128) {
+    ctx.beginPath(); ctx.moveTo(p, 0); ctx.lineTo(p, 1024); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, p); ctx.lineTo(1024, p); ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(225, 232, 215, 0.72)'; ctx.lineWidth = 5;
+  ctx.strokeRect(64, 64, 896, 896); ctx.strokeRect(82, 82, 860, 860);
+  const tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = 2;
+  return tex;
+}
+
+function createBrickWallTexture() {
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 512;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#171110';
+  ctx.fillRect(0, 0, 512, 512);
+  const rows = 16, cols = 8, bw = 512 / cols, bh = 512 / rows;
+  for (let r = 0; r < rows; r++) {
+    const offset = (r % 2) * (bw * 0.5);
+    for (let col = -1; col <= cols; col++) {
+      const shade = 28 + Math.floor(Math.random() * 24);
+      const red = shade + 16 + Math.floor(Math.random() * 14);
+      ctx.fillStyle = `rgb(${red}, ${shade}, ${Math.max(14, shade - 4)})`;
+      ctx.fillRect(col * bw + offset + 2, r * bh + 2, bw - 4, bh - 4);
+    }
+  }
+  for (let i = 0; i < 2200; i++) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+    ctx.fillRect(Math.random() * 512, Math.random() * 512, 4, 4);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(8, 3);
+  return tex;
+}
+
+function buildDetailedEnvironment(scene) {
+  const envGroup = new THREE.Group();
+  scene.add(envGroup);
+
+  const brickTex = createBrickWallTexture();
+  const roomMesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(7.2, 7.2, 6.4, 20, 1, true),
+    new THREE.MeshStandardMaterial({ map: brickTex, side: THREE.BackSide, roughness: 0.92, metalness: 0.1 })
+  );
+  roomMesh.position.y = 2.6;
+  envGroup.add(roomMesh);
+
+  const floorMesh = new THREE.Mesh(new THREE.CircleGeometry(7.3, 24), new THREE.MeshStandardMaterial({ color: 0x121311, roughness: 0.95 }));
+  floorMesh.rotation.x = -Math.PI / 2;
+  envGroup.add(floorMesh);
+
+  const ceilingMesh = new THREE.Mesh(new THREE.CircleGeometry(7.3, 24), new THREE.MeshStandardMaterial({ color: 0x0d0d0d, roughness: 0.9 }));
+  ceilingMesh.rotation.x = Math.PI / 2; ceilingMesh.position.y = 5.6;
+  envGroup.add(ceilingMesh);
+
+  const rustPipeMat = new THREE.MeshStandardMaterial({ color: 0x4f2a22, roughness: 0.65, metalness: 0.55 });
+  const darkMetalMat = new THREE.MeshStandardMaterial({ color: 0x222426, roughness: 0.55, metalness: 0.75 });
+  const rackBeigeMat = new THREE.MeshStandardMaterial({ color: 0x6b6458, roughness: 0.6, metalness: 0.35 });
+
+  for (let i = 0; i < 5; i++) {
+    const sector = new THREE.Group();
+    sector.rotation.y = i * ((Math.PI * 2) / 5);
+    envGroup.add(sector);
+
+    [-0.45, -0.15, 0.25, 0.55, 0.85].forEach((px, pIdx) => {
+      const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 5.6, 8), rustPipeMat);
+      pipe.position.set(px, 2.8, 6.75 - (pIdx % 2) * 0.08);
+      sector.add(pipe);
+      [1.4, 3.1, 4.4].forEach(fy => {
+        const flange = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.06, 8), darkMetalMat);
+        flange.position.set(px, fy, 6.75 - (pIdx % 2) * 0.08);
+        sector.add(flange);
+      });
+    });
+
+    [1.85, 2.45].forEach((vy, vIdx) => {
+      const valve = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.022, 6, 12), rustPipeMat);
+      valve.position.set(0.75 + vIdx * 0.22, vy, 6.62);
+      sector.add(valve);
+    });
+
+    const radGroup = new THREE.Group();
+    radGroup.position.set(-0.35, 0.9, 6.45);
+    for (let r = 0; r < 9; r++) {
+      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.78, 0.26), darkMetalMat);
+      fin.position.x = (r - 4) * 0.11;
+      radGroup.add(fin);
+    }
+    sector.add(radGroup);
+
+    const spotHousing = new THREE.Group();
+    spotHousing.position.set(-2.35, 3.25, 5.75);
+    spotHousing.lookAt(0, 1.0, 0);
+    const canBody = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.28, 0.55, 12), darkMetalMat);
+    canBody.rotation.x = Math.PI / 2;
+    const lensGlow = new THREE.Mesh(new THREE.CircleGeometry(0.26, 12), new THREE.MeshBasicMaterial({ color: 0x1c1c1c }));
+    lensGlow.position.z = 0.28;
+    spotHousing.add(canBody, lensGlow);
+
+    [
+      [0, 0.36, 0.35, 0.52, 0.26, -0.45, 0], [0, -0.36, 0.35, 0.52, 0.26, 0.45, 0],
+      [-0.36, 0, 0.35, 0.26, 0.52, 0, 0.45], [0.36, 0, 0.35, 0.26, 0.52, 0, -0.45]
+    ].forEach(([bx, by, bz, bw, bh, rx, ry]) => {
+      const flap = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, 0.025), darkMetalMat);
+      flap.position.set(bx, by, bz); flap.rotation.set(rx, ry, 0);
+      spotHousing.add(flap);
+    });
+    sector.add(spotHousing);
+
+    const leftRack = new THREE.Group();
+    leftRack.position.set(-2.45, 1.35, 5.65); leftRack.rotation.y = 0.32;
+    const ampBottom = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.48, 0.72), darkMetalMat); ampBottom.position.y = 0.24;
+    const ledStrip = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.07, 0.02), new THREE.MeshBasicMaterial({ color: 0x39ff14 })); ledStrip.position.set(0, 0.32, 0.365);
+    const meterTop = new THREE.Mesh(new THREE.BoxGeometry(0.96, 0.68, 0.64), rackBeigeMat); meterTop.position.y = 0.82;
+    const dialScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 0.36), new THREE.MeshBasicMaterial({ color: 0xb8c4a8 })); dialScreen.position.set(0.08, 0.88, 0.325);
+    leftRack.add(ampBottom, ledStrip, meterTop, dialScreen);
+    sector.add(leftRack);
+
+    const rightStack = new THREE.Group();
+    rightStack.position.set(2.35, 1.15, 5.75); rightStack.rotation.y = -0.28;
+    const spkCabinet = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.95, 0.72), darkMetalMat); spkCabinet.position.set(0.45, 0.98, 0);
+    rightStack.add(spkCabinet);
+
+    [0.52, 1.44].forEach(wy => {
+      const coneOuter = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.045, 8, 16), new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.5 }));
+      coneOuter.position.set(0.45, wy, 0.365);
+      const coneInner = new THREE.Mesh(new THREE.CircleGeometry(0.28, 16), new THREE.MeshBasicMaterial({ color: 0x0b0b0b }));
+      coneInner.position.set(0.45, wy, 0.362);
+      rightStack.add(coneOuter, coneInner);
+    });
+
+    const deckBox = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.85, 0.62), rackBeigeMat); deckBox.position.set(-0.55, 0.42, 0.05);
+    const fanFrame = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.86, 0.2), darkMetalMat); fanFrame.position.set(-0.55, 1.48, 0.25);
+    const fanRing = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.025, 6, 16), rackBeigeMat); fanRing.position.set(-0.55, 1.48, 0.36);
+    rightStack.add(deckBox, fanFrame, fanRing);
+    sector.add(rightStack);
+
+    const cableCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-2.6, 4.9, 5.5), new THREE.Vector3(-0.8, 3.85, 6.2),
+      new THREE.Vector3(1.1, 4.15, 6.1), new THREE.Vector3(2.8, 5.0, 5.4)
+    ]);
+    sector.add(new THREE.Mesh(new THREE.TubeGeometry(cableCurve, 14, 0.032, 5, false), darkMetalMat));
   }
 }
 
-function processLocalInput() {
-  if (gameState.phase !== 'playing') return;
-  let vx = stickVec.x, vy = stickVec.y;
-  if (keys['KeyW'] || keys['ArrowUp']) vy -= 1;
-  if (keys['KeyS'] || keys['ArrowDown']) vy += 1;
-  if (keys['KeyA'] || keys['ArrowLeft']) vx -= 1;
-  if (keys['KeyD'] || keys['ArrowRight']) vx += 1;
+function initThreeScene() {
+  const canvas = document.getElementById('three-canvas');
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x090707);
+  scene.fog = new THREE.FogExp2(0x090707, 0.068);
 
-  const len = Math.hypot(vx, vy);
-  if (len > 1) { vx /= len; vy /= len; }
+  camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 50);
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
 
-  const me = gameState.players.find(p => p.id === myId);
-  if (!me) return;
-  const angle = len > 0.05 ? Math.atan2(vy, vx) : me.angle;
+  canvas.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
+  }, false);
 
-  if (isHost) {
-    me.vx = vx; me.vy = vy; me.angle = angle;
-  } else if (hostConn && hostConn.open) {
-    hostConn.send({ type: 'input', vx, vy, angle });
+  canvas.addEventListener('webglcontextrestored', () => {
+    if (!animFrameId) animate3D();
+  }, false);
+
+  scene.add(new THREE.AmbientLight(0x544942, 1.55));
+  const overheadSpot = new THREE.SpotLight(0xffebd6, 2.5, 20, Math.PI / 2.8, 0.55);
+  overheadSpot.position.set(0, 5.1, 0);
+  scene.add(overheadSpot);
+
+  const backRimLight = new THREE.PointLight(0xffb88c, 0.75, 12);
+  backRimLight.position.set(0, 2.8, 0);
+  scene.add(backRimLight);
+
+  buildDetailedEnvironment(scene);
+
+  tableGroup = new THREE.Group();
+  scene.add(tableGroup);
+
+  const tableRadius = 2.58;
+  const topTex = createDetailedTableTopTexture();
+  const tableTopMat = new THREE.MeshStandardMaterial({ map: topTex, roughness: 0.72, metalness: 0.35 });
+  const tableSideMat = new THREE.MeshStandardMaterial({ color: 0x222520, roughness: 0.75, metalness: 0.55 });
+
+  const tableMesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(tableRadius, tableRadius * 0.92, 0.28, 10),
+    [tableSideMat, tableTopMat, tableSideMat]
+  );
+  tableMesh.position.y = 0.72;
+  tableGroup.add(tableMesh);
+
+  const outerRim = new THREE.Mesh(
+    new THREE.TorusGeometry(tableRadius * 0.96, 0.065, 8, 10),
+    new THREE.MeshStandardMaterial({ color: 0x1c1e1a, metalness: 0.75, roughness: 0.45 })
+  );
+  outerRim.rotation.x = Math.PI / 2; outerRim.position.y = 0.86;
+  tableGroup.add(outerRim);
+
+  for (let b = 0; b < 10; b++) {
+    const ba = (b / 10) * Math.PI * 2;
+    const bolt = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.032, 0.032, 0.04, 8),
+      new THREE.MeshStandardMaterial({ color: 0x777c72, metalness: 0.85, roughness: 0.3 })
+    );
+    bolt.position.set(Math.sin(ba) * (tableRadius * 0.94), 0.875, Math.cos(ba) * (tableRadius * 0.94));
+    tableGroup.add(bolt);
+  }
+
+  const centerOuterRing = new THREE.Mesh(
+    new THREE.TorusGeometry(0.96, 0.075, 10, 28),
+    new THREE.MeshStandardMaterial({ color: 0x45473e, metalness: 0.65, roughness: 0.45 })
+  );
+  centerOuterRing.rotation.x = Math.PI / 2; centerOuterRing.position.y = 0.88;
+  tableGroup.add(centerOuterRing);
+
+  const centerInnerDisc = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.86, 0.89, 0.06, 24),
+    new THREE.MeshStandardMaterial({ color: 0x353830, metalness: 0.5, roughness: 0.6 })
+  );
+  centerInnerDisc.position.y = 0.885;
+  tableGroup.add(centerInnerDisc);
+
+  const slitMat = new THREE.MeshBasicMaterial({ color: 0x161814 });
+  const slit1 = new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.01, 0.025), slitMat); slit1.position.y = 0.918;
+  const slit2 = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.01, 1.66), slitMat); slit2.position.y = 0.918;
+  tableGroup.add(slit1, slit2);
+
+  shotgunGroup = new THREE.Group();
+  shotgunGroup.position.set(0, 0.99, 0);
+
+  const stock = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.14, 0.52), new THREE.MeshStandardMaterial({ color: 0x4a2518, roughness: 0.7 }));
+  stock.position.set(0, -0.02, -0.44);
+  const receiver = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.13, 0.44), new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8, roughness: 0.3 }));
+  const pump = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.048, 0.26, 12), new THREE.MeshStandardMaterial({ color: 0x3d2214, roughness: 0.75 }));
+  pump.rotation.x = Math.PI / 2; pump.position.set(0, -0.025, 0.34);
+
+  barrelMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.95, 12), new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.85, roughness: 0.25 }));
+  barrelMesh.rotation.x = Math.PI / 2; barrelMesh.position.set(0, 0.03, 0.45);
+
+  const shotgunHitbox = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.34, 1.42), new THREE.MeshBasicMaterial({ visible: false }));
+  shotgunHitbox.userData = { interactType: 'shotgun' };
+  shotgunGroup.add(stock, receiver, pump, barrelMesh, shotgunHitbox);
+  scene.add(shotgunGroup);
+
+  myLeftHand = buildHandMesh();
+  myRightHand = buildHandMesh();
+  myLeftHand.visible = false;
+  myRightHand.visible = false;
+  scene.add(myLeftHand, myRightHand);
+
+  let dragging = false, movedDist = 0, startX = 0, prevX = 0, prevY = 0, lastLookSend = 0;
+
+  canvas.addEventListener('pointerdown', (e) => {
+    dragging = true; movedDist = 0; startX = e.clientX; prevX = e.clientX; prevY = e.clientY;
+  });
+
+  window.addEventListener('pointerup', (e) => {
+    if (!dragging) return;
+    dragging = false;
+    const totalDx = e.clientX - startX;
+    if (movedDist < 8) handle3DDirectTap(e.clientX, e.clientY);
+    else if (adrenalineStealSlot !== null && Math.abs(totalDx) >= 48) cycleAdrenalineTarget(totalDx < 0 ? 1 : -1);
+  });
+
+  window.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - prevX;
+    const dy = e.clientY - prevY;
+    movedDist += Math.hypot(dx, dy);
+    prevX = e.clientX; prevY = e.clientY;
+    if (adrenalineStealSlot !== null) return;
+
+    userYawOffset = Math.max(-1.15, Math.min(1.15, userYawOffset - dx * 0.005));
+    userPitchOffset = Math.max(-0.62, Math.min(0.62, userPitchOffset - dy * 0.005));
+
+    const now = Date.now();
+    if (now - lastLookSend > 120) {
+      lastLookSend = now;
+      sendToHost({ type: 'look', yaw: userYawOffset, pitch: userPitchOffset });
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    if (!camera || !renderer) return;
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  if (!animFrameId) animate3D();
+}
+
+function handle3DDirectTap(clientX, clientY) {
+  const turnPlayer = gameState.players[gameState.turnIndex];
+  const isMyTurn = (gameState.phase === 'play' && turnPlayer && turnPlayer.id === myId);
+  if (!isMyTurn) return;
+
+  const rect = renderer.domElement.getBoundingClientRect();
+  pointerNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+  pointerNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(pointerNDC, camera);
+  const targets = [...interactableMeshes];
+  if (!isAimingMode && adrenalineStealSlot === null && !pendingPlayerTargetItem) {
+    shotgunGroup.children.forEach(c => {
+      if (c.userData && c.userData.interactType === 'shotgun') targets.push(c);
+    });
+  }
+
+  const hits = raycaster.intersectObjects(targets, false);
+  if (hits.length === 0) return;
+
+  let bestHit = hits[0], bestDistToCenter = Infinity;
+  const worldBoxCenter = new THREE.Vector3();
+  hits.forEach(h => {
+    h.object.getWorldPosition(worldBoxCenter);
+    const d = h.point.distanceTo(worldBoxCenter);
+    if (d < bestDistToCenter) { bestDistToCenter = d; bestHit = h; }
+  });
+
+  const info = bestHit.object.userData;
+  if (!info || !info.interactType) return;
+
+  if (pendingPlayerTargetItem) {
+    if (info.interactType === 'target_player' && info.playerId !== myId) confirmDirectPlayerTarget(info.playerId);
+    return;
+  }
+
+  if (adrenalineStealSlot !== null) {
+    if (info.interactType === 'target_player' && info.playerId !== myId) { focusAdrenalineTarget(info.playerId); return; }
+    if (info.interactType === 'enemy_item') {
+      if (info.itemId === 'adrenaline') { showBanner('アドレナリン自体は盗めません！', 1600); return; }
+      const mySlot = adrenalineStealSlot;
+      adrenalineStealSlot = null; adrenalineFocusTargetId = null;
+      document.getElementById('action-overlay').style.display = 'none';
+      setCameraMode('front');
+      playTone(720, 'sine', 0.1, 0.16);
+      sendToHost({ type: 'use_item', slotIndex: mySlot, targetPlayerId: info.playerId, stealSlotIndex: info.slotIndex });
+    }
+    return;
+  }
+
+  if (isAimingMode) {
+    if (info.interactType === 'target_player' && info.playerId !== myId) { playShotSound(false); confirmShootTarget(info.playerId); }
+    return;
+  }
+
+  if (info.interactType === 'shotgun') {
+    playTone(440, 'triangle', 0.08, 0.15);
+    openShootTargetMenu();
+  } else if (info.interactType === 'my_item') {
+    playTone(620, 'sine', 0.08, 0.15);
+    openItemUseModal(info.slotIndex, info.itemId);
   }
 }
 
-/* =========================================================
-   7. HUD & サイバーネオン Canvas 描画
-   ========================================================= */
-function updateHud() {
-  const me = gameState.players.find(p => p.id === myId);
-  const aliveCount = gameState.players.filter(p => p.alive).length;
-  document.getElementById('hudAlive').textContent = `${aliveCount} / ${gameState.players.length}`;
-
-  const m = Math.floor(gameState.timeLeft / 60).toString().padStart(2, '0');
-  const s = Math.floor(gameState.timeLeft % 60).toString().padStart(2, '0');
-  document.getElementById('hudTimer').textContent = `${m}:${s}`;
-
-  const elapsed = MATCH_TIME - gameState.timeLeft;
-  const phaseEl = document.getElementById('hudPhase');
-  if (elapsed >= 210) { phaseEl.textContent = '🔥 最終エリア（回復停止）'; phaseEl.style.color = '#ff007f'; }
-  else if (elapsed >= 120) { phaseEl.textContent = '⚠️ 危険エリア縮小中'; phaseEl.style.color = '#ff3b30'; }
-  else if (elapsed >= 60) { phaseEl.textContent = '⚡ アイテム大量出現'; phaseEl.style.color = '#ffd700'; }
-  else { phaseEl.textContent = '通常フェーズ'; phaseEl.style.color = '#c77dff'; }
-
-  if (!me) return;
-  document.getElementById('hudName').textContent = me.name;
-  document.getElementById('hudHpText').textContent = `${me.hp} / 100`;
-  document.getElementById('hudHpBar').style.width = `${me.hp}%`;
-
-  const buffs = [];
-  if (me.shield) buffs.push('<span class="buff-tag" style="color:#00f3ff;">🛡️ シールド</span>');
-  if (me.poweredSword) buffs.push('<span class="buff-tag" style="color:#ff9500;">⚔️ 強化剣(40)</span>');
-  if (me.speedTimer > 0) buffs.push('<span class="buff-tag" style="color:#ffd700;">⚡ 2倍速</span>');
-  if (me.stunTimer > 0) buffs.push('<span class="buff-tag" style="color:#ff3b30;">🕸️ 停止中</span>');
-  document.getElementById('hudBuffs').innerHTML = buffs.join('');
-
-  const atkMask = document.getElementById('atkCdMask');
-  if (me.atkCd > 0) { atkMask.classList.remove('hidden'); atkMask.textContent = me.atkCd.toFixed(1); }
-  else atkMask.classList.add('hidden');
-
-  const dashMask = document.getElementById('dashCdMask');
-  if (me.dashCd > 0) { dashMask.classList.remove('hidden'); dashMask.textContent = me.dashCd.toFixed(1); }
-  else dashMask.classList.add('hidden');
+function setCameraMode(mode) {
+  cameraMode = mode;
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('cam-btn-' + mode);
+  if (btn) btn.classList.add('active');
+  userYawOffset = 0;
+  userPitchOffset = 0;
 }
 
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+function buildMaskMesh(skinId) {
+  const skin = MASK_SKINS.find(s => s.id === skinId) || MASK_SKINS[0];
+  const group = new THREE.Group();
 
-function resizeCanvas() {
-  canvas.width = window.innerWidth * devicePixelRatio;
-  canvas.height = window.innerHeight * devicePixelRatio;
-  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  const baseMat = new THREE.MeshStandardMaterial({ color: skin.body, roughness: skin.type === 'visor' ? 0.35 : 0.62, metalness: skin.type === 'visor' ? 0.75 : 0.25 });
+  const rimMat = new THREE.MeshStandardMaterial({ color: skin.rim, metalness: 0.7, roughness: 0.35 });
+  const accentMat = new THREE.MeshStandardMaterial({ color: skin.accent, roughness: 0.55, metalness: 0.25 });
+  const eyeMat = new THREE.MeshBasicMaterial({ color: skin.eye });
+  const noseMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.3, metalness: 0.4 });
+  const toothMat = new THREE.MeshStandardMaterial({ color: 0xf4f1ea, roughness: 0.4 });
+
+  group.add(new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.44, 0.36), baseMat));
+
+  [-0.21, 0.21].forEach(cx => {
+    const cheek = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.22, 0.28), accentMat);
+    cheek.position.set(cx, -0.05, 0.03);
+    group.add(cheek);
+  });
+
+  if (skin.type === 'visor') {
+    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.10, 0.06), eyeMat); visor.position.set(0, 0.06, 0.185);
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(0.39, 0.14, 0.04), rimMat); frame.position.set(0, 0.06, 0.175);
+    group.add(visor, frame);
+    [-0.22, 0.22].forEach(ax => {
+      const earPod = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.06, 12), rimMat);
+      earPod.rotation.z = Math.PI / 2; earPod.position.set(ax, 0.05, 0);
+      const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.015, 0.26, 8), eyeMat);
+      ant.position.set(ax, 0.22, -0.04);
+      group.add(earPod, ant);
+    });
+    const grille = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.14, 0.08), rimMat); grille.position.set(0, -0.11, 0.19);
+    group.add(grille);
+    return group;
+  }
+
+  const isRoundEye = (skin.type === 'owl' || skin.type === 'skull');
+  [-0.105, 0.105].forEach((ex, idx) => {
+    if (isRoundEye) {
+      const eye = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.072, 0.05, 16), eyeMat);
+      eye.rotation.x = Math.PI / 2; eye.position.set(ex, 0.06, 0.185);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.076, 0.016, 8, 18), rimMat);
+      ring.position.set(ex, 0.06, 0.205);
+      group.add(eye, ring);
+    } else {
+      const eye = new THREE.Mesh(new THREE.BoxGeometry(0.095, 0.055, 0.04), eyeMat);
+      eye.position.set(ex, 0.06, 0.185); eye.rotation.z = idx === 0 ? -0.18 : 0.18;
+      const brow = new THREE.Mesh(new THREE.BoxGeometry(0.115, 0.028, 0.05), rimMat);
+      brow.position.set(ex, 0.095, 0.19); brow.rotation.z = idx === 0 ? -0.22 : 0.22;
+      group.add(eye, brow);
+    }
+  });
+
+  switch (skin.type) {
+    case 'wolf': {
+      [-0.14, 0.14].forEach((ex, i) => {
+        const ear = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.24, 4), baseMat);
+        ear.position.set(ex, 0.32, -0.02); ear.rotation.z = i === 0 ? 0.14 : -0.14;
+        const innerEar = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.16, 4), accentMat);
+        innerEar.position.set(ex, 0.30, 0.01); innerEar.rotation.z = i === 0 ? 0.14 : -0.14;
+        group.add(ear, innerEar);
+      });
+      const snout = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.14, 0.20), accentMat); snout.position.set(0, -0.08, 0.24);
+      const nose = new THREE.Mesh(new THREE.SphereGeometry(0.042, 10, 10), noseMat); nose.position.set(0, -0.03, 0.34);
+      group.add(snout, nose);
+      [-0.065, 0.065].forEach(fx => {
+        const fang = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.065, 6), toothMat);
+        fang.rotation.x = Math.PI; fang.position.set(fx, -0.16, 0.30);
+        group.add(fang);
+      });
+      break;
+    }
+    case 'fox': {
+      [-0.15, 0.15].forEach((ex, i) => {
+        const ear = new THREE.Mesh(new THREE.ConeGeometry(0.085, 0.28, 4), baseMat);
+        ear.position.set(ex, 0.33, 0); ear.rotation.z = i === 0 ? 0.22 : -0.22;
+        const tip = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.12, 4), rimMat);
+        tip.position.set(ex * 1.15, 0.42, 0); tip.rotation.z = i === 0 ? 0.22 : -0.22;
+        group.add(ear, tip);
+      });
+      const muzzle = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.26, 6), accentMat);
+      muzzle.rotation.x = Math.PI / 2; muzzle.position.set(0, -0.08, 0.27);
+      const nose = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), noseMat); nose.position.set(0, -0.08, 0.40);
+      const crest = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.12, 0.03), eyeMat); crest.position.set(0, 0.15, 0.185);
+      group.add(muzzle, nose, crest);
+      break;
+    }
+    case 'rabbit': {
+      const leftEar = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.44, 0.04), baseMat);
+      leftEar.position.set(-0.11, 0.42, -0.02); leftEar.rotation.z = 0.08;
+      const leftInner = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.36, 0.045), accentMat);
+      leftInner.position.set(-0.11, 0.41, -0.015); leftInner.rotation.z = 0.08;
+      const rightEarBase = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.24, 0.04), baseMat);
+      rightEarBase.position.set(0.11, 0.32, -0.02);
+      const rightEarTip = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.22, 0.04), baseMat);
+      rightEarTip.position.set(0.13, 0.43, 0.06); rightEarTip.rotation.x = 0.75;
+      group.add(leftEar, leftInner, rightEarBase, rightEarTip);
+      const nose = new THREE.Mesh(new THREE.SphereGeometry(0.036, 10, 10), accentMat); nose.position.set(0, -0.05, 0.20);
+      [-0.022, 0.022].forEach(tx => {
+        const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.075, 0.025), toothMat);
+        tooth.position.set(tx, -0.14, 0.195);
+        group.add(tooth);
+      });
+      group.add(nose);
+      break;
+    }
+    case 'owl': {
+      [-0.16, 0.16].forEach((ex, i) => {
+        const tuft = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.20, 0.08), accentMat);
+        tuft.position.set(ex, 0.27, 0.05); tuft.rotation.z = i === 0 ? 0.38 : -0.38;
+        group.add(tuft);
+      });
+      const beak = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.16, 4), rimMat);
+      beak.rotation.x = Math.PI * 0.68; beak.position.set(0, -0.04, 0.23);
+      const chest = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.14, 0.04), accentMat); chest.position.set(0, -0.15, 0.185);
+      group.add(beak, chest);
+      break;
+    }
+    case 'oni': {
+      [-0.13, 0.13].forEach((hx, i) => {
+        const horn = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.28, 10), accentMat);
+        horn.position.set(hx, 0.33, 0.04); horn.rotation.set(0.25, 0, i === 0 ? 0.22 : -0.22);
+        group.add(horn);
+      });
+      const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.13, 0.14), rimMat); jaw.position.set(0, -0.14, 0.16);
+      group.add(jaw);
+      [-0.09, 0.09].forEach(fx => {
+        const tusk = new THREE.Mesh(new THREE.ConeGeometry(0.024, 0.09, 6), eyeMat);
+        tusk.position.set(fx, -0.07, 0.23);
+        group.add(tusk);
+      });
+      break;
+    }
+    case 'skull': {
+      const noseHole = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.08, 3), rimMat); noseHole.position.set(0, -0.04, 0.185);
+      const mouthPlate = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.11, 0.06), rimMat); mouthPlate.position.set(0, -0.14, 0.185);
+      group.add(noseHole, mouthPlate);
+      for (let tx = -0.10; tx <= 0.10; tx += 0.04) {
+        const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.085, 0.03), toothMat);
+        tooth.position.set(tx, -0.14, 0.205);
+        group.add(tooth);
+      }
+      break;
+    }
+    case 'boar': {
+      const snout = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.095, 0.16, 12), accentMat);
+      snout.rotation.x = Math.PI / 2; snout.position.set(0, -0.08, 0.24);
+      const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.03, 12), rimMat);
+      disc.rotation.x = Math.PI / 2; disc.position.set(0, -0.08, 0.32);
+      group.add(snout, disc);
+      [-0.14, 0.14].forEach((tx, i) => {
+        const tusk = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.19, 8), toothMat);
+        tusk.position.set(tx, -0.06, 0.25); tusk.rotation.set(0.35, 0, i === 0 ? 0.55 : -0.55);
+        group.add(tusk);
+      });
+      const mohawk = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.16, 0.34), rimMat); mohawk.position.set(0, 0.26, 0);
+      group.add(mohawk);
+      break;
+    }
+    case 'crow': {
+      const beakUpper = new THREE.Mesh(new THREE.ConeGeometry(0.085, 0.38, 6), accentMat);
+      beakUpper.rotation.x = Math.PI * 0.56; beakUpper.position.set(0, -0.05, 0.33);
+      const beakRidge = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.04, 0.32), rimMat);
+      beakRidge.rotation.x = 0.18; beakRidge.position.set(0, -0.01, 0.31);
+      group.add(beakUpper, beakRidge);
+      [-0.18, 0.18].forEach((fx, i) => {
+        const feather = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.22, 0.16), accentMat);
+        feather.position.set(fx, 0.18, -0.06); feather.rotation.z = i === 0 ? 0.28 : -0.28;
+        group.add(feather);
+      });
+      break;
+    }
+    case 'lion': {
+      for (let a = 0; a < 12; a++) {
+        const theta = (a / 12) * Math.PI * 2;
+        const mane = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.18), accentMat);
+        mane.position.set(Math.cos(theta) * 0.24, Math.sin(theta) * 0.25 + 0.02, -0.03);
+        mane.rotation.z = theta;
+        group.add(mane);
+      }
+      [-0.16, 0.16].forEach(ex => {
+        const ear = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.04, 12), baseMat);
+        ear.rotation.x = Math.PI / 2; ear.position.set(ex, 0.23, 0.08);
+        group.add(ear);
+      });
+      const muzzle = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.14, 0.14), baseMat); muzzle.position.set(0, -0.09, 0.21);
+      const nose = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.05, 3), noseMat);
+      nose.rotation.x = Math.PI; nose.position.set(0, -0.04, 0.285);
+      group.add(muzzle, nose);
+      break;
+    }
+  }
+  return group;
 }
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
 
-function render() {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  ctx.fillStyle = '#060711';
-  ctx.fillRect(0, 0, w, h);
-
-  const me = gameState.players.find(p => p.id === myId) || gameState.players[0];
-  let camX = MAP_SIZE / 2, camY = MAP_SIZE / 2;
-  if (me) { camX = me.x; camY = me.y; }
-
-  ctx.save();
-  let sx = 0, sy = 0;
-  if (shakeTimer > 0) {
-    sx = (Math.random() - 0.5) * 12;
-    sy = (Math.random() - 0.5) * 12;
+function buildHandMesh() {
+  const handGroup = new THREE.Group();
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0x8f7a6c, roughness: 0.8 });
+  handGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.06, 0.18), skinMat));
+  for (let f = -1.5; f <= 1.5; f += 1) {
+    const finger = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.04, 0.11), skinMat);
+    finger.position.set(f * 0.032, -0.01, 0.12);
+    handGroup.add(finger);
   }
-  ctx.translate(w / 2 - camX + sx, h / 2 - camY + sy);
+  return handGroup;
+}
 
-  // サイバーグリッド床
-  ctx.strokeStyle = 'rgba(0, 243, 255, 0.08)';
-  ctx.lineWidth = 1;
-  const grid = 60;
-  for (let x = 0; x <= MAP_SIZE; x += grid) {
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, MAP_SIZE); ctx.stroke();
+function buildItem3DMesh(itemId) {
+  const g = new THREE.Group();
+  switch (itemId) {
+    case 'saw': {
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.008, 0.05), new THREE.MeshStandardMaterial({ color: 0xc8d0d8, metalness: 0.88, roughness: 0.22 }));
+      blade.position.set(0.02, 0.025, 0);
+      const handle = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.032, 0.065), new THREE.MeshStandardMaterial({ color: 0x7a3b1e, roughness: 0.8 }));
+      handle.position.set(-0.10, 0.028, 0);
+      g.add(blade, handle);
+      break;
+    }
+    case 'magnifier': {
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.011, 10, 20), new THREE.MeshStandardMaterial({ color: 0xd0d0d0, metalness: 0.85, roughness: 0.2 }));
+      rim.rotation.x = Math.PI / 2; rim.position.set(-0.025, 0.02, 0);
+      const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.008, 18), new THREE.MeshStandardMaterial({ color: 0xaaddff, transparent: true, opacity: 0.45, roughness: 0.1 }));
+      lens.position.set(-0.025, 0.02, 0);
+      const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.015, 0.11, 10), new THREE.MeshStandardMaterial({ color: 0x1e1e1e, roughness: 0.6 }));
+      handle.rotation.z = Math.PI / 2; handle.position.set(0.08, 0.02, 0);
+      g.add(rim, lens, handle);
+      break;
+    }
+    case 'cigarette': {
+      const boxBottom = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.032, 0.125), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 }));
+      boxBottom.position.y = 0.016;
+      const boxTop = new THREE.Mesh(new THREE.BoxGeometry(0.087, 0.034, 0.052), new THREE.MeshStandardMaterial({ color: 0xc82323, roughness: 0.5 }));
+      boxTop.position.set(0, 0.017, -0.038);
+      const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.105, 8), new THREE.MeshStandardMaterial({ color: 0xf7f7f7, roughness: 0.7 }));
+      stick.rotation.x = Math.PI / 2; stick.position.set(0.02, 0.038, 0.028);
+      g.add(boxBottom, boxTop, stick);
+      break;
+    }
+    case 'beer': {
+      const can = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.044, 0.15, 16), new THREE.MeshStandardMaterial({ color: 0xcfd6dc, metalness: 0.85, roughness: 0.25 }));
+      can.position.y = 0.075;
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.048, 16), new THREE.MeshStandardMaterial({ color: 0x246b35, roughness: 0.5 }));
+      band.position.y = 0.078;
+      const topRim = new THREE.Mesh(new THREE.TorusGeometry(0.039, 0.005, 8, 16), new THREE.MeshStandardMaterial({ color: 0xe0e0e0, metalness: 0.9 }));
+      topRim.rotation.x = Math.PI / 2; topRim.position.y = 0.151;
+      g.add(can, band, topRim);
+      break;
+    }
+    case 'medicine': {
+      const bottle = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.12, 14), new THREE.MeshStandardMaterial({ color: 0xb87333, transparent: true, opacity: 0.85, roughness: 0.3 }));
+      bottle.position.y = 0.06;
+      const label = new THREE.Mesh(new THREE.CylinderGeometry(0.0415, 0.0415, 0.062, 14), new THREE.MeshStandardMaterial({ color: 0xebe6d8, roughness: 0.8 }));
+      label.position.y = 0.06;
+      const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.043, 0.043, 0.026, 14), new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.5 }));
+      cap.position.y = 0.13;
+      g.add(bottle, label, cap);
+      break;
+    }
+    case 'adrenaline': {
+      const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.019, 0.019, 0.13, 12), new THREE.MeshStandardMaterial({ color: 0xddeeff, transparent: true, opacity: 0.55, roughness: 0.1 }));
+      barrel.rotation.z = Math.PI / 2; barrel.position.y = 0.025;
+      const liquid = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.085, 12), new THREE.MeshStandardMaterial({ color: 0x39ff14, emissive: 0x1a8800, roughness: 0.3 }));
+      liquid.rotation.z = Math.PI / 2; liquid.position.set(0.014, 0.025, 0);
+      const plunger = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.075, 8), new THREE.MeshStandardMaterial({ color: 0x333333 }));
+      plunger.rotation.z = Math.PI / 2; plunger.position.set(-0.085, 0.025, 0);
+      const needle = new THREE.Mesh(new THREE.CylinderGeometry(0.002, 0.002, 0.055, 6), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.95 }));
+      needle.rotation.z = Math.PI / 2; needle.position.set(0.09, 0.025, 0);
+      g.add(barrel, liquid, plunger, needle);
+      break;
+    }
+    case 'inverter': {
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.125, 0.044, 0.145), new THREE.MeshStandardMaterial({ color: 0x263829, metalness: 0.5, roughness: 0.5 }));
+      body.position.y = 0.022;
+      const redNode = new THREE.Mesh(new THREE.SphereGeometry(0.019, 10, 10), new THREE.MeshStandardMaterial({ color: 0xff2a2a, emissive: 0x660000 }));
+      redNode.position.set(-0.03, 0.047, 0.02);
+      const blueNode = new THREE.Mesh(new THREE.SphereGeometry(0.019, 10, 10), new THREE.MeshStandardMaterial({ color: 0x2a9df4, emissive: 0x003366 }));
+      blueNode.position.set(0.03, 0.047, 0.02);
+      const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.075, 6), new THREE.MeshStandardMaterial({ color: 0xbbbbbb, metalness: 0.8 }));
+      ant.position.set(0.042, 0.072, -0.048);
+      g.add(body, redNode, blueNode, ant);
+      break;
+    }
+    case 'phone': {
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.082, 0.025, 0.16), new THREE.MeshStandardMaterial({ color: 0x1c1c1e, roughness: 0.5 }));
+      body.position.y = 0.013;
+      const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.062, 0.052), new THREE.MeshBasicMaterial({ color: 0x39ff14 }));
+      screen.rotation.x = -Math.PI / 2; screen.position.set(0, 0.026, -0.032);
+      const keypad = new THREE.Mesh(new THREE.BoxGeometry(0.062, 0.006, 0.072), new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.7 }));
+      keypad.position.set(0, 0.026, 0.036);
+      const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.008, 0.042, 8), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+      ant.rotation.x = Math.PI / 2; ant.position.set(0.026, 0.014, -0.095);
+      g.add(body, screen, keypad, ant);
+      break;
+    }
+    case 'handcuffs': {
+      const metalMat = new THREE.MeshStandardMaterial({ color: 0xd0d8de, metalness: 0.9, roughness: 0.2 });
+      const ringL = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.01, 8, 18), metalMat);
+      ringL.rotation.x = Math.PI / 2; ringL.position.set(-0.056, 0.016, 0);
+      const ringR = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.01, 8, 18), metalMat);
+      ringR.rotation.x = Math.PI / 2; ringR.position.set(0.056, 0.016, 0);
+      const chain = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.012, 0.015), metalMat);
+      chain.position.set(0, 0.016, 0);
+      g.add(ringL, ringR, chain);
+      break;
+    }
+    case 'remote': {
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.078, 0.024, 0.155), new THREE.MeshStandardMaterial({ color: 0x22262b, roughness: 0.5 }));
+      body.position.y = 0.012;
+      const led = new THREE.Mesh(new THREE.SphereGeometry(0.011, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff2a2a }));
+      led.position.set(0, 0.025, -0.052);
+      const btnPad = new THREE.Mesh(new THREE.BoxGeometry(0.052, 0.006, 0.075), new THREE.MeshStandardMaterial({ color: 0x39ff14 }));
+      btnPad.position.set(0, 0.025, 0.014);
+      g.add(body, led, btnPad);
+      break;
+    }
+    case 'eyedrops': {
+      const bottle = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.082, 12), new THREE.MeshStandardMaterial({ color: 0xdff7ff, transparent: true, opacity: 0.85 }));
+      bottle.position.y = 0.041;
+      const liquid = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.042, 12), new THREE.MeshStandardMaterial({ color: 0x2a9df4 }));
+      liquid.position.y = 0.03;
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.026, 0.042, 12), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+      tip.position.y = 0.102;
+      g.add(bottle, liquid, tip);
+      break;
+    }
+    case 'rosary': {
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0x554400, metalness: 0.9, roughness: 0.2 });
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.008, 8, 18), goldMat);
+      ring.rotation.x = Math.PI / 2; ring.position.set(0, 0.016, -0.032);
+      const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.017, 0.014, 0.09), goldMat); crossV.position.set(0, 0.016, 0.045);
+      const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.014, 0.017), goldMat); crossH.position.set(0, 0.016, 0.032);
+      g.add(ring, crossV, crossH);
+      break;
+    }
   }
-  for (let y = 0; y <= MAP_SIZE; y += grid) {
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(MAP_SIZE, y); ctx.stroke();
-  }
+  return g;
+}
 
-  // 外周フレーム
-  ctx.strokeStyle = '#7b2cbf';
-  ctx.lineWidth = 6;
-  ctx.strokeRect(0, 0, MAP_SIZE, MAP_SIZE);
+function update3DSceneFromState() {
+  if (!scene) return;
+  const tagsContainer = document.getElementById('name-tags-container');
+  const stepAngle = (Math.PI * 2) / 5;
+  interactableMeshes = [];
 
-  // 危険エリア（安全圏リング）
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(MAP_SIZE / 2, MAP_SIZE / 2, gameState.zoneRadius, 0, Math.PI * 2);
-  ctx.strokeStyle = '#ff007f';
-  ctx.lineWidth = 5;
-  ctx.shadowColor = '#ff007f';
-  ctx.shadowBlur = 18;
-  ctx.stroke();
-  ctx.restore();
+  Object.keys(seatVisuals).forEach(pid => {
+    if (!gameState.players.find(p => p.id === pid)) {
+      scene.remove(seatVisuals[pid].group);
+      disposeObject3D(seatVisuals[pid].group);
+      seatVisuals[pid].nameTag.remove();
+      delete seatVisuals[pid];
+    }
+  });
 
-  // 設置された罠
-  for (const tr of gameState.traps) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(tr.x, tr.y, 22, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(199, 125, 255, 0.5)';
-    ctx.setLineDash([5, 5]);
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.restore();
-  }
+  gameState.players.forEach((p, idx) => {
+    const angle = idx * stepAngle;
+    if (p.id === myId) mySeatAngle = angle;
 
-  // アイテム描画
-  const pulse = 1 + Math.sin(performance.now() / 160) * 0.1;
-  for (const it of gameState.items) {
-    ctx.save();
-    ctx.translate(it.x, it.y);
-    ctx.scale(pulse, pulse);
-    ctx.beginPath();
-    ctx.arc(0, 0, 20, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(10, 14, 34, 0.9)';
-    ctx.fill();
-    ctx.lineWidth = 2.5;
-    ctx.strokeStyle = it.color;
-    ctx.shadowColor = it.color;
-    ctx.shadowBlur = 14;
-    ctx.stroke();
-    ctx.font = '18px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(it.icon, 0, 1);
-    ctx.restore();
-  }
-
-  // プレイヤー描画
-  for (const p of gameState.players) {
-    if (!p.alive) continue;
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    if (p.dashTimer > 0) ctx.globalAlpha = 0.45;
-
-    // 攻撃方向インジケーター
-    ctx.save();
-    ctx.rotate(p.angle);
-    ctx.beginPath();
-    ctx.moveTo(28, 0);
-    ctx.lineTo(18, -8);
-    ctx.lineTo(18, 8);
-    ctx.closePath();
-    ctx.fillStyle = p.poweredSword ? '#ff9500' : p.color.main;
-    ctx.fill();
-    ctx.restore();
-
-    // シールドバリア
-    if (p.shield) {
-      ctx.beginPath();
-      ctx.arc(0, 0, 30, 0, Math.PI * 2);
-      ctx.strokeStyle = '#00f3ff';
-      ctx.lineWidth = 3;
-      ctx.stroke();
+    if (seatVisuals[p.id] && seatVisuals[p.id].skinId !== p.skinId) {
+      seatVisuals[p.id].group.remove(seatVisuals[p.id].headGroup);
+      disposeObject3D(seatVisuals[p.id].headGroup);
+      const newHead = buildMaskMesh(p.skinId);
+      newHead.position.set(0, 1.52, 2.75);
+      newHead.rotation.order = 'YXZ';
+      newHead.rotation.y = Math.PI;
+      seatVisuals[p.id].group.add(newHead);
+      seatVisuals[p.id].headGroup = newHead;
+      seatVisuals[p.id].skinId = p.skinId;
     }
 
-    // 本体サークル
-    ctx.beginPath();
-    ctx.arc(0, 0, 22, 0, Math.PI * 2);
-    ctx.fillStyle = '#0b0f26';
-    ctx.fill();
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = p.color.main;
-    ctx.shadowColor = p.color.main;
-    ctx.shadowBlur = 18;
-    ctx.stroke();
+    if (!seatVisuals[p.id]) {
+      const group = new THREE.Group();
+      scene.add(group);
 
-    // 名前とミニHPバー
-    ctx.shadowBlur = 0;
-    ctx.font = 'bold 12px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(p.name, 0, -36);
+      const sideConsole = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.14, 0.16), new THREE.MeshStandardMaterial({ color: 0x2a2d27, metalness: 0.6, roughness: 0.4 }));
+      sideConsole.position.set(-0.62, 0.92, 2.18); sideConsole.rotation.y = 0.25;
+      const consoleScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.08), new THREE.MeshBasicMaterial({ color: 0x39ff14 }));
+      consoleScreen.position.set(-0.62, 0.94, 2.098); consoleScreen.rotation.set(-0.35, Math.PI + 0.25, 0);
+      group.add(sideConsole, consoleScreen);
 
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(-22, -31, 44, 5);
-    ctx.fillStyle = p.hp > 35 ? '#39ff14' : '#ff3b30';
-    ctx.fillRect(-22, -31, 44 * (p.hp / 100), 5);
+      const slotCenters = [];
+      const lineMat = new THREE.LineBasicMaterial({ color: 0xb8c4b0 });
+      [-1, 1].forEach(side => {
+        for (let r = 0; r < 2; r++) {
+          for (let c = 0; c < 2; c++) {
+            const cx = side * (0.58 + c * 0.30);
+            const cz = 1.46 + r * 0.30;
+            slotCenters.push(new THREE.Vector3(cx, 0.87, cz));
+            const rectGeo = new THREE.EdgesGeometry(new THREE.PlaneGeometry(0.24, 0.24));
+            const rect = new THREE.LineSegments(rectGeo, lineMat);
+            rect.rotation.x = -Math.PI / 2; rect.position.set(cx, 0.865, cz);
+            group.add(rect);
+          }
+        }
+      });
 
-    // 同盟・裏切りチャット吹き出し
-    if (p.emote) {
-      ctx.font = 'bold 12px sans-serif';
-      const tw = ctx.measureText(p.emote).width + 16;
-      ctx.fillStyle = 'rgba(18, 10, 42, 0.92)';
-      ctx.strokeStyle = p.color.main;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.roundRect(-tw / 2, -66, tw, 22, 8);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = '#fff';
-      ctx.fillText(p.emote, 0, -51);
+      const headGroup = buildMaskMesh(p.skinId);
+      headGroup.position.set(0, 1.52, 2.75);
+      headGroup.rotation.order = 'YXZ';
+      headGroup.rotation.y = Math.PI;
+
+      const targetHitBox = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.9, 0.75), new THREE.MeshBasicMaterial({ visible: false }));
+      targetHitBox.position.set(0, 1.45, 2.7);
+      targetHitBox.userData = { interactType: 'target_player', playerId: p.id };
+      group.add(targetHitBox);
+
+      const leftHand = buildHandMesh(); leftHand.position.set(-0.38, 1.05, 2.25); leftHand.rotation.y = Math.PI;
+      const rightHand = buildHandMesh(); rightHand.position.set(0.38, 1.05, 2.25); rightHand.rotation.y = Math.PI;
+      group.add(headGroup, leftHand, rightHand);
+
+      const nameTag = document.createElement('div');
+      nameTag.className = 'name-tag';
+      nameTag.onclick = () => {
+        if (adrenalineStealSlot !== null && p.alive && p.id !== myId) focusAdrenalineTarget(p.id);
+        else if (pendingPlayerTargetItem && p.alive && p.id !== myId) confirmDirectPlayerTarget(p.id);
+        else if (isAimingMode && p.alive && p.id !== myId) confirmShootTarget(p.id);
+      };
+      tagsContainer.appendChild(nameTag);
+
+      seatVisuals[p.id] = {
+        group, headGroup, skinId: p.skinId, targetHitBox,
+        leftHand, rightHand, slotCenters, itemMeshes: [], nameTag
+      };
     }
 
-    ctx.restore();
-  }
+    const vis = seatVisuals[p.id];
+    vis.group.rotation.y = angle;
 
-  // バトルエフェクト描画
-  for (const ef of gameState.effects) {
-    ctx.save();
-    if (ef.type === 'slash') {
-      ctx.translate(ef.x, ef.y);
-      ctx.rotate(ef.angle);
-      ctx.beginPath();
-      ctx.arc(0, 0, ef.powered ? 120 : 105, -0.95, 0.95);
-      ctx.strokeStyle = ef.color;
-      ctx.lineWidth = ef.powered ? 16 : 10;
-      ctx.shadowColor = ef.color;
-      ctx.shadowBlur = 20;
-      ctx.stroke();
-    } else if (ef.type === 'bomb') {
-      ctx.beginPath();
-      ctx.arc(ef.x, ef.y, 175 * (1 - ef.ttl / 0.45), 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 59, 48, 0.35)';
-      ctx.fill();
-      ctx.strokeStyle = '#ff9500';
-      ctx.lineWidth = 4;
-      ctx.stroke();
-    } else if (ef.type === 'ring' || ef.type === 'dash') {
-      ctx.beginPath();
-      ctx.arc(ef.x, ef.y, 48 * (1 - ef.ttl), 0, Math.PI * 2);
-      ctx.strokeStyle = ef.color;
-      ctx.lineWidth = 3;
-      ctx.stroke();
-    } else if (ef.type === 'text') {
-      ctx.font = '900 18px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillStyle = ef.color;
-      ctx.fillText(ef.text, ef.x, ef.y - (1 - ef.ttl) * 28);
+    const isMe = (p.id === myId);
+    vis.headGroup.visible = !isMe && p.alive;
+    vis.leftHand.visible = !isMe && p.alive;
+    vis.rightHand.visible = !isMe && p.alive;
+
+    if (!isMe && p.alive && (isAimingMode || pendingPlayerTargetItem || adrenalineStealSlot !== null)) {
+      interactableMeshes.push(vis.targetHitBox);
     }
-    ctx.restore();
+
+    vis.itemMeshes.forEach(m => { vis.group.remove(m); disposeObject3D(m); });
+    vis.itemMeshes = [];
+    p.slots.forEach((itemId, sIdx) => {
+      if (itemId && vis.slotCenters[sIdx]) {
+        const m = buildItem3DMesh(itemId);
+        m.position.copy(vis.slotCenters[sIdx]);
+
+        if (adrenalineStealSlot !== null && !isMe && p.alive && itemId !== 'adrenaline') {
+          m.position.y += 0.06;
+          m.scale.set(1.22, 1.22, 1.22);
+        }
+
+        if (isMe && p.alive && adrenalineStealSlot === null && !pendingPlayerTargetItem && !isAimingMode) {
+          const hitBox = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.17, 0.17), new THREE.MeshBasicMaterial({ visible: false }));
+          hitBox.position.y = 0.07;
+          hitBox.userData = { interactType: 'my_item', slotIndex: sIdx, itemId };
+          m.add(hitBox);
+          interactableMeshes.push(hitBox);
+        } else if (!isMe && p.alive && adrenalineStealSlot !== null) {
+          const enemyHitBox = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.18), new THREE.MeshBasicMaterial({ visible: false }));
+          enemyHitBox.position.y = 0.07;
+          enemyHitBox.userData = { interactType: 'enemy_item', playerId: p.id, slotIndex: sIdx, itemId };
+          m.add(enemyHitBox);
+          interactableMeshes.push(enemyHitBox);
+        }
+
+        vis.group.add(m);
+        vis.itemMeshes.push(m);
+      }
+    });
+
+    const isTurn = (gameState.phase === 'play' && gameState.players[gameState.turnIndex]?.id === p.id);
+    const statusMarks = (p.rosaryActive ? '✝' : '') + (p.skipNextTurn ? '⛓️' : '') + (p.noItemsNextTurn ? '💧' : '');
+    let prefix = '';
+    if (isAimingMode && !isMe && p.alive) prefix = '🎯 ';
+    else if (pendingPlayerTargetItem && !isMe && p.alive) prefix = pendingPlayerTargetItem.itemId === 'handcuffs' ? '⛓️ ' : '💧 ';
+    else if (adrenalineStealSlot !== null && !isMe && p.alive) prefix = p.id === adrenalineFocusTargetId ? '💉[確認中] ' : '💉 ';
+
+    vis.nameTag.textContent = `${prefix}${p.name} (⚡${p.hp})${statusMarks}`;
+    vis.nameTag.className = 'name-tag'
+      + (isTurn ? ' turn-active' : '')
+      + (!p.alive ? ' dead' : '')
+      + (isAimingMode && !isMe && p.alive ? ' aimable' : '')
+      + ((pendingPlayerTargetItem || adrenalineStealSlot !== null) && !isMe && p.alive ? ' item-targetable' : '');
+    vis.nameTag.style.display = isMe ? 'none' : 'block';
+  });
+
+  barrelMesh.scale.y = gameState.sawActive ? 0.55 : 1.0;
+}
+
+function getSeatPosition(playerIndex, radius = 2.2) {
+  const angle = playerIndex * ((Math.PI * 2) / 5);
+  return new THREE.Vector3(Math.sin(angle) * radius, 1.28, Math.cos(angle) * radius);
+}
+
+function animate3D() {
+  animFrameId = requestAnimationFrame(animate3D);
+  if (!renderer || !scene || !camera) return;
+  const t = performance.now() * 0.0025;
+
+  if (isChamberCutscene) {
+    const camX = Math.sin(mySeatAngle) * 1.85;
+    const camZ = Math.cos(mySeatAngle) * 1.85;
+    targetCamPos.set(camX, 1.75, camZ);
+    targetCamLook.set(0, 1.18, 0);
+  } else if (adrenalineStealSlot !== null && adrenalineFocusTargetId) {
+    const targetIdx = gameState.players.findIndex(p => p.id === adrenalineFocusTargetId);
+    if (targetIdx !== -1) {
+      const tAngle = targetIdx * ((Math.PI * 2) / 5);
+      targetCamPos.set(Math.sin(tAngle) * 0.55, 2.02, Math.cos(tAngle) * 0.55);
+      targetCamLook.set(Math.sin(tAngle) * 1.75, 0.88, Math.cos(tAngle) * 1.75);
+    }
+  } else if (gameState.phase === 'gameover' && gameState.winnerId && gameState.winnerId !== myId) {
+    const winIdx = gameState.players.findIndex(p => p.id === gameState.winnerId);
+    if (winIdx !== -1) {
+      const winAngle = winIdx * ((Math.PI * 2) / 5);
+      targetCamPos.set(Math.sin(winAngle) * 1.35, 1.55, Math.cos(winAngle) * 1.35);
+      targetCamLook.set(Math.sin(winAngle) * 2.75, 1.52, Math.cos(winAngle) * 2.75);
+    }
+  } else {
+    const dist = cameraMode === 'top' ? 0.4 : 2.95;
+    const height = cameraMode === 'top' ? 4.3 : 1.72;
+    const baseLookY = cameraMode === 'top' ? 0.85 : 1.22;
+
+    const camX = Math.sin(mySeatAngle) * dist;
+    const camZ = Math.cos(mySeatAngle) * dist;
+    targetCamPos.set(camX, height, camZ);
+
+    const lookYaw = mySeatAngle + Math.PI + userYawOffset;
+    const pitchDeltaY = Math.tan(userPitchOffset) * 2.5;
+    targetCamLook.set(
+      camX + Math.sin(lookYaw) * 2.5,
+      baseLookY + pitchDeltaY,
+      camZ + Math.cos(lookYaw) * 2.5
+    );
   }
 
-  ctx.restore();
-
-  // 仮想スティックの視覚ガイド
-  if (stickTouchId !== null) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(stickOrigin.x, stickOrigin.y, 46, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(0, 243, 255, 0.45)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(stickOrigin.x + stickVec.x * 46, stickOrigin.y + stickVec.y * 46, 20, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(0, 243, 255, 0.65)';
-    ctx.fill();
-    ctx.restore();
+  camera.position.lerp(targetCamPos, 0.14);
+  if (cameraShakeTime > 0) {
+    cameraShakeTime -= 0.016;
+    camera.position.x += (Math.random() - 0.5) * 0.16;
+    camera.position.y += (Math.random() - 0.5) * 0.16;
   }
-}
+  camera.lookAt(targetCamLook);
 
-function escapeHtml(str) {
-  return String(str).replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
-}
+  if (shotgunRecoil > 0) shotgunRecoil = Math.max(0, shotgunRecoil - 0.018);
 
-// メインループ
-let lastTime = performance.now();
-function loop(now) {
-  const dt = Math.min(0.05, (now - lastTime) / 1000);
-  lastTime = now;
+  let activeShooterIdx = gameState.turnIndex;
+  let activeTargetId = gameState.aimTargetId;
 
-  if (shakeTimer > 0) shakeTimer = Math.max(0, shakeTimer - dt);
-  processLocalInput();
-  stepSimulation(dt);
-  render();
-  requestAnimationFrame(loop);
+  if (activeShootOverride) {
+    const sIdx = gameState.players.findIndex(p => p.id === activeShootOverride.shooterId);
+    if (sIdx !== -1) { activeShooterIdx = sIdx; activeTargetId = activeShootOverride.targetId; }
+  }
+
+  const shooterPlayer = gameState.players[activeShooterIdx];
+  const isHeld = Boolean(activeShootOverride) || (shooterPlayer && (shooterPlayer.handAction === 'aim' || shooterPlayer.handAction === 'shoot' || (shooterPlayer.id === myId && isAimingMode)));
+
+  if (shotgunGroup) {
+    if (isHeld && activeShooterIdx >= 0 && activeShooterIdx < gameState.players.length) {
+      const holdPos = getSeatPosition(activeShooterIdx, 1.9);
+      holdPos.y = 1.28;
+      shotgunGroup.position.lerp(holdPos, 0.28);
+
+      let aimPos = new THREE.Vector3(0, 1.28, 0);
+      const effectiveTargetId = activeTargetId || (shooterPlayer && shooterPlayer.id === myId && isAimingMode ? myId : null);
+      if (effectiveTargetId) {
+        const tIdx = gameState.players.findIndex(p => p.id === effectiveTargetId);
+        if (tIdx !== -1) {
+          if (tIdx === activeShooterIdx) {
+            const selfAngle = activeShooterIdx * ((Math.PI * 2) / 5);
+            aimPos.set(Math.sin(selfAngle) * 3.1, 1.48, Math.cos(selfAngle) * 3.1);
+          } else {
+            aimPos = getSeatPosition(tIdx, 2.75);
+            aimPos.y = 1.50;
+          }
+        }
+      }
+
+      const dummy = new THREE.Object3D();
+      dummy.position.copy(shotgunGroup.position);
+      dummy.lookAt(aimPos);
+      shotgunGroup.quaternion.slerp(dummy.quaternion, activeShootOverride ? 0.55 : 0.25);
+
+      if (shotgunRecoil > 0) {
+        shotgunGroup.translateZ(-shotgunRecoil * 0.5);
+        shotgunGroup.rotateX(-shotgunRecoil * 0.45);
+      }
+
+      if (shooterPlayer && shooterPlayer.id === myId) {
+        myLeftHand.visible = true;
+        myRightHand.visible = true;
+        const leftGrip = new THREE.Vector3(-0.06, -0.04, 0.34).applyMatrix4(shotgunGroup.matrixWorld);
+        const rightGrip = new THREE.Vector3(0.06, -0.05, -0.18).applyMatrix4(shotgunGroup.matrixWorld);
+        myLeftHand.position.copy(leftGrip);
+        myRightHand.position.copy(rightGrip);
+        myLeftHand.quaternion.copy(shotgunGroup.quaternion);
+        myRightHand.quaternion.copy(shotgunGroup.quaternion);
+      } else {
+        myLeftHand.visible = false;
+        myRightHand.visible = false;
+      }
+    } else {
+      myLeftHand.visible = false;
+      myRightHand.visible = false;
+      shotgunGroup.position.lerp(new THREE.Vector3(0, 0.99, 0), 0.18);
+      const restYaw = (activeShooterIdx >= 0 ? activeShooterIdx : 0) * ((Math.PI * 2) / 5);
+      const restQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), restYaw);
+      shotgunGroup.quaternion.slerp(restQuat, 0.15);
+    }
+  }
+
+  gameState.players.forEach((p, idx) => {
+    const vis = seatVisuals[p.id];
+    if (!vis) return;
+
+    vis.headGroup.rotation.order = 'YXZ';
+    const pitchAngle = p.lookPitch || 0;
+
+    let kb = hitKnockback[p.id] || 0;
+    if (kb > 0) {
+      kb = Math.max(0, kb - 0.025);
+      hitKnockback[p.id] = kb;
+      vis.headGroup.position.set(0, 1.52 - kb * 0.18, 2.75 + kb * 0.45);
+      vis.headGroup.rotation.y = Math.PI + (p.lookYaw || 0);
+      vis.headGroup.rotation.x = -kb * 0.65 - pitchAngle;
+    } else {
+      vis.headGroup.position.set(0, 1.52 + Math.sin(t + idx) * 0.03, 2.75);
+      vis.headGroup.rotation.y = Math.PI + (p.lookYaw || 0);
+      vis.headGroup.rotation.x = -pitchAngle;
+    }
+
+    const isThisShooter = (activeShootOverride && activeShootOverride.shooterId === p.id) || (p.handAction === 'aim' || p.handAction === 'shoot');
+    if (p.id !== myId && isThisShooter) {
+      const leftWorld = new THREE.Vector3(-0.06, -0.04, 0.34).applyMatrix4(shotgunGroup.matrixWorld);
+      const rightWorld = new THREE.Vector3(0.06, -0.05, -0.18).applyMatrix4(shotgunGroup.matrixWorld);
+      vis.group.worldToLocal(leftWorld);
+      vis.group.worldToLocal(rightWorld);
+      vis.leftHand.position.lerp(leftWorld, 0.38);
+      vis.rightHand.position.lerp(rightWorld, 0.38);
+    } else if (p.handAction && p.handAction.startsWith('item_')) {
+      vis.rightHand.position.set(0.1, 1.25 + Math.sin(t * 6) * 0.08, 1.95);
+    } else {
+      vis.leftHand.position.set(-0.38, 1.05 + Math.sin(t + idx) * 0.025 + kb * 0.3, 2.25 + kb * 0.25);
+      vis.rightHand.position.set(0.38, 1.05 + Math.cos(t + idx) * 0.025 + kb * 0.3, 2.25 + kb * 0.25);
+    }
+
+    if (p.id !== myId) {
+      const worldHeadPos = new THREE.Vector3(0, 1.92, 2.75);
+      worldHeadPos.applyAxisAngle(new THREE.Vector3(0, 1, 0), idx * ((Math.PI * 2) / 5));
+      worldHeadPos.project(camera);
+
+      if (worldHeadPos.z < 1) {
+        const sx = (worldHeadPos.x * 0.5 + 0.5) * window.innerWidth;
+        const sy = (-worldHeadPos.y * 0.5 + 0.5) * window.innerHeight;
+        vis.nameTag.style.left = sx + 'px';
+        vis.nameTag.style.top = sy + 'px';
+        vis.nameTag.style.display = 'block';
+      } else {
+        vis.nameTag.style.display = 'none';
+      }
+    }
+  });
+
+  renderer.render(scene, camera);
 }
-requestAnimationFrame(loop);
 </script>
 </body>
 </html>
