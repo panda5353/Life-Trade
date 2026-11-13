@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Life Trade" />
 <meta name="theme-color" content="#000000" />
-<title>Life Trade ver 0.8</title>
+<title>Life Trade ver 0.9</title>
 
 <!-- Three.js & PeerJS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -72,8 +72,8 @@
       to bottom,
       rgba(0, 0, 0, 0) 0px,
       rgba(0, 0, 0, 0) 2px,
-      rgba(0, 20, 0, 0.25) 3px,
-      rgba(0, 0, 0, 0.35) 4px
+      rgba(0, 20, 0, 0.22) 3px,
+      rgba(0, 0, 0, 0.32) 4px
     );
     z-index: 500;
   }
@@ -344,6 +344,15 @@
     align-items: center;
     gap: 8px;
   }
+  .hud-ammo-only {
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid var(--neon);
+    padding: 6px 14px;
+    font-size: 16px;
+    letter-spacing: 1px;
+    text-shadow: 0 0 6px var(--neon);
+    pointer-events: none;
+  }
   .my-hp-badge {
     background: rgba(0, 15, 0, 0.9);
     border: 1px solid var(--neon);
@@ -481,7 +490,7 @@
     transform: translateY(-8px) scale(0.82);
   }
 
-  /* 射撃構え中＆アドレナリン奪取中オーバーレイ */
+  /* 射撃構え中＆アドレナリン奪取中＆ターゲット直接選択オーバーレイ */
   #action-overlay {
     position: absolute;
     bottom: 14px;
@@ -746,6 +755,14 @@
     color: #ff6666;
     box-shadow: 0 0 10px var(--danger);
   }
+  .name-tag.item-targetable {
+    pointer-events: auto;
+    cursor: pointer;
+    border: 1px solid var(--gold);
+    background: rgba(40, 32, 0, 0.88);
+    color: var(--gold);
+    box-shadow: 0 0 10px var(--gold);
+  }
 
   #flash-fx {
     position: fixed;
@@ -787,7 +804,7 @@
   <div class="term-header">
     <div>
       <span class="game-title">Life Trade</span>
-      <span class="game-ver">ver 0.8</span>
+      <span class="game-ver">ver 0.9</span>
     </div>
     <div style="font-size:12px; display:flex; align-items:center; gap:6px;">
       <span>SOLO AI &amp; ONLINE [2-5 PLAYERS]</span>
@@ -840,7 +857,7 @@
         <div>&gt; TERMINAL STATUS: <span id="net-status">READY</span></div>
         <div>&gt; 初期ライフ: ⚡×5 (負け抜け制)</div>
         <div>&gt; 弾倉: 5発開始〜最大10発 (赤・青 各最低1発 / R5以降は赤率UP)</div>
-        <div>&gt; 新アイテム: 手錠・リモコン・目薬・ロザリオ(1/10) 実装</div>
+        <div>&gt; 出現率: 手錠・目薬・タバコ・アドレナリン(1/2) / リモコン・インバータ(1/5) / ロザリオ(1/10)</div>
         <div>&gt; 席順・スタートプレイヤーは毎回ランダム決定</div>
         <div id="title-error" style="color:var(--danger); margin-top:4px;"></div>
       </div>
@@ -858,7 +875,7 @@
       <div style="font-size:14px; margin-bottom:6px;">
         ハイローラー：
         <span style="float:right; display:flex; gap:6px; align-items:center;">
-          <span>Life Trade ver 0.8</span>
+          <span>Life Trade ver 0.9</span>
           <button class="bgm-btn" onclick="openItemGuideModal()">? アイテム図鑑</button>
           <button class="bgm-btn" id="bgm-btn-lobby" onclick="toggleBgm()">♪ BGM: ON</button>
         </span>
@@ -901,16 +918,17 @@
           <span id="hud-round">ROUND 1</span>
           <span id="hud-dir-badge">↻ 時計回り</span> |
           <span id="hud-turn-info">待機中...</span>
+          <span id="hud-saw-badge" style="color:var(--danger); display:none;">[威力2倍]</span>
         </div>
-        <div class="my-hp-badge" id="hud-my-hp">
-          ⚡⚡⚡⚡⚡
+        <div style="display:flex; gap:6px; align-items:center;">
+          <div class="my-hp-badge" id="hud-my-hp">⚡⚡⚡⚡⚡</div>
+          <button class="bgm-btn" onclick="openItemGuideModal()">? 図鑑</button>
+          <button class="bgm-btn" id="bgm-btn-game" onclick="toggleBgm()">♪ BGM: ON</button>
         </div>
       </div>
-      <div class="hud-badge">
-        <span id="hud-saw-badge" style="color:var(--danger); display:none;">[威力2倍中]</span>
-        <button class="bgm-btn" onclick="openItemGuideModal()">? アイテム図鑑</button>
-        <button class="bgm-btn" id="bgm-btn-game" onclick="toggleBgm()">♪ BGM: ON</button>
-      </div>
+
+      <!-- 右上：残り残弾数のみ表示 -->
+      <div class="hud-ammo-only" id="hud-ammo-count">残弾: 0発</div>
     </div>
 
     <!-- 視点切り替え（正面・俯瞰のみ） -->
@@ -932,7 +950,7 @@
       <div id="shell-visual-legend" style="font-size:14px;"></div>
     </div>
 
-    <!-- ショットガン構え中＆アドレナリン奪取中メニュー -->
+    <!-- ショットガン構え中＆アドレナリン奪取中＆手錠・目薬相手選択メニュー -->
     <div id="action-overlay"></div>
   </div>
 </div>
@@ -968,7 +986,7 @@
 <div id="item-guide-modal" onclick="if(event.target===this) closeItemGuideModal()">
   <div class="guide-panel">
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--neon); padding-bottom:6px;">
-      <span style="font-size:16px;">[ ITEM DATABASE ] 全12種アイテム効果＆外観</span>
+      <span style="font-size:16px;">[ ITEM DATABASE ] 全12種アイテム効果＆出現率</span>
       <button class="btn" style="padding:4px 10px;" onclick="closeItemGuideModal()">✕ 閉じる</button>
     </div>
     <div class="guide-grid" id="item-guide-grid"></div>
@@ -1190,8 +1208,13 @@ renderSkinSelector();
 
 /* ==========================================================================
    1. アイテム定義（全12種）
-   - ロザリオは 1/10 (10%) の確率で出現
-   - タバコ・アドレナリンは通常アイテムの半分の出現率
+   - ロザリオ: 1/10 (10%)
+   - リモコン: 1/5 (weight: 0.2)
+   - インバータ: 1/5 (weight: 0.2)
+   - 手錠: 1/2 (weight: 0.5)
+   - 目薬: 1/2 (weight: 0.5)
+   - タバコ: 1/2 (weight: 0.5)
+   - アドレナリン: 1/2 (weight: 0.5)
    ========================================================================== */
 const ITEM_DEFS = {
   saw: {
@@ -1239,8 +1262,8 @@ const ITEM_DEFS = {
   inverter: {
     id: 'inverter',
     name: 'インバータ',
-    weight: 1.0,
-    badge: '',
+    weight: 0.2,
+    badge: '出現率 1/5',
     desc: '現在薬室にある弾の空砲と実弾を入れ替える。'
   },
   phone: {
@@ -1253,23 +1276,23 @@ const ITEM_DEFS = {
   handcuffs: {
     id: 'handcuffs',
     name: '手錠',
-    weight: 1.0,
-    badge: '',
-    desc: '選択した相手を拘束し、次にターンが回ってきても1回スキップさせる。'
+    weight: 0.5,
+    badge: '出現率 1/2',
+    desc: '使う相手を直接タップして拘束し、次にターンが回ってきても1回スキップさせる。'
   },
   remote: {
     id: 'remote',
     name: 'リモコン',
-    weight: 1.0,
-    badge: '',
+    weight: 0.2,
+    badge: '出現率 1/5',
     desc: 'ターンの進行順番（時計回り／反時計回り）を逆順にする。'
   },
   eyedrops: {
     id: 'eyedrops',
     name: '目薬',
-    weight: 1.0,
-    badge: '',
-    desc: '選択した相手は、次の自分のターンにアイテムを使えなくなる。'
+    weight: 0.5,
+    badge: '出現率 1/2',
+    desc: '使う相手を直接タップして選択し、その相手は次の自分のターンにアイテムを使えなくなる。'
   },
   rosary: {
     id: 'rosary',
@@ -1283,7 +1306,6 @@ const ITEM_KEYS = Object.keys(ITEM_DEFS);
 const STANDARD_ITEM_KEYS = ITEM_KEYS.filter(k => k !== 'rosary');
 
 function rollWeightedItem() {
-  // 1/10 (10%) の確率でロザリオが出現
   if (Math.random() < 0.1) {
     return 'rosary';
   }
@@ -1575,7 +1597,7 @@ function playMatchResultSound(isWinner) {
 /* ==========================================================================
    3. ネットワーク＆ゲーム状態管理（PeerJS 3桁ルーム & 一人用AIモード）
    ========================================================================== */
-const PEER_PREFIX = 'lifetrade-v08-room-';
+const PEER_PREFIX = 'lifetrade-v09-room-';
 let peer = null;
 let isHost = false;
 let isSoloAi = false;
@@ -1586,12 +1608,12 @@ let connections = {};
 let hostConn = null;
 
 let gameState = {
-  phase: 'lobby', // 'lobby' | 'loading' | 'loot' | 'play' | 'gameover'
+  phase: 'lobby',
   maxPlayers: 5,
   round: 1,
   players: [],
   turnIndex: 0,
-  turnDirection: 1, // 1: 時計回り, -1: 逆順（リモコンで反転）
+  turnDirection: 1,
   shells: [],
   initialShellCount: 0,
   sawActive: false,
@@ -1641,14 +1663,13 @@ function createPlayerObj(id, name, skinId, isHostPlayer, isAi) {
     damageDealt: 0,
     survivedRound: 1,
     elimOrder: 0,
-    skipNextTurn: false,    // 手錠：次ターン1回スキップ
-    noItemsNextTurn: false, // 目薬：次ターンアイテム使用不可
-    rosaryActive: false,    // ロザリオ：このラウンド中HP0でHP2復活
+    skipNextTurn: false,
+    noItemsNextTurn: false,
+    rosaryActive: false,
     aiKnownNext: null
   };
 }
 
-/* --- 一人用 (vs AI) 開始 --- */
 function startSoloAiMatch() {
   ensureBgmStart();
   setError('');
@@ -1909,7 +1930,6 @@ function resetMatchStats() {
   gameState.winnerName = '';
   gameState.turnDirection = 1;
 
-  // 席順をランダムシャッフル
   for (let i = gameState.players.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [gameState.players[i], gameState.players[j]] = [gameState.players[j], gameState.players[i]];
@@ -1930,7 +1950,6 @@ function resetMatchStats() {
     p.aiKnownNext = null;
   });
 
-  // スタートプレイヤーをランダム決定
   gameState.turnIndex = Math.floor(Math.random() * gameState.players.length);
 }
 
@@ -1967,7 +1986,6 @@ let roundLoadingTimer = null;
 function applyDamageOrFatal(player, dmg) {
   player.hp = Math.max(0, player.hp - dmg);
   if (player.hp <= 0 && player.alive) {
-    // ロザリオ発動中ならそのラウンドの間は残機2個（HP2）で即座に復活
     if (player.rosaryActive) {
       player.rosaryActive = false;
       player.hp = 2;
@@ -2003,17 +2021,13 @@ function startNewRound() {
     return;
   }
 
-  // ラウンド切り替わり時にロザリオ効果は終了（そのラウンドの間のみ有効）
   alivePlayers.forEach(p => {
     p.survivedRound = gameState.round;
     p.aiKnownNext = null;
     p.rosaryActive = false;
   });
 
-  // ラウンド1: 5発スタート、ラウンドごとに+1発、最大10発まで増加
   const total = Math.min(10, 5 + (gameState.round - 1));
-
-  // 赤(実弾)1発、青(空砲)1発を最低保証し、残りはランダム決定（5ラウンド目以降は赤率68%に上昇）
   const liveProb = gameState.round >= 5 ? 0.68 : 0.50;
   let liveCount = 1;
   let blankCount = 1;
@@ -2088,11 +2102,9 @@ function startNewRound() {
   }, loadDurationMs);
 }
 
-// ターン進行（逆順リモコン・手錠スキップ・目薬解除に対応）
 function advanceTurnIndex(bannerLogs = []) {
   const prevPlayer = gameState.players[gameState.turnIndex];
   if (prevPlayer && prevPlayer.noItemsNextTurn) {
-    // 目薬でアイテム封じされていたターンが終了したので解除
     prevPlayer.noItemsNextTurn = false;
   }
 
@@ -2189,7 +2201,6 @@ function executeItemUse(player, slotIndex, targetPlayerId, stealSlotIndex) {
       actualItem = victim.slots[stealSlotIndex];
       victim.slots[stealSlotIndex] = null;
       stealInfo = { from: victim.name, item: actualItem };
-      // 奪ったアイテムがターゲット選択型（手錠・目薬）の場合、そのまま奪った相手を対象にする
       targetPlayerId = victim.id;
     } else {
       broadcastState({ kind: 'banner', text: `${player.name} のアドレナリンは不発に終わった` });
@@ -2390,7 +2401,7 @@ function executeShoot(shooter, targetId) {
 }
 
 /* ==========================================================================
-   一人用モード AI 思考ルーチン（新アイテム4種対応）
+   一人用モード AI 思考ルーチン
    ========================================================================== */
 let aiThinkTimer = null;
 
@@ -2414,16 +2425,13 @@ function runAiStep(ai) {
   const enemies = gameState.players.filter(p => p.alive && p.id !== ai.id);
   if (enemies.length === 0) return;
 
-  // 目薬でアイテム封じされていなければアイテム使用を検討
   if (!ai.noItemsNextTurn) {
-    // 0. ロザリオがあれば即使用して復活保険をかける
     const rosIdx = ai.slots.indexOf('rosary');
     if (rosIdx !== -1 && !ai.rosaryActive) {
       executeItemUse(ai, rosIdx);
       return;
     }
 
-    // 1. ライフが減っていればタバコ優先
     if (ai.hp < ai.maxHp) {
       const cigIdx = ai.slots.indexOf('cigarette');
       if (cigIdx !== -1) {
@@ -2439,7 +2447,6 @@ function runAiStep(ai) {
       }
     }
 
-    // 2. 手錠・目薬・リモコンの戦術使用
     const cuffIdx = ai.slots.indexOf('handcuffs');
     if (cuffIdx !== -1) {
       const unCuffed = enemies.filter(e => !e.skipNextTurn);
@@ -2465,7 +2472,6 @@ function runAiStep(ai) {
       return;
     }
 
-    // 3. 虫眼鏡・携帯で調査
     if (ai.aiKnownNext === null && gameState.shells.length > 1) {
       const magIdx = ai.slots.indexOf('magnifier');
       if (magIdx !== -1) {
@@ -2479,7 +2485,6 @@ function runAiStep(ai) {
       }
     }
 
-    // 4. アドレナリンで相手から奪取
     const adrIdx = ai.slots.indexOf('adrenaline');
     if (adrIdx !== -1) {
       let bestSteal = null;
@@ -2502,7 +2507,6 @@ function runAiStep(ai) {
     }
   }
 
-  // 5. 次の弾が空砲と判明している場合
   if (ai.aiKnownNext === false) {
     if (!ai.noItemsNextTurn) {
       const invIdx = ai.slots.indexOf('inverter');
@@ -2520,7 +2524,6 @@ function runAiStep(ai) {
     return;
   }
 
-  // 6. 次の弾が実弾と判明している場合
   if (ai.aiKnownNext === true) {
     if (!ai.noItemsNextTurn && !gameState.sawActive) {
       const sawIdx = ai.slots.indexOf('saw');
@@ -2534,7 +2537,6 @@ function runAiStep(ai) {
     return;
   }
 
-  // 7. 弾性が不明な場合
   const liveRem = gameState.shells.filter(Boolean).length;
   const liveRatio = liveRem / gameState.shells.length;
 
@@ -2584,10 +2586,11 @@ let threeInitialized = false;
 let cameraMode = 'front';
 let isAimingMode = false;
 let adrenalineStealSlot = null;
-let adrenalineFocusTargetId = null; // アドレナリンで目の前にズーム中の相手ID
+let adrenalineFocusTargetId = null;
+let pendingPlayerTargetItem = null; // { slotIndex, itemId }（手錠・目薬の直接プレイヤー選択モード）
 let isChamberCutscene = false;
 let activeShootOverride = null;
-let hitKnockback = {}; // playerId -> remaining knockback intensity (0..1)
+let hitKnockback = {};
 
 function applyStateUpdate(newState, event) {
   gameState = newState;
@@ -2618,6 +2621,7 @@ function applyStateUpdate(newState, event) {
     isAimingMode = false;
     adrenalineStealSlot = null;
     adrenalineFocusTargetId = null;
+    pendingPlayerTargetItem = null;
   }
 
   update3DSceneFromState();
@@ -2641,7 +2645,6 @@ function applyStateUpdate(newState, event) {
       showBanner(event.text, 2300);
 
       if (event.isLive) {
-        // 撃たれた本人だけに画面フラッシュ＆シェイクを発生させ、他の人は撃たれた3Dモーションのみ再生
         if (event.targetId === myId) {
           triggerFlash('rgba(255, 20, 20, 0.58)');
           cameraShakeTime = 0.45;
@@ -2856,6 +2859,12 @@ function updateGameHUD() {
     dirEl.style.color = gameState.turnDirection === 1 ? 'var(--neon)' : 'var(--gold)';
   }
 
+  // 右上は残り残弾数のみ表示
+  const ammoEl = document.getElementById('hud-ammo-count');
+  if (ammoEl) {
+    ammoEl.textContent = `残弾: ${gameState.shells.length}発`;
+  }
+
   const turnPlayer = gameState.players[gameState.turnIndex];
   const isMyTurn = (gameState.phase === 'play' && turnPlayer && turnPlayer.id === myId);
   const me = gameState.players.find(p => p.id === myId);
@@ -2864,6 +2873,7 @@ function updateGameHUD() {
     gameState.phase === 'loading' ? '弾薬装填中...' :
     gameState.phase === 'loot' ? 'アイテム配置中...' :
     gameState.phase === 'gameover' ? `決着！勝者: ${gameState.winnerName}` :
+    pendingPlayerTargetItem ? `🎯 【${ITEM_DEFS[pendingPlayerTargetItem.itemId].name}】を使う相手を直接タップ` :
     adrenalineStealSlot !== null ? '💉 相手の目の前の3Dアイテムを直接タップして奪う' :
     isAimingMode ? '🎯 撃つ相手(3D)をタップ または 自分を撃つ' :
     (isMyTurn && me && me.noItemsNextTurn) ? '💧 目薬効果中（銃をタップして射撃のみ可能）' :
@@ -2886,7 +2896,7 @@ function updateGameHUD() {
     myHpEl.innerHTML = boltsHtml;
   }
 
-  if (!isMyTurn && adrenalineStealSlot === null && !isAimingMode) {
+  if (!isMyTurn && adrenalineStealSlot === null && !isAimingMode && !pendingPlayerTargetItem) {
     document.getElementById('action-overlay').style.display = 'none';
   }
 }
@@ -2962,7 +2972,7 @@ function finishLootPhase() {
 }
 
 /* ==========================================================================
-   8. アイテム使用＆アドレナリン相手目の前ズーム奪取＆ターゲット選択UI
+   8. アイテム使用＆手錠・目薬・アドレナリンの直接選択UI
    ========================================================================== */
 function openItemUseModal(slotIndex, itemId) {
   const me = gameState.players.find(p => p.id === myId);
@@ -3000,18 +3010,11 @@ function openItemUseModal(slotIndex, itemId) {
       extra.innerHTML = '<div style="color:var(--danger); font-size:12px;">対象の相手がいません</div>';
       useBtn.style.display = 'none';
     } else {
-      const sel = document.createElement('select');
-      aliveEnemies.forEach(e => {
-        const opt = document.createElement('option');
-        opt.value = e.id;
-        opt.textContent = `${e.name} (⚡${e.hp})`;
-        sel.appendChild(opt);
-      });
-      extra.appendChild(sel);
+      extra.innerHTML = `<div style="font-size:12px; color:var(--gold);">「使用する」を押した後、使う相手を画面上で直接タップしてください。</div>`;
       useBtn.style.display = 'inline-block';
       useBtn.onclick = () => {
         closeItemModal();
-        sendToHost({ type: 'use_item', slotIndex, targetPlayerId: sel.value });
+        startDirectPlayerTargetSelection(slotIndex, itemId, aliveEnemies);
       };
     }
   } else {
@@ -3025,10 +3028,67 @@ function openItemUseModal(slotIndex, itemId) {
   modal.style.display = 'flex';
 }
 
+/* 手錠・目薬の「使う人を直接タップして選ぶ」モード */
+function startDirectPlayerTargetSelection(slotIndex, itemId, aliveEnemies) {
+  pendingPlayerTargetItem = { slotIndex, itemId };
+  isAimingMode = false;
+  adrenalineStealSlot = null;
+  adrenalineFocusTargetId = null;
+
+  updateGameHUD();
+  update3DSceneFromState();
+
+  const overlay = document.getElementById('action-overlay');
+  overlay.innerHTML = '';
+  overlay.style.display = 'flex';
+
+  const icon = itemId === 'handcuffs' ? '⛓️' : '💧';
+  const hint = document.createElement('span');
+  hint.style.fontSize = '13px';
+  hint.style.color = 'var(--gold)';
+  hint.textContent = `${icon} 【${ITEM_DEFS[itemId].name}】を使う相手(3D)を直接タップ:`;
+  overlay.appendChild(hint);
+
+  aliveEnemies.forEach(e => {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-gold';
+    btn.style.padding = '4px 10px';
+    btn.style.fontSize = '12px';
+    btn.textContent = `${e.name} (⚡${e.hp})`;
+    btn.onclick = () => confirmDirectPlayerTarget(e.id);
+    overlay.appendChild(btn);
+  });
+
+  const cancel = document.createElement('button');
+  cancel.className = 'btn';
+  cancel.style.padding = '4px 10px';
+  cancel.textContent = 'キャンセル';
+  cancel.onclick = () => cancelDirectPlayerTarget();
+  overlay.appendChild(cancel);
+}
+
+function confirmDirectPlayerTarget(targetId) {
+  if (!pendingPlayerTargetItem) return;
+  const { slotIndex } = pendingPlayerTargetItem;
+  pendingPlayerTargetItem = null;
+  document.getElementById('action-overlay').style.display = 'none';
+  playTone(680, 'sine', 0.1, 0.16);
+  updateGameHUD();
+  update3DSceneFromState();
+  sendToHost({ type: 'use_item', slotIndex, targetPlayerId: targetId });
+}
+
+function cancelDirectPlayerTarget() {
+  pendingPlayerTargetItem = null;
+  document.getElementById('action-overlay').style.display = 'none';
+  updateGameHUD();
+  update3DSceneFromState();
+}
+
 function startAdrenaline3DSelection(slotIndex, stealablePlayers) {
   adrenalineStealSlot = slotIndex;
   isAimingMode = false;
-  // 最初の奪取対象プレイヤーの目の前へ即座にカメラ移動
+  pendingPlayerTargetItem = null;
   adrenalineFocusTargetId = stealablePlayers[0].id;
   userYawOffset = 0;
 
@@ -3044,7 +3104,6 @@ function startAdrenaline3DSelection(slotIndex, stealablePlayers) {
   hint.textContent = '💉 目の前の3Dアイテムをタップ:';
   overlay.appendChild(hint);
 
-  // 複数の相手がアイテムを持っている場合は相手の目の前へ視点を切り替えられるボタンを表示
   stealablePlayers.forEach(p => {
     const pBtn = document.createElement('button');
     pBtn.className = 'btn';
@@ -3087,6 +3146,7 @@ function closeItemModal() {
 function openShootTargetMenu() {
   adrenalineStealSlot = null;
   adrenalineFocusTargetId = null;
+  pendingPlayerTargetItem = null;
   isAimingMode = true;
   sendToHost({ type: 'aim', targetId: myId });
   updateGameHUD();
@@ -3132,7 +3192,7 @@ function confirmShootTarget(targetId) {
 }
 
 /* ==========================================================================
-   9. Three.js 3D空間構築・10種スキンマスク・全12種3Dアイテム・視点制御
+   9. Three.js 精密背景・テーブル造形・シビアなアイテム当たり判定・視点制御
    ========================================================================== */
 let scene, camera, renderer;
 let tableGroup, shotgunGroup, barrelMesh;
@@ -3149,60 +3209,352 @@ const raycaster = new THREE.Raycaster();
 const pointerNDC = new THREE.Vector2();
 let interactableMeshes = [];
 
+// 精密テーブル天板テクスチャ（参考画像の緑がかったパネル＋白グリッド線＋リベット風テクスチャ）
+function createDetailedTableTopTexture() {
+  const c = document.createElement('canvas');
+  c.width = 1024; c.height = 1024;
+  const ctx = c.getContext('2d');
+
+  ctx.fillStyle = '#333b2f';
+  ctx.fillRect(0, 0, 1024, 1024);
+
+  // 汚し・経年劣化ノイズ
+  for (let i = 0; i < 6500; i++) {
+    const x = Math.random() * 1024;
+    const y = Math.random() * 1024;
+    const r = 1 + Math.random() * 4;
+    ctx.fillStyle = Math.random() < 0.5 ? 'rgba(15, 18, 12, 0.25)' : 'rgba(95, 105, 82, 0.16)';
+    ctx.fillRect(x, y, r, r);
+  }
+
+  // 外周の金属縁帯
+  ctx.strokeStyle = '#1b1d19';
+  ctx.lineWidth = 42;
+  ctx.strokeRect(21, 21, 982, 982);
+
+  // 放射状およびグリッド状の白線パネルライン
+  ctx.strokeStyle = 'rgba(218, 226, 208, 0.58)';
+  ctx.lineWidth = 4;
+  const step = 128;
+  for (let p = step; p < 1024; p += step) {
+    ctx.beginPath(); ctx.moveTo(p, 0); ctx.lineTo(p, 1024); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, p); ctx.lineTo(1024, p); ctx.stroke();
+  }
+
+  // 二重フレーム線
+  ctx.strokeStyle = 'rgba(225, 232, 215, 0.72)';
+  ctx.lineWidth = 5;
+  ctx.strokeRect(64, 64, 896, 896);
+  ctx.strokeRect(82, 82, 860, 860);
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = 4;
+  return tex;
+}
+
+// レンガ壁テクスチャ（参考画像の暗い赤茶レンガと目地）
+function createBrickWallTexture() {
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 512;
+  const ctx = c.getContext('2d');
+
+  ctx.fillStyle = '#171110';
+  ctx.fillRect(0, 0, 512, 512);
+
+  const rows = 16;
+  const cols = 8;
+  const bw = 512 / cols;
+  const bh = 512 / rows;
+
+  for (let r = 0; r < rows; r++) {
+    const offset = (r % 2) * (bw * 0.5);
+    for (let col = -1; col <= cols; col++) {
+      const shade = 28 + Math.floor(Math.random() * 24);
+      const red = shade + 16 + Math.floor(Math.random() * 14);
+      ctx.fillStyle = `rgb(${red}, ${shade}, ${Math.max(14, shade - 4)})`;
+      ctx.fillRect(col * bw + offset + 2, r * bh + 2, bw - 4, bh - 4);
+    }
+  }
+
+  // 経年汚れ・煤
+  for (let i = 0; i < 2200; i++) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+    ctx.fillRect(Math.random() * 512, Math.random() * 512, 4, 4);
+  }
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(8, 3);
+  return tex;
+}
+
+// スタジオ照明・大型スピーカー・オシロスコープラック・パイプ壁・天井ケーブルを構築
+function buildDetailedEnvironment(scene) {
+  const envGroup = new THREE.Group();
+  scene.add(envGroup);
+
+  // 1. レンガ壁の部屋＋金属床＋天井
+  const brickTex = createBrickWallTexture();
+  const roomGeo = new THREE.CylinderGeometry(7.2, 7.2, 6.4, 20, 1, true);
+  const roomMat = new THREE.MeshStandardMaterial({
+    map: brickTex,
+    side: THREE.BackSide,
+    roughness: 0.92,
+    metalness: 0.1
+  });
+  const roomMesh = new THREE.Mesh(roomGeo, roomMat);
+  roomMesh.position.y = 2.6;
+  envGroup.add(roomMesh);
+
+  const floorMesh = new THREE.Mesh(
+    new THREE.CircleGeometry(7.3, 24),
+    new THREE.MeshStandardMaterial({ color: 0x121311, roughness: 0.95 })
+  );
+  floorMesh.rotation.x = -Math.PI / 2;
+  floorMesh.position.y = 0;
+  envGroup.add(floorMesh);
+
+  const ceilingMesh = new THREE.Mesh(
+    new THREE.CircleGeometry(7.3, 24),
+    new THREE.MeshStandardMaterial({ color: 0x0d0d0d, roughness: 0.9 })
+  );
+  ceilingMesh.rotation.x = Math.PI / 2;
+  ceilingMesh.position.y = 5.6;
+  envGroup.add(ceilingMesh);
+
+  const rustPipeMat = new THREE.MeshStandardMaterial({ color: 0x4f2a22, roughness: 0.65, metalness: 0.55 });
+  const darkMetalMat = new THREE.MeshStandardMaterial({ color: 0x222426, roughness: 0.55, metalness: 0.75 });
+  const rackBeigeMat = new THREE.MeshStandardMaterial({ color: 0x6b6458, roughness: 0.6, metalness: 0.35 });
+
+  // 2. 5席それぞれの背後の壁面に産業設備を配置
+  for (let i = 0; i < 5; i++) {
+    const sector = new THREE.Group();
+    sector.rotation.y = i * ((Math.PI * 2) / 5);
+    envGroup.add(sector);
+
+    // 縦パイプ群＋バルブハンドル（参考画像中央・右寄り）
+    [-0.45, -0.15, 0.25, 0.55, 0.85].forEach((px, pIdx) => {
+      const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 5.6, 10), rustPipeMat);
+      pipe.position.set(px, 2.8, 6.75 - (pIdx % 2) * 0.08);
+      sector.add(pipe);
+
+      // パイプ継ぎ目フランジ
+      [1.4, 3.1, 4.4].forEach(fy => {
+        const flange = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.06, 10), darkMetalMat);
+        flange.position.set(px, fy, 6.75 - (pIdx % 2) * 0.08);
+        sector.add(flange);
+      });
+    });
+
+    // 赤い丸バルブハンドル
+    [1.85, 2.45].forEach((vy, vIdx) => {
+      const valve = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.022, 8, 16), rustPipeMat);
+      valve.position.set(0.75 + vIdx * 0.22, vy, 6.62);
+      sector.add(valve);
+    });
+
+    // 壁際の鋳鉄ラジエーター（参考画像のプレイヤー背後）
+    const radGroup = new THREE.Group();
+    radGroup.position.set(-0.35, 0.9, 6.45);
+    for (let r = 0; r < 9; r++) {
+      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.78, 0.26), darkMetalMat);
+      fin.position.x = (r - 4) * 0.11;
+      radGroup.add(fin);
+    }
+    sector.add(radGroup);
+
+    // 左側：バーンドア付き大型スタジオスポットライト（参考画像左上）
+    const spotHousing = new THREE.Group();
+    spotHousing.position.set(-2.35, 3.25, 5.75);
+    spotHousing.lookAt(0, 1.0, 0);
+    const canBody = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.28, 0.55, 14), darkMetalMat);
+    canBody.rotation.x = Math.PI / 2;
+    const lensGlow = new THREE.Mesh(
+      new THREE.CircleGeometry(0.26, 16),
+      new THREE.MeshBasicMaterial({ color: 0x1c1c1c })
+    );
+    lensGlow.position.z = 0.28;
+    spotHousing.add(canBody, lensGlow);
+
+    // 4枚の遮光フラップ（バーンドア）
+    [
+      [0, 0.36, 0.35, 0.52, 0.26, -0.45, 0],
+      [0, -0.36, 0.35, 0.52, 0.26, 0.45, 0],
+      [-0.36, 0, 0.35, 0.26, 0.52, 0, 0.45],
+      [0.36, 0, 0.35, 0.26, 0.52, 0, -0.45]
+    ].forEach(([bx, by, bz, bw, bh, rx, ry]) => {
+      const flap = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, 0.025), darkMetalMat);
+      flap.position.set(bx, by, bz);
+      flap.rotation.set(rx, ry, 0);
+      spotHousing.add(flap);
+    });
+    sector.add(spotHousing);
+
+    // 左下：アナログ計器＆オシロスコープラック（参考画像左下）
+    const leftRack = new THREE.Group();
+    leftRack.position.set(-2.45, 1.35, 5.65);
+    leftRack.rotation.y = 0.32;
+
+    const ampBottom = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.48, 0.72), darkMetalMat);
+    ampBottom.position.y = 0.24;
+    const ledStrip = new THREE.Mesh(
+      new THREE.BoxGeometry(0.95, 0.07, 0.02),
+      new THREE.MeshBasicMaterial({ color: 0x39ff14 })
+    );
+    ledStrip.position.set(0, 0.32, 0.365);
+
+    const meterTop = new THREE.Mesh(new THREE.BoxGeometry(0.96, 0.68, 0.64), rackBeigeMat);
+    meterTop.position.y = 0.82;
+    const dialScreen = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.56, 0.36),
+      new THREE.MeshBasicMaterial({ color: 0xb8c4a8 })
+    );
+    dialScreen.position.set(0.08, 0.88, 0.325);
+    leftRack.add(ampBottom, ledStrip, meterTop, dialScreen);
+    sector.add(leftRack);
+
+    // 右側：大型デュアルウーファースピーカー＋換気ファン＋オーディオデッキ（参考画像右上・右）
+    const rightStack = new THREE.Group();
+    rightStack.position.set(2.35, 1.15, 5.75);
+    rightStack.rotation.y = -0.28;
+
+    // 2段大型スピーカーボックス
+    const spkCabinet = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.95, 0.72), darkMetalMat);
+    spkCabinet.position.set(0.45, 0.98, 0);
+    rightStack.add(spkCabinet);
+
+    [0.52, 1.44].forEach(wy => {
+      const coneOuter = new THREE.Mesh(
+        new THREE.TorusGeometry(0.32, 0.045, 10, 22),
+        new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.5 })
+      );
+      coneOuter.position.set(0.45, wy, 0.365);
+      const coneInner = new THREE.Mesh(
+        new THREE.CircleGeometry(0.28, 20),
+        new THREE.MeshBasicMaterial({ color: 0x0b0b0b })
+      );
+      coneInner.position.set(0.45, wy, 0.362);
+      rightStack.add(coneOuter, coneInner);
+    });
+
+    // オーディオデッキ積載＆丸型換気ファン
+    const deckBox = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.85, 0.62), rackBeigeMat);
+    deckBox.position.set(-0.55, 0.42, 0.05);
+    const fanFrame = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.86, 0.2), darkMetalMat);
+    fanFrame.position.set(-0.55, 1.48, 0.25);
+    const fanRing = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.025, 8, 20), rackBeigeMat);
+    fanRing.position.set(-0.55, 1.48, 0.36);
+    rightStack.add(deckBox, fanFrame, fanRing);
+    sector.add(rightStack);
+
+    // 天井から垂れ下がる太い黒ケーブル（参考画像上部）
+    const cableCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-2.6, 4.9, 5.5),
+      new THREE.Vector3(-0.8, 3.85, 6.2),
+      new THREE.Vector3(1.1, 4.15, 6.1),
+      new THREE.Vector3(2.8, 5.0, 5.4)
+    ]);
+    const cableGeo = new THREE.TubeGeometry(cableCurve, 18, 0.032, 6, false);
+    const cableMesh = new THREE.Mesh(cableGeo, darkMetalMat);
+    sector.add(cableMesh);
+  }
+}
+
 function initThreeScene() {
   const canvas = document.getElementById('three-canvas');
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x070606);
-  scene.fog = new THREE.FogExp2(0x070606, 0.085);
+  scene.background = new THREE.Color(0x090707);
+  scene.fog = new THREE.FogExp2(0x090707, 0.068);
 
   camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 50);
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-  const ambient = new THREE.AmbientLight(0x453d38, 1.45);
+  // 照明（参考画像の暖色系スタジオスポット＋薄暗い緑反射）
+  const ambient = new THREE.AmbientLight(0x544942, 1.55);
   scene.add(ambient);
 
-  const overheadSpot = new THREE.SpotLight(0xffebd6, 2.3, 18, Math.PI / 3.2, 0.5);
-  overheadSpot.position.set(0, 5.2, 0);
+  const overheadSpot = new THREE.SpotLight(0xffebd6, 2.5, 20, Math.PI / 2.8, 0.55);
+  overheadSpot.position.set(0, 5.1, 0);
   scene.add(overheadSpot);
 
-  const greenRim = new THREE.PointLight(0x39ff14, 0.55, 8);
-  greenRim.position.set(0, 1.5, 0);
-  scene.add(greenRim);
+  const backRimLight = new THREE.PointLight(0xffb88c, 0.75, 12);
+  backRimLight.position.set(0, 2.8, 0);
+  scene.add(backRimLight);
 
-  const roomGeo = new THREE.CylinderGeometry(8.5, 8.5, 7, 12, 1, true);
-  const roomMat = new THREE.MeshStandardMaterial({ color: 0x1a1210, side: THREE.BackSide, roughness: 0.9 });
-  const roomMesh = new THREE.Mesh(roomGeo, roomMat);
-  roomMesh.position.y = 2.5;
-  scene.add(roomMesh);
+  // 精密背景（レンガ壁・パイプ・スタジオ照明・スピーカー・計器ラック）を構築
+  buildDetailedEnvironment(scene);
 
+  // 精密テーブル構築（参考画像の八角〜五角金属フレーム＋グリッド天板＋中央ターンテーブル＋各席モニター）
   tableGroup = new THREE.Group();
   scene.add(tableGroup);
 
-  const tableRadius = 2.55;
-  const tableGeo = new THREE.CylinderGeometry(tableRadius, tableRadius * 0.92, 0.28, 5);
-  const tableMat = new THREE.MeshStandardMaterial({ color: 0x2a2e25, roughness: 0.85, metalness: 0.25 });
-  const tableMesh = new THREE.Mesh(tableGeo, tableMat);
+  const tableRadius = 2.58;
+  const topTex = createDetailedTableTopTexture();
+  const tableTopMat = new THREE.MeshStandardMaterial({
+    map: topTex,
+    roughness: 0.72,
+    metalness: 0.35
+  });
+  const tableSideMat = new THREE.MeshStandardMaterial({
+    color: 0x222520,
+    roughness: 0.75,
+    metalness: 0.55
+  });
+
+  const tableGeo = new THREE.CylinderGeometry(tableRadius, tableRadius * 0.92, 0.28, 10);
+  const tableMesh = new THREE.Mesh(tableGeo, [tableSideMat, tableTopMat, tableSideMat]);
   tableMesh.position.y = 0.72;
   tableGroup.add(tableMesh);
 
-  const rimGeo = new THREE.CylinderGeometry(tableRadius + 0.06, tableRadius + 0.06, 0.31, 5);
-  const rimMat = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.7, metalness: 0.6 });
-  const rimMesh = new THREE.Mesh(rimGeo, rimMat);
-  rimMesh.position.y = 0.715;
-  rimMesh.scale.set(1.01, 0.96, 1.01);
-  tableGroup.add(rimMesh);
-
-  const centerDisc = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.95, 1.02, 0.08, 24),
-    new THREE.MeshStandardMaterial({ color: 0x3b3830, roughness: 0.7, metalness: 0.5 })
+  // テーブル外周の重厚な金属縁＆コーナーボルト
+  const outerRim = new THREE.Mesh(
+    new THREE.TorusGeometry(tableRadius * 0.96, 0.065, 8, 10),
+    new THREE.MeshStandardMaterial({ color: 0x1c1e1a, metalness: 0.75, roughness: 0.45 })
   );
-  centerDisc.position.y = 0.89;
-  tableGroup.add(centerDisc);
+  outerRim.rotation.x = Math.PI / 2;
+  outerRim.position.y = 0.86;
+  tableGroup.add(outerRim);
 
+  for (let b = 0; b < 10; b++) {
+    const ba = (b / 10) * Math.PI * 2;
+    const bolt = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.032, 0.032, 0.04, 8),
+      new THREE.MeshStandardMaterial({ color: 0x777c72, metalness: 0.85, roughness: 0.3 })
+    );
+    bolt.position.set(Math.sin(ba) * (tableRadius * 0.94), 0.875, Math.cos(ba) * (tableRadius * 0.94));
+    tableGroup.add(bolt);
+  }
+
+  // 中央の大型回転ターンテーブル＋外周リング＋十字スリット（参考画像中央）
+  const centerOuterRing = new THREE.Mesh(
+    new THREE.TorusGeometry(0.96, 0.075, 10, 32),
+    new THREE.MeshStandardMaterial({ color: 0x45473e, metalness: 0.65, roughness: 0.45 })
+  );
+  centerOuterRing.rotation.x = Math.PI / 2;
+  centerOuterRing.position.y = 0.88;
+  tableGroup.add(centerOuterRing);
+
+  const centerInnerDisc = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.86, 0.89, 0.06, 28),
+    new THREE.MeshStandardMaterial({ color: 0x353830, metalness: 0.5, roughness: 0.6 })
+  );
+  centerInnerDisc.position.y = 0.885;
+  tableGroup.add(centerInnerDisc);
+
+  // ターンテーブル上の十字スリットライン
+  const slitMat = new THREE.MeshBasicMaterial({ color: 0x161814 });
+  const slit1 = new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.01, 0.025), slitMat);
+  slit1.position.y = 0.918;
+  const slit2 = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.01, 1.66), slitMat);
+  slit2.position.y = 0.918;
+  tableGroup.add(slit1, slit2);
+
+  // ショットガン造形
   shotgunGroup = new THREE.Group();
-  shotgunGroup.position.set(0, 0.98, 0);
+  shotgunGroup.position.set(0, 0.99, 0);
 
   const stock = new THREE.Mesh(
     new THREE.BoxGeometry(0.11, 0.14, 0.52),
@@ -3230,7 +3582,7 @@ function initThreeScene() {
   barrelMesh.position.set(0, 0.03, 0.45);
 
   const shotgunHitbox = new THREE.Mesh(
-    new THREE.BoxGeometry(0.5, 0.4, 1.5),
+    new THREE.BoxGeometry(0.42, 0.34, 1.42),
     new THREE.MeshBasicMaterial({ visible: false })
   );
   shotgunHitbox.userData = { interactType: 'shotgun' };
@@ -3254,7 +3606,7 @@ function initThreeScene() {
   window.addEventListener('pointerup', (e) => {
     if (!dragging) return;
     dragging = false;
-    if (movedDist < 10) {
+    if (movedDist < 8) {
       handle3DDirectTap(e.clientX, e.clientY);
     }
   });
@@ -3281,6 +3633,7 @@ function initThreeScene() {
   animate3D();
 }
 
+/* --- シビアな当たり判定による3Dタップ処理 --- */
 function handle3DDirectTap(clientX, clientY) {
   const turnPlayer = gameState.players[gameState.turnIndex];
   const isMyTurn = (gameState.phase === 'play' && turnPlayer && turnPlayer.id === myId);
@@ -3292,23 +3645,41 @@ function handle3DDirectTap(clientX, clientY) {
 
   raycaster.setFromCamera(pointerNDC, camera);
   const targets = [...interactableMeshes];
-  if (!isAimingMode && adrenalineStealSlot === null) {
+  if (!isAimingMode && adrenalineStealSlot === null && !pendingPlayerTargetItem) {
     shotgunGroup.children.forEach(c => {
       if (c.userData && c.userData.interactType === 'shotgun') targets.push(c);
     });
   }
 
-  const hits = raycaster.intersectObjects(targets, true);
+  // recursive=false にすることでタイトな専用ヒットボックスのみを厳密に判定し、誤爆を防ぐ
+  const hits = raycaster.intersectObjects(targets, false);
   if (hits.length === 0) return;
 
-  let hitObj = hits[0].object;
-  while (hitObj && !hitObj.userData?.interactType) {
-    hitObj = hitObj.parent;
+  // 最もレイの中心（ヒットボックス中心）に近いものを優先選択してシビアに判定
+  let bestHit = hits[0];
+  let bestDistToCenter = Infinity;
+  const worldBoxCenter = new THREE.Vector3();
+  hits.forEach(h => {
+    h.object.getWorldPosition(worldBoxCenter);
+    const d = h.point.distanceTo(worldBoxCenter);
+    if (d < bestDistToCenter) {
+      bestDistToCenter = d;
+      bestHit = h;
+    }
+  });
+
+  const info = bestHit.object.userData;
+  if (!info || !info.interactType) return;
+
+  // 手錠・目薬の直接プレイヤー選択モード中
+  if (pendingPlayerTargetItem) {
+    if (info.interactType === 'target_player' && info.playerId !== myId) {
+      confirmDirectPlayerTarget(info.playerId);
+    }
+    return;
   }
-  if (!hitObj) return;
 
-  const info = hitObj.userData;
-
+  // アドレナリン奪取モード中
   if (adrenalineStealSlot !== null) {
     if (info.interactType === 'enemy_item') {
       if (info.itemId === 'adrenaline') {
@@ -3331,6 +3702,7 @@ function handle3DDirectTap(clientX, clientY) {
     return;
   }
 
+  // 射撃ターゲット選択中
   if (isAimingMode) {
     if (info.interactType === 'target_player' && info.playerId !== myId) {
       playShotSound(false);
@@ -3339,6 +3711,7 @@ function handle3DDirectTap(clientX, clientY) {
     return;
   }
 
+  // 通常行動：ショットガン or 自分の手元アイテム
   if (info.interactType === 'shotgun') {
     playTone(440, 'triangle', 0.08, 0.15);
     openShootTargetMenu();
@@ -3447,236 +3820,236 @@ function buildItem3DMesh(itemId) {
   switch (itemId) {
     case 'saw': {
       const blade = new THREE.Mesh(
-        new THREE.BoxGeometry(0.24, 0.008, 0.055),
+        new THREE.BoxGeometry(0.22, 0.008, 0.05),
         new THREE.MeshStandardMaterial({ color: 0xc8d0d8, metalness: 0.88, roughness: 0.22 })
       );
-      blade.position.set(0.03, 0.025, 0);
+      blade.position.set(0.02, 0.025, 0);
       const handle = new THREE.Mesh(
-        new THREE.BoxGeometry(0.08, 0.032, 0.07),
+        new THREE.BoxGeometry(0.075, 0.032, 0.065),
         new THREE.MeshStandardMaterial({ color: 0x7a3b1e, roughness: 0.8 })
       );
-      handle.position.set(-0.11, 0.028, 0);
+      handle.position.set(-0.10, 0.028, 0);
       g.add(blade, handle);
       break;
     }
     case 'magnifier': {
       const rim = new THREE.Mesh(
-        new THREE.TorusGeometry(0.065, 0.011, 10, 20),
+        new THREE.TorusGeometry(0.06, 0.011, 10, 20),
         new THREE.MeshStandardMaterial({ color: 0xd0d0d0, metalness: 0.85, roughness: 0.2 })
       );
       rim.rotation.x = Math.PI / 2;
-      rim.position.set(-0.03, 0.02, 0);
+      rim.position.set(-0.025, 0.02, 0);
       const lens = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.06, 0.06, 0.008, 18),
+        new THREE.CylinderGeometry(0.055, 0.055, 0.008, 18),
         new THREE.MeshStandardMaterial({ color: 0xaaddff, transparent: true, opacity: 0.45, roughness: 0.1 })
       );
-      lens.position.set(-0.03, 0.02, 0);
+      lens.position.set(-0.025, 0.02, 0);
       const handle = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.012, 0.015, 0.13, 10),
+        new THREE.CylinderGeometry(0.012, 0.015, 0.11, 10),
         new THREE.MeshStandardMaterial({ color: 0x1e1e1e, roughness: 0.6 })
       );
       handle.rotation.z = Math.PI / 2;
-      handle.position.set(0.09, 0.02, 0);
+      handle.position.set(0.08, 0.02, 0);
       g.add(rim, lens, handle);
       break;
     }
     case 'cigarette': {
       const boxBottom = new THREE.Mesh(
-        new THREE.BoxGeometry(0.09, 0.032, 0.13),
+        new THREE.BoxGeometry(0.085, 0.032, 0.125),
         new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 })
       );
       boxBottom.position.y = 0.016;
       const boxTop = new THREE.Mesh(
-        new THREE.BoxGeometry(0.092, 0.034, 0.055),
+        new THREE.BoxGeometry(0.087, 0.034, 0.052),
         new THREE.MeshStandardMaterial({ color: 0xc82323, roughness: 0.5 })
       );
-      boxTop.position.set(0, 0.017, -0.04);
+      boxTop.position.set(0, 0.017, -0.038);
       const stick = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.008, 0.008, 0.11, 8),
+        new THREE.CylinderGeometry(0.008, 0.008, 0.105, 8),
         new THREE.MeshStandardMaterial({ color: 0xf7f7f7, roughness: 0.7 })
       );
       stick.rotation.x = Math.PI / 2;
-      stick.position.set(0.02, 0.038, 0.03);
+      stick.position.set(0.02, 0.038, 0.028);
       g.add(boxBottom, boxTop, stick);
       break;
     }
     case 'beer': {
       const can = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.045, 0.045, 0.155, 16),
+        new THREE.CylinderGeometry(0.044, 0.044, 0.15, 16),
         new THREE.MeshStandardMaterial({ color: 0xcfd6dc, metalness: 0.85, roughness: 0.25 })
       );
-      can.position.y = 0.078;
+      can.position.y = 0.075;
       const band = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.046, 0.046, 0.05, 16),
+        new THREE.CylinderGeometry(0.045, 0.045, 0.048, 16),
         new THREE.MeshStandardMaterial({ color: 0x246b35, roughness: 0.5 })
       );
-      band.position.y = 0.08;
+      band.position.y = 0.078;
       const topRim = new THREE.Mesh(
-        new THREE.TorusGeometry(0.04, 0.005, 8, 16),
+        new THREE.TorusGeometry(0.039, 0.005, 8, 16),
         new THREE.MeshStandardMaterial({ color: 0xe0e0e0, metalness: 0.9 })
       );
       topRim.rotation.x = Math.PI / 2;
-      topRim.position.y = 0.156;
+      topRim.position.y = 0.151;
       g.add(can, band, topRim);
       break;
     }
     case 'medicine': {
       const bottle = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.042, 0.042, 0.125, 14),
+        new THREE.CylinderGeometry(0.04, 0.04, 0.12, 14),
         new THREE.MeshStandardMaterial({ color: 0xb87333, transparent: true, opacity: 0.85, roughness: 0.3 })
       );
-      bottle.position.y = 0.062;
+      bottle.position.y = 0.06;
       const label = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.0435, 0.0435, 0.065, 14),
+        new THREE.CylinderGeometry(0.0415, 0.0415, 0.062, 14),
         new THREE.MeshStandardMaterial({ color: 0xebe6d8, roughness: 0.8 })
       );
-      label.position.y = 0.062;
+      label.position.y = 0.06;
       const cap = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.045, 0.045, 0.028, 14),
+        new THREE.CylinderGeometry(0.043, 0.043, 0.026, 14),
         new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.5 })
       );
-      cap.position.y = 0.135;
+      cap.position.y = 0.13;
       g.add(bottle, label, cap);
       break;
     }
     case 'adrenaline': {
       const barrel = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.02, 0.02, 0.14, 12),
+        new THREE.CylinderGeometry(0.019, 0.019, 0.13, 12),
         new THREE.MeshStandardMaterial({ color: 0xddeeff, transparent: true, opacity: 0.55, roughness: 0.1 })
       );
       barrel.rotation.z = Math.PI / 2;
       barrel.position.y = 0.025;
       const liquid = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.016, 0.016, 0.09, 12),
+        new THREE.CylinderGeometry(0.015, 0.015, 0.085, 12),
         new THREE.MeshStandardMaterial({ color: 0x39ff14, emissive: 0x1a8800, roughness: 0.3 })
       );
       liquid.rotation.z = Math.PI / 2;
-      liquid.position.set(0.015, 0.025, 0);
+      liquid.position.set(0.014, 0.025, 0);
       const plunger = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.008, 0.008, 0.08, 8),
+        new THREE.CylinderGeometry(0.008, 0.008, 0.075, 8),
         new THREE.MeshStandardMaterial({ color: 0x333333 })
       );
       plunger.rotation.z = Math.PI / 2;
-      plunger.position.set(-0.09, 0.025, 0);
+      plunger.position.set(-0.085, 0.025, 0);
       const needle = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.002, 0.002, 0.06, 6),
+        new THREE.CylinderGeometry(0.002, 0.002, 0.055, 6),
         new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.95 })
       );
       needle.rotation.z = Math.PI / 2;
-      needle.position.set(0.095, 0.025, 0);
+      needle.position.set(0.09, 0.025, 0);
       g.add(barrel, liquid, plunger, needle);
       break;
     }
     case 'inverter': {
       const body = new THREE.Mesh(
-        new THREE.BoxGeometry(0.13, 0.045, 0.15),
+        new THREE.BoxGeometry(0.125, 0.044, 0.145),
         new THREE.MeshStandardMaterial({ color: 0x263829, metalness: 0.5, roughness: 0.5 })
       );
       body.position.y = 0.022;
       const redNode = new THREE.Mesh(
-        new THREE.SphereGeometry(0.02, 10, 10),
+        new THREE.SphereGeometry(0.019, 10, 10),
         new THREE.MeshStandardMaterial({ color: 0xff2a2a, emissive: 0x660000 })
       );
-      redNode.position.set(-0.032, 0.048, 0.02);
+      redNode.position.set(-0.03, 0.047, 0.02);
       const blueNode = new THREE.Mesh(
-        new THREE.SphereGeometry(0.02, 10, 10),
+        new THREE.SphereGeometry(0.019, 10, 10),
         new THREE.MeshStandardMaterial({ color: 0x2a9df4, emissive: 0x003366 })
       );
-      blueNode.position.set(0.032, 0.048, 0.02);
+      blueNode.position.set(0.03, 0.047, 0.02);
       const ant = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.005, 0.005, 0.08, 6),
+        new THREE.CylinderGeometry(0.005, 0.005, 0.075, 6),
         new THREE.MeshStandardMaterial({ color: 0xbbbbbb, metalness: 0.8 })
       );
-      ant.position.set(0.045, 0.075, -0.05);
+      ant.position.set(0.042, 0.072, -0.048);
       g.add(body, redNode, blueNode, ant);
       break;
     }
     case 'phone': {
       const body = new THREE.Mesh(
-        new THREE.BoxGeometry(0.085, 0.026, 0.17),
+        new THREE.BoxGeometry(0.082, 0.025, 0.16),
         new THREE.MeshStandardMaterial({ color: 0x1c1c1e, roughness: 0.5 })
       );
       body.position.y = 0.013;
       const screen = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.065, 0.055),
+        new THREE.PlaneGeometry(0.062, 0.052),
         new THREE.MeshBasicMaterial({ color: 0x39ff14 })
       );
       screen.rotation.x = -Math.PI / 2;
-      screen.position.set(0, 0.027, -0.035);
+      screen.position.set(0, 0.026, -0.032);
       const keypad = new THREE.Mesh(
-        new THREE.BoxGeometry(0.065, 0.006, 0.075),
+        new THREE.BoxGeometry(0.062, 0.006, 0.072),
         new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.7 })
       );
-      keypad.position.set(0, 0.027, 0.038);
+      keypad.position.set(0, 0.026, 0.036);
       const ant = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.006, 0.008, 0.045, 8),
+        new THREE.CylinderGeometry(0.006, 0.008, 0.042, 8),
         new THREE.MeshStandardMaterial({ color: 0x111111 })
       );
       ant.rotation.x = Math.PI / 2;
-      ant.position.set(0.028, 0.015, -0.1);
+      ant.position.set(0.026, 0.014, -0.095);
       g.add(body, screen, keypad, ant);
       break;
     }
     case 'handcuffs': {
       const metalMat = new THREE.MeshStandardMaterial({ color: 0xd0d8de, metalness: 0.9, roughness: 0.2 });
-      const ringL = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.01, 8, 18), metalMat);
+      const ringL = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.01, 8, 18), metalMat);
       ringL.rotation.x = Math.PI / 2;
-      ringL.position.set(-0.06, 0.016, 0);
-      const ringR = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.01, 8, 18), metalMat);
+      ringL.position.set(-0.056, 0.016, 0);
+      const ringR = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.01, 8, 18), metalMat);
       ringR.rotation.x = Math.PI / 2;
-      ringR.position.set(0.06, 0.016, 0);
-      const chain = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.012, 0.015), metalMat);
+      ringR.position.set(0.056, 0.016, 0);
+      const chain = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.012, 0.015), metalMat);
       chain.position.set(0, 0.016, 0);
       g.add(ringL, ringR, chain);
       break;
     }
     case 'remote': {
       const body = new THREE.Mesh(
-        new THREE.BoxGeometry(0.08, 0.024, 0.165),
+        new THREE.BoxGeometry(0.078, 0.024, 0.155),
         new THREE.MeshStandardMaterial({ color: 0x22262b, roughness: 0.5 })
       );
       body.position.y = 0.012;
       const led = new THREE.Mesh(
-        new THREE.SphereGeometry(0.012, 8, 8),
+        new THREE.SphereGeometry(0.011, 8, 8),
         new THREE.MeshBasicMaterial({ color: 0xff2a2a })
       );
-      led.position.set(0, 0.025, -0.055);
+      led.position.set(0, 0.025, -0.052);
       const btnPad = new THREE.Mesh(
-        new THREE.BoxGeometry(0.055, 0.006, 0.08),
+        new THREE.BoxGeometry(0.052, 0.006, 0.075),
         new THREE.MeshStandardMaterial({ color: 0x39ff14 })
       );
-      btnPad.position.set(0, 0.025, 0.015);
+      btnPad.position.set(0, 0.025, 0.014);
       g.add(body, led, btnPad);
       break;
     }
     case 'eyedrops': {
       const bottle = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.032, 0.032, 0.085, 12),
+        new THREE.CylinderGeometry(0.03, 0.03, 0.082, 12),
         new THREE.MeshStandardMaterial({ color: 0xdff7ff, transparent: true, opacity: 0.85 })
       );
-      bottle.position.y = 0.042;
+      bottle.position.y = 0.041;
       const liquid = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.028, 0.028, 0.045, 12),
+        new THREE.CylinderGeometry(0.026, 0.026, 0.042, 12),
         new THREE.MeshStandardMaterial({ color: 0x2a9df4 })
       );
-      liquid.position.y = 0.032;
+      liquid.position.y = 0.03;
       const tip = new THREE.Mesh(
-        new THREE.ConeGeometry(0.028, 0.045, 12),
+        new THREE.ConeGeometry(0.026, 0.042, 12),
         new THREE.MeshStandardMaterial({ color: 0xffffff })
       );
-      tip.position.y = 0.105;
+      tip.position.y = 0.102;
       g.add(bottle, liquid, tip);
       break;
     }
     case 'rosary': {
       const goldMat = new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0x554400, metalness: 0.9, roughness: 0.2 });
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.008, 8, 18), goldMat);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.008, 8, 18), goldMat);
       ring.rotation.x = Math.PI / 2;
-      ring.position.set(0, 0.016, -0.035);
-      const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.014, 0.095), goldMat);
-      crossV.position.set(0, 0.016, 0.048);
-      const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.014, 0.018), goldMat);
-      crossH.position.set(0, 0.016, 0.035);
+      ring.position.set(0, 0.016, -0.032);
+      const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.017, 0.014, 0.09), goldMat);
+      crossV.position.set(0, 0.016, 0.045);
+      const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.014, 0.017), goldMat);
+      crossH.position.set(0, 0.016, 0.032);
       g.add(ring, crossV, crossH);
       break;
     }
@@ -3701,7 +4074,6 @@ function update3DSceneFromState() {
     const angle = idx * stepAngle;
     if (p.id === myId) mySeatAngle = angle;
 
-    // スキンが変更された場合はマスクを再構築
     if (seatVisuals[p.id] && seatVisuals[p.id].skinId !== p.skinId) {
       seatVisuals[p.id].group.remove(seatVisuals[p.id].headGroup);
       const newHead = buildMaskMesh(p.skinId);
@@ -3716,15 +4088,31 @@ function update3DSceneFromState() {
       const group = new THREE.Group();
       scene.add(group);
 
+      // 各席手前の小型モニター台座（参考画像テーブル手前左右の端末）
+      const sideConsole = new THREE.Mesh(
+        new THREE.BoxGeometry(0.42, 0.14, 0.16),
+        new THREE.MeshStandardMaterial({ color: 0x2a2d27, metalness: 0.6, roughness: 0.4 })
+      );
+      sideConsole.position.set(-0.62, 0.92, 2.18);
+      sideConsole.rotation.y = 0.25;
+      const consoleScreen = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.32, 0.08),
+        new THREE.MeshBasicMaterial({ color: 0x39ff14 })
+      );
+      consoleScreen.position.set(-0.62, 0.94, 2.098);
+      consoleScreen.rotation.set(-0.35, Math.PI + 0.25, 0);
+      group.add(sideConsole, consoleScreen);
+
+      // アイテムスロット枠（間隔を明確に空けて隣接誤タップを防止）
       const slotCenters = [];
       const lineMat = new THREE.LineBasicMaterial({ color: 0xb8c4b0 });
       [-1, 1].forEach(side => {
         for (let r = 0; r < 2; r++) {
           for (let c = 0; c < 2; c++) {
-            const cx = side * (0.58 + c * 0.28);
-            const cz = 1.48 + r * 0.28;
+            const cx = side * (0.58 + c * 0.30);
+            const cz = 1.46 + r * 0.30;
             slotCenters.push(new THREE.Vector3(cx, 0.87, cz));
-            const rectGeo = new THREE.EdgesGeometry(new THREE.PlaneGeometry(0.25, 0.25));
+            const rectGeo = new THREE.EdgesGeometry(new THREE.PlaneGeometry(0.24, 0.24));
             const rect = new THREE.LineSegments(rectGeo, lineMat);
             rect.rotation.x = -Math.PI / 2;
             rect.position.set(cx, 0.865, cz);
@@ -3758,7 +4146,9 @@ function update3DSceneFromState() {
       const nameTag = document.createElement('div');
       nameTag.className = 'name-tag';
       nameTag.onclick = () => {
-        if (isAimingMode && p.alive && p.id !== myId) {
+        if (pendingPlayerTargetItem && p.alive && p.id !== myId) {
+          confirmDirectPlayerTarget(p.id);
+        } else if (isAimingMode && p.alive && p.id !== myId) {
           confirmShootTarget(p.id);
         }
       };
@@ -3785,7 +4175,7 @@ function update3DSceneFromState() {
     vis.leftHand.visible = !isMe && p.alive;
     vis.rightHand.visible = !isMe && p.alive;
 
-    if (!isMe && p.alive && isAimingMode) {
+    if (!isMe && p.alive && (isAimingMode || pendingPlayerTargetItem)) {
       interactableMeshes.push(vis.targetHitBox);
     }
 
@@ -3798,24 +4188,25 @@ function update3DSceneFromState() {
 
         if (adrenalineStealSlot !== null && !isMe && p.alive && itemId !== 'adrenaline') {
           m.position.y += 0.06;
-          m.scale.set(1.24, 1.24, 1.24);
+          m.scale.set(1.22, 1.22, 1.22);
         }
 
-        if (isMe && p.alive && adrenalineStealSlot === null) {
+        // 当たり判定をシビア（0.17×0.17）に設定して隣接アイテム誤タップを防止
+        if (isMe && p.alive && adrenalineStealSlot === null && !pendingPlayerTargetItem && !isAimingMode) {
           const hitBox = new THREE.Mesh(
-            new THREE.BoxGeometry(0.26, 0.25, 0.26),
+            new THREE.BoxGeometry(0.17, 0.17, 0.17),
             new THREE.MeshBasicMaterial({ visible: false })
           );
-          hitBox.position.y = 0.08;
+          hitBox.position.y = 0.07;
           hitBox.userData = { interactType: 'my_item', slotIndex: sIdx, itemId: itemId };
           m.add(hitBox);
           interactableMeshes.push(hitBox);
         } else if (!isMe && p.alive && adrenalineStealSlot !== null) {
           const enemyHitBox = new THREE.Mesh(
-            new THREE.BoxGeometry(0.30, 0.30, 0.30),
+            new THREE.BoxGeometry(0.18, 0.18, 0.18),
             new THREE.MeshBasicMaterial({ visible: false })
           );
-          enemyHitBox.position.y = 0.08;
+          enemyHitBox.position.y = 0.07;
           enemyHitBox.userData = {
             interactType: 'enemy_item',
             playerId: p.id,
@@ -3833,13 +4224,18 @@ function update3DSceneFromState() {
 
     const isTurn = (gameState.phase === 'play' && gameState.players[gameState.turnIndex]?.id === p.id);
     const statusMarks = (p.rosaryActive ? '✝' : '') + (p.skipNextTurn ? '⛓️' : '') + (p.noItemsNextTurn ? '💧' : '');
-    vis.nameTag.textContent = (isAimingMode && !isMe && p.alive)
-      ? `🎯 ${p.name} (⚡${p.hp})${statusMarks}`
-      : `${p.name} (⚡${p.hp})${statusMarks}`;
+    let prefix = '';
+    if (isAimingMode && !isMe && p.alive) prefix = '🎯 ';
+    else if (pendingPlayerTargetItem && !isMe && p.alive) {
+      prefix = pendingPlayerTargetItem.itemId === 'handcuffs' ? '⛓️ ' : '💧 ';
+    }
+
+    vis.nameTag.textContent = `${prefix}${p.name} (⚡${p.hp})${statusMarks}`;
     vis.nameTag.className = 'name-tag'
       + (isTurn ? ' turn-active' : '')
       + (!p.alive ? ' dead' : '')
-      + (isAimingMode && !isMe && p.alive ? ' aimable' : '');
+      + (isAimingMode && !isMe && p.alive ? ' aimable' : '')
+      + (pendingPlayerTargetItem && !isMe && p.alive ? ' item-targetable' : '');
     vis.nameTag.style.display = isMe ? 'none' : 'block';
   });
 
@@ -3861,7 +4257,6 @@ function animate3D() {
     targetCamPos.set(camX, 1.75, camZ);
     targetCamLook.set(0, 1.18, 0);
   } else if (adrenalineStealSlot !== null && adrenalineFocusTargetId) {
-    // アドレナリン使用時：選択した相手のテーブル目の前に視点を移動して3Dアイテムを選びやすくする
     const targetIdx = gameState.players.findIndex(p => p.id === adrenalineFocusTargetId);
     if (targetIdx !== -1) {
       const tAngle = targetIdx * ((Math.PI * 2) / 5);
@@ -3965,7 +4360,7 @@ function animate3D() {
     } else {
       myLeftHand.visible = false;
       myRightHand.visible = false;
-      shotgunGroup.position.lerp(new THREE.Vector3(0, 0.98, 0), 0.18);
+      shotgunGroup.position.lerp(new THREE.Vector3(0, 0.99, 0), 0.18);
       const restYaw = (activeShooterIdx >= 0 ? activeShooterIdx : 0) * ((Math.PI * 2) / 5);
       const restQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), restYaw);
       shotgunGroup.quaternion.slerp(restQuat, 0.15);
@@ -3976,7 +4371,6 @@ function animate3D() {
     const vis = seatVisuals[p.id];
     if (!vis) return;
 
-    // 撃たれた本人だけの被弾ノックバック演出（他の人は影響を受けない）
     let kb = hitKnockback[p.id] || 0;
     if (kb > 0) {
       kb = Math.max(0, kb - 0.025);
