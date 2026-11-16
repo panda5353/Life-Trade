@@ -818,7 +818,7 @@
 </head>
 <body class="scanlines">
 
-<!-- YouTube BGM用非表示プレイヤー（1曲ループ） -->
+<!-- YouTube BGM用非表示プレイヤー（1曲のみループ） -->
 <div id="yt-bgm-container"><div id="yt-bgm-player"></div></div>
 
 <!-- 縦画面警告 -->
@@ -1649,6 +1649,10 @@ let reconnectTimer = null;
 let reconnectAttempts = 0;
 let intentionalLeave = false;
 
+let isResolvingAction = false;
+let roundTransitionTimer = null;
+let emptyShellWatchdogTimer = null;
+
 let gameState = {
   phase: 'lobby',
   maxPlayers: 5,
@@ -1826,6 +1830,9 @@ function startSoloAiMatch() {
   setError('');
   intentionalLeave = true;
   clearTimeout(reconnectTimer);
+  clearTimeout(roundTransitionTimer);
+  clearTimeout(emptyShellWatchdogTimer);
+  isResolvingAction = false;
   setReconnectBanner(false);
   if (peer) {
     peer.destroy();
@@ -1879,6 +1886,9 @@ function createRoom() {
   setError('');
   intentionalLeave = false;
   clearTimeout(reconnectTimer);
+  clearTimeout(roundTransitionTimer);
+  clearTimeout(emptyShellWatchdogTimer);
+  isResolvingAction = false;
   setReconnectBanner(false);
   isSoloAi = false;
   myName = getCleanName();
@@ -1901,6 +1911,12 @@ function createRoom() {
     const backup = loadHostBackupState(roomCode);
     if (backup && Array.isArray(backup.players) && backup.players.length > 0 && backup.phase !== 'lobby' && backup.phase !== 'gameover') {
       gameState = backup;
+      isResolvingAction = false;
+      gameState.aimTargetId = null;
+      gameState.players.forEach(p => {
+        if (p.handAction === 'shoot' || p.handAction === 'aim') p.handAction = 'idle';
+      });
+
       const hostPlayer = gameState.players.find(p => p.sessionToken === mySessionToken || p.isHostPlayer);
       if (hostPlayer) {
         const oldHostId = hostPlayer.id;
@@ -1916,6 +1932,19 @@ function createRoom() {
       if (gameState.phase === 'loading') {
         gameState.phase = 'play';
       }
+
+      // 復元時点で生存1名以下、または残弾0なら即座に次ラウンド／決着処理を進める
+      const alivePlayers = gameState.players.filter(p => p.alive);
+      if (alivePlayers.length <= 1) {
+        startNewRound();
+        return;
+      }
+      if (gameState.phase === 'play' && (!Array.isArray(gameState.shells) || gameState.shells.length === 0)) {
+        gameState.round++;
+        startNewRound();
+        return;
+      }
+
       broadcastState({ kind: 'banner', text: `ホストが復帰しました！参加者も再接続できます` });
       return;
     }
@@ -1952,7 +1981,6 @@ function createRoom() {
         gameState.players = gameState.players.filter(p => p.id !== conn.peer);
         broadcastState();
       } else {
-        // ゲーム途中なら席・ライフ・アイテムを保持したまま切断状態にする
         leftPlayer.disconnected = true;
         if (gameState.phase === 'loot' && leftPlayer.lootPending && leftPlayer.lootPending.length > 0) {
           let cursor = 0;
@@ -2092,6 +2120,7 @@ function manualReconnectNow() {
       peer.reconnect();
     }
     setReconnectBanner(false);
+    ensureRoundIntegrity();
     showBanner('ホスト通信を再確認しました', 1500);
     return;
   }
@@ -2110,6 +2139,57 @@ function sendToHost(payload) {
   }
 }
 
+/* ==========================================================================
+   残弾0・進行停止を防ぐ安全監視（ホスト専用）
+   ========================================================================== */
+function ensureRoundIntegrity() {
+  if (!isHost) return;
+  clearTimeout(emptyShellWatchdogTimer);
+
+  if (gameState.phase === 'play' && !isResolvingAction) {
+    const aliveCount = gameState.players.filter(p => p.alive).length;
+    if (aliveCount <= 1) {
+      startNewRound();
+      return;
+    }
+    if (!Array.isArray(gameState.shells) || gameState.shells.length === 0) {
+      isResolvingAction = true;
+      clearTimeout(roundTransitionTimer);
+      roundTransitionTimer = setTimeout(() => {
+        isResolvingAction = false;
+        if (gameState.phase === 'play' && gameState.shells.length === 0) {
+          gameState.round++;
+          startNewRound();
+        }
+      }, 600);
+      return;
+    }
+  }
+
+  // バックグラウンド復帰やタイマー遅延で停止した場合の保険ウォッチドッグ
+  if (gameState.phase === 'play' || gameState.phase === 'loading') {
+    emptyShellWatchdogTimer = setTimeout(() => {
+      if (!isHost) return;
+      if (gameState.phase === 'play' && !isResolvingAction && gameState.shells.length === 0) {
+        gameState.round++;
+        startNewRound();
+      } else if (gameState.phase === 'loading' && !isChamberCutscene) {
+        startNewRound();
+      }
+    }, 3200);
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    if (isHost) {
+      ensureRoundIntegrity();
+    } else if (!isSoloAi && roomCode && (!hostConn || !hostConn.open)) {
+      scheduleClientReconnect();
+    }
+  }
+});
+
 function broadcastState(extraEvent = null) {
   if (!isHost) return;
   saveHostBackupState();
@@ -2120,6 +2200,7 @@ function broadcastState(extraEvent = null) {
     });
   }
   applyStateUpdate(gameState, extraEvent);
+  ensureRoundIntegrity();
   scheduleAiTurnIfNeeded();
 }
 
@@ -2208,6 +2289,8 @@ function leaveRoom() {
   clearTimeout(reconnectTimer);
   clearTimeout(aiThinkTimer);
   clearTimeout(roundLoadingTimer);
+  clearTimeout(roundTransitionTimer);
+  clearTimeout(emptyShellWatchdogTimer);
   clearActiveSession();
   if (roomCode) localStorage.removeItem(HOST_BACKUP_PREFIX + roomCode);
   if (peer) peer.destroy();
@@ -2221,6 +2304,10 @@ function hostStartGame() {
 }
 
 function resetMatchStats() {
+  clearTimeout(roundTransitionTimer);
+  clearTimeout(roundLoadingTimer);
+  clearTimeout(emptyShellWatchdogTimer);
+  isResolvingAction = false;
   gameState.round = 1;
   gameState.elimCounter = 0;
   gameState.winnerId = '';
@@ -2261,6 +2348,9 @@ function requestRematch() {
 function requestBackToLobby() {
   clearTimeout(aiThinkTimer);
   clearTimeout(roundLoadingTimer);
+  clearTimeout(roundTransitionTimer);
+  clearTimeout(emptyShellWatchdogTimer);
+  isResolvingAction = false;
   if (isSoloAi) {
     isSoloAi = false;
     document.getElementById('result-modal').style.display = 'none';
@@ -2304,7 +2394,11 @@ function applyDamageOrFatal(player, dmg) {
 
 function startNewRound() {
   clearTimeout(roundLoadingTimer);
+  clearTimeout(roundTransitionTimer);
+  clearTimeout(emptyShellWatchdogTimer);
   clearTimeout(aiThinkTimer);
+  isResolvingAction = false;
+
   const alivePlayers = gameState.players.filter(p => p.alive);
   if (alivePlayers.length <= 1) {
     const winner = alivePlayers[0] || null;
@@ -2354,7 +2448,7 @@ function startNewRound() {
   gameState.aimTargetId = null;
   gameState.players.forEach(p => { p.handAction = 'idle'; });
 
-  if (!gameState.players[gameState.turnIndex].alive) {
+  if (!gameState.players[gameState.turnIndex] || !gameState.players[gameState.turnIndex].alive) {
     advanceTurnIndex();
   }
 
@@ -2492,7 +2586,7 @@ function handleHostReceive(senderId, data) {
     return;
   }
 
-  if (gameState.phase !== 'play' || gameState.turnIndex !== pIndex) return;
+  if (gameState.phase !== 'play' || gameState.turnIndex !== pIndex || isResolvingAction) return;
 
   if (data.type === 'aim') {
     if (player.handAction === 'shoot') return;
@@ -2518,7 +2612,7 @@ function handleHostReceive(senderId, data) {
 }
 
 function executeItemUse(player, slotIndex, targetPlayerId, stealSlotIndex) {
-  if (player.noItemsNextTurn) return;
+  if (player.noItemsNextTurn || isResolvingAction) return;
   const itemId = player.slots[slotIndex];
   if (!itemId) return;
 
@@ -2647,9 +2741,14 @@ function executeItemUse(player, slotIndex, targetPlayerId, stealSlotIndex) {
   const finalBanner = extraLogs.length > 0 ? `${bannerText} ／ ${extraLogs.join(' ')}` : bannerText;
 
   if (gameState.shells.length === 0) {
+    isResolvingAction = true;
     gameState.round++;
     broadcastState({ kind: 'banner', text: finalBanner });
-    setTimeout(() => startNewRound(), 1800);
+    clearTimeout(roundTransitionTimer);
+    roundTransitionTimer = setTimeout(() => {
+      isResolvingAction = false;
+      startNewRound();
+    }, 1700);
   } else {
     broadcastState({ kind: 'item_fx', item: actualItem, actorId: player.id, text: finalBanner });
     setTimeout(() => {
@@ -2670,8 +2769,11 @@ function executeItemUse(player, slotIndex, targetPlayerId, stealSlotIndex) {
 }
 
 function executeShoot(shooter, targetId) {
+  if (isResolvingAction) return;
   const target = gameState.players.find(p => p.id === targetId);
   if (!target || !target.alive || gameState.shells.length === 0) return;
+
+  isResolvingAction = true;
 
   const isLive = gameState.shells.shift();
   shooter.aiKnownNext = null;
@@ -2718,7 +2820,9 @@ function executeShoot(shooter, targetId) {
     text
   });
 
-  setTimeout(() => {
+  clearTimeout(roundTransitionTimer);
+  roundTransitionTimer = setTimeout(() => {
+    isResolvingAction = false;
     gameState.aimTargetId = null;
     shooter.handAction = 'idle';
     const alivePlayers = gameState.players.filter(p => p.alive);
@@ -2730,7 +2834,7 @@ function executeShoot(shooter, targetId) {
     } else {
       broadcastState();
     }
-  }, 1900);
+  }, 1850);
 }
 
 /* ==========================================================================
@@ -2740,7 +2844,7 @@ let aiThinkTimer = null;
 
 function scheduleAiTurnIfNeeded() {
   clearTimeout(aiThinkTimer);
-  if (!isSoloAi || gameState.phase !== 'play') return;
+  if (!isSoloAi || gameState.phase !== 'play' || isResolvingAction) return;
   const current = gameState.players[gameState.turnIndex];
   if (!current || !current.alive || !current.isAi) return;
   if (activeShootOverride) return;
@@ -2751,9 +2855,15 @@ function scheduleAiTurnIfNeeded() {
 }
 
 function runAiStep(ai) {
-  if (!isSoloAi || gameState.phase !== 'play') return;
+  if (!isSoloAi || gameState.phase !== 'play' || isResolvingAction) return;
   const current = gameState.players[gameState.turnIndex];
-  if (!current || current.id !== ai.id || !ai.alive || gameState.shells.length === 0) return;
+  if (!current || current.id !== ai.id || !ai.alive) return;
+
+  if (gameState.shells.length === 0) {
+    gameState.round++;
+    startNewRound();
+    return;
+  }
 
   const enemies = gameState.players.filter(p => p.alive && p.id !== ai.id);
   if (enemies.length === 0) return;
@@ -2962,7 +3072,7 @@ function applyStateUpdate(newState, event) {
   }
 
   const turnPlayer = gameState.players[gameState.turnIndex];
-  const isMyTurn = (gameState.phase === 'play' && turnPlayer && turnPlayer.id === myId);
+  const isMyTurn = (gameState.phase === 'play' && turnPlayer && turnPlayer.id === myId && gameState.shells.length > 0);
   if (!isMyTurn) {
     isAimingMode = false;
     adrenalineStealSlot = null;
@@ -3210,7 +3320,7 @@ function updateGameHUD() {
   }
 
   const turnPlayer = gameState.players[gameState.turnIndex];
-  const isMyTurn = (gameState.phase === 'play' && turnPlayer && turnPlayer.id === myId);
+  const isMyTurn = (gameState.phase === 'play' && turnPlayer && turnPlayer.id === myId && gameState.shells.length > 0);
   const me = getMePlayer();
 
   const focusedEnemy = adrenalineFocusTargetId
@@ -3221,6 +3331,7 @@ function updateGameHUD() {
     gameState.phase === 'loading' ? '弾薬装填中...' :
     gameState.phase === 'loot' ? 'アイテム配置中...' :
     gameState.phase === 'gameover' ? `決着！勝者: ${gameState.winnerName}` :
+    gameState.shells.length === 0 ? '次ラウンド準備中...' :
     pendingPlayerTargetItem ? `🎯 【${ITEM_DEFS[pendingPlayerTargetItem.itemId].name}】を使う相手を直接タップ` :
     adrenalineStealSlot !== null ? `💉 ${focusedEnemy ? focusedEnemy.name : '相手'}の3Dアイテムをタップ（下ボタン/スワイプで対象切替）` :
     isAimingMode ? '🎯 撃つ相手(3D)をタップ または 自分を撃つ' :
@@ -3323,6 +3434,7 @@ function finishLootPhase() {
    8. アイテム使用＆手錠・目薬・アドレナリンの直接選択UI
    ========================================================================== */
 function openItemUseModal(slotIndex, itemId) {
+  if (gameState.shells.length === 0) return;
   const me = getMePlayer();
   if (me && me.noItemsNextTurn) {
     showBanner('💧 目薬の効果でこのターンはアイテムを使えません！', 2000);
@@ -3549,6 +3661,7 @@ function closeItemModal() {
 }
 
 function openShootTargetMenu() {
+  if (gameState.shells.length === 0) return;
   adrenalineStealSlot = null;
   adrenalineFocusTargetId = null;
   pendingPlayerTargetItem = null;
@@ -4022,7 +4135,7 @@ function initThreeScene() {
 
 function handle3DDirectTap(clientX, clientY) {
   const turnPlayer = gameState.players[gameState.turnIndex];
-  const isMyTurn = (gameState.phase === 'play' && turnPlayer && turnPlayer.id === myId);
+  const isMyTurn = (gameState.phase === 'play' && turnPlayer && turnPlayer.id === myId && gameState.shells.length > 0);
   if (!isMyTurn) return;
 
   const rect = renderer.domElement.getBoundingClientRect();
