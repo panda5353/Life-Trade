@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Life Trade" />
 <meta name="theme-color" content="#000000" />
-<title>Life Trade ver 1.0</title>
+<title>Life Trade ver 1.1</title>
 
 <!-- Three.js & PeerJS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -205,6 +205,14 @@
     background: var(--gold);
     color: #000;
   }
+  .btn-danger {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+  .btn-danger:hover, .btn-danger:active {
+    background: var(--danger);
+    color: #000;
+  }
   .btn:disabled {
     opacity: 0.35;
     pointer-events: none;
@@ -375,6 +383,24 @@
     border: 1px solid var(--gold);
     color: var(--gold);
     letter-spacing: 0;
+  }
+
+  /* 通信再接続ステータスバー */
+  #reconnect-banner {
+    position: fixed;
+    top: 52px;
+    right: 12px;
+    background: rgba(40, 0, 0, 0.94);
+    border: 1px solid var(--danger);
+    color: #ff9999;
+    padding: 6px 12px;
+    font-size: 12px;
+    z-index: 460;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    pointer-events: auto;
+    box-shadow: 0 0 12px rgba(255, 42, 42, 0.5);
   }
 
   /* カメラ視点切替ボタン（正面・俯瞰のみ） */
@@ -748,6 +774,10 @@
     color: #666;
     text-decoration: line-through;
   }
+  .name-tag.disconnected {
+    color: #ff8888;
+    opacity: 0.78;
+  }
   .name-tag.aimable {
     pointer-events: auto;
     cursor: pointer;
@@ -788,7 +818,7 @@
 </head>
 <body class="scanlines">
 
-<!-- YouTube BGM用非表示プレイヤー -->
+<!-- YouTube BGM用非表示プレイヤー（1曲ループ） -->
 <div id="yt-bgm-container"><div id="yt-bgm-player"></div></div>
 
 <!-- 縦画面警告 -->
@@ -800,12 +830,18 @@
 <!-- フラッシュ演出 -->
 <div id="flash-fx"></div>
 
+<!-- 通信切断・自動再接続バナー -->
+<div id="reconnect-banner">
+  <span id="reconnect-banner-text">通信切断：再接続中...</span>
+  <button class="bgm-btn" onclick="manualReconnectNow()">今すぐ再接続</button>
+</div>
+
 <!-- ① 部屋に入る前のロビー -->
 <div id="title-screen" class="screen active">
   <div class="term-header">
     <div>
       <span class="game-title">Life Trade</span>
-      <span class="game-ver">ver 1.0</span>
+      <span class="game-ver">ver 1.1</span>
     </div>
     <div style="font-size:12px; display:flex; align-items:center; gap:6px;">
       <span>SOLO AI &amp; ONLINE [2-5 PLAYERS]</span>
@@ -844,7 +880,8 @@
         </div>
       </div>
 
-      <div style="display:flex; flex-direction:column; gap:6px;">
+      <div style="display:flex; flex-direction:column; gap:5px;">
+        <button class="btn btn-center btn-danger" id="resume-session-btn" style="display:none;" onclick="resumeLastSession()"></button>
         <button class="btn btn-center btn-gold" onclick="startSoloAiMatch()">[ ▶ 一人用 (vs AI) で開始 ]</button>
         <div style="display:flex; gap:8px;">
           <button class="btn btn-center" style="flex:1;" onclick="createRoom()">[ オンライン部屋を作成 ]</button>
@@ -858,7 +895,7 @@
         <div>&gt; TERMINAL STATUS: <span id="net-status">READY</span></div>
         <div>&gt; 初期ライフ: ⚡×5 (負け抜け制)</div>
         <div>&gt; 弾倉: 5発開始〜最大10発 (赤・青 各最低1発 / R5以降は赤率UP)</div>
-        <div>&gt; 出現率: ノコギリ・虫眼鏡・ビール・薬・携帯(13.33%) / タバコ・アドレナリン・手錠・目薬(6.67%) / リモコン・インバータ(2.67%) / ロザリオ(1.33%)</div>
+        <div>&gt; 途中復帰対応: 落ちても同じ3桁番号で席・ライフ・アイテムのまま復帰可能</div>
         <div>&gt; 席順・スタートプレイヤーは毎回ランダム決定</div>
         <div id="title-error" style="color:var(--danger); margin-top:4px;"></div>
       </div>
@@ -876,7 +913,7 @@
       <div style="font-size:14px; margin-bottom:6px;">
         ハイローラー：
         <span style="float:right; display:flex; gap:6px; align-items:center;">
-          <span>Life Trade ver 1.0</span>
+          <span>Life Trade ver 1.1</span>
           <button class="bgm-btn" onclick="openItemGuideModal()">? アイテム図鑑</button>
           <button class="bgm-btn" id="bgm-btn-lobby" onclick="toggleBgm()">♪ BGM: ON</button>
         </span>
@@ -925,6 +962,7 @@
           <div class="my-hp-badge" id="hud-my-hp">⚡⚡⚡⚡⚡</div>
           <button class="bgm-btn" onclick="openItemGuideModal()">? 図鑑</button>
           <button class="bgm-btn" id="bgm-btn-game" onclick="toggleBgm()">♪ BGM: ON</button>
+          <button class="bgm-btn" id="hud-reconnect-btn" style="display:none;" onclick="manualReconnectNow()">↻ 再接続</button>
         </div>
       </div>
 
@@ -1022,14 +1060,9 @@
 
 <script>
 /* ==========================================================================
-   YouTube BGM プレイヤー
-   - ロビー（待機中）: mvkcyB_lve0
-   - ゲーム開始後・奇数ラウンド: -VNhQ2-aQwE
-   - ゲーム開始後・偶数ラウンド: FL9ocieCNjM
+   YouTube BGM プレイヤー（1曲のみループ再生）
    ========================================================================== */
-const LOBBY_BGM_VIDEO_ID = 'mvkcyB_lve0';
-const GAME_BGM_VIDEO_IDS = ['-VNhQ2-aQwE', 'FL9ocieCNjM'];
-let currentBgmVideoId = LOBBY_BGM_VIDEO_ID;
+const BGM_VIDEO_ID = 'mvkcyB_lve0';
 let ytPlayer = null;
 let ytReady = false;
 let bgmEnabled = true;
@@ -1044,7 +1077,7 @@ window.onYouTubeIframeAPIReady = function() {
   const playerVars = {
     autoplay: 1,
     loop: 1,
-    playlist: currentBgmVideoId,
+    playlist: BGM_VIDEO_ID,
     controls: 0,
     disablekb: 1,
     fs: 0,
@@ -1059,11 +1092,12 @@ window.onYouTubeIframeAPIReady = function() {
   ytPlayer = new YT.Player('yt-bgm-player', {
     width: '1',
     height: '1',
-    videoId: currentBgmVideoId,
+    videoId: BGM_VIDEO_ID,
     playerVars: playerVars,
     events: {
       onReady: function(e) {
         ytReady = true;
+        e.target.setLoop(true);
         e.target.setVolume(45);
         if (bgmEnabled) {
           e.target.playVideo();
@@ -1079,40 +1113,6 @@ window.onYouTubeIframeAPIReady = function() {
     }
   });
 };
-
-function setBgmTrack(videoId) {
-  if (!videoId || currentBgmVideoId === videoId) return;
-  currentBgmVideoId = videoId;
-  if (!ytReady || !ytPlayer) return;
-  if (bgmEnabled) {
-    ytPlayer.loadPlaylist({
-      playlist: [currentBgmVideoId],
-      index: 0,
-      startSeconds: 0
-    });
-    ytPlayer.setLoop(true);
-    ytPlayer.unMute();
-    ytPlayer.setVolume(45);
-    ytPlayer.playVideo();
-  } else {
-    ytPlayer.cuePlaylist({
-      playlist: [currentBgmVideoId],
-      index: 0,
-      startSeconds: 0
-    });
-    ytPlayer.setLoop(true);
-  }
-}
-
-function updateBgmForGameState(state) {
-  if (!state || state.phase === 'lobby') {
-    setBgmTrack(LOBBY_BGM_VIDEO_ID);
-    return;
-  }
-  const roundNum = Math.max(1, state.round || 1);
-  const trackIdx = (roundNum - 1) % GAME_BGM_VIDEO_IDS.length;
-  setBgmTrack(GAME_BGM_VIDEO_IDS[trackIdx]);
-}
 
 function updateBgmButtons() {
   const label = bgmEnabled ? '♪ BGM: ON' : '♪ BGM: OFF';
@@ -1624,9 +1624,19 @@ function playMatchResultSound(isWinner) {
 }
 
 /* ==========================================================================
-   3. ネットワーク＆ゲーム状態管理（PeerJS 3桁ルーム & 一人用AIモード）
+   3. ネットワーク＆途中復帰セッション管理（PeerJS 3桁ルーム & 一人用AIモード）
    ========================================================================== */
-const PEER_PREFIX = 'lifetrade-v10-room-';
+const PEER_PREFIX = 'lifetrade-v11-room-';
+const SESSION_TOKEN_KEY = 'lt_session_token';
+const ACTIVE_SESSION_KEY = 'lt_active_session';
+const HOST_BACKUP_PREFIX = 'lt_host_backup_';
+
+let mySessionToken = localStorage.getItem(SESSION_TOKEN_KEY);
+if (!mySessionToken) {
+  mySessionToken = 'tok-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 9);
+  localStorage.setItem(SESSION_TOKEN_KEY, mySessionToken);
+}
+
 let peer = null;
 let isHost = false;
 let isSoloAi = false;
@@ -1635,6 +1645,9 @@ let myName = 'PLAYER';
 let roomCode = '';
 let connections = {};
 let hostConn = null;
+let reconnectTimer = null;
+let reconnectAttempts = 0;
+let intentionalLeave = false;
 
 let gameState = {
   phase: 'lobby',
@@ -1654,6 +1667,112 @@ let gameState = {
 
 const savedName = localStorage.getItem('lt_player_name');
 if (savedName) document.getElementById('player-name-input').value = savedName;
+
+function saveActiveSession(code, role, name, skinId) {
+  if (!code || code === 'SOLO') return;
+  localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify({
+    roomCode: code,
+    role,
+    name,
+    skinId,
+    timestamp: Date.now()
+  }));
+}
+
+function clearActiveSession() {
+  localStorage.removeItem(ACTIVE_SESSION_KEY);
+}
+
+function getSavedActiveSession() {
+  try {
+    const raw = localStorage.getItem(ACTIVE_SESSION_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data || !data.roomCode || Date.now() - data.timestamp > 2 * 60 * 60 * 1000) {
+      localStorage.removeItem(ACTIVE_SESSION_KEY);
+      return null;
+    }
+    return data;
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveHostBackupState() {
+  if (!isHost || isSoloAi || !roomCode) return;
+  try {
+    if (gameState.phase === 'lobby' || gameState.phase === 'gameover') {
+      localStorage.removeItem(HOST_BACKUP_PREFIX + roomCode);
+    } else {
+      localStorage.setItem(HOST_BACKUP_PREFIX + roomCode, JSON.stringify({
+        timestamp: Date.now(),
+        state: gameState
+      }));
+    }
+  } catch (e) {}
+}
+
+function loadHostBackupState(code) {
+  try {
+    const raw = localStorage.getItem(HOST_BACKUP_PREFIX + code);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !parsed.state || Date.now() - parsed.timestamp > 2 * 60 * 60 * 1000) {
+      localStorage.removeItem(HOST_BACKUP_PREFIX + code);
+      return null;
+    }
+    return parsed.state;
+  } catch (e) {
+    return null;
+  }
+}
+
+function checkResumeSessionBanner() {
+  const saved = getSavedActiveSession();
+  const btn = document.getElementById('resume-session-btn');
+  const roomInput = document.getElementById('room-id-input');
+  if (!btn) return;
+  if (saved && /^\d{3}$/.test(saved.roomCode)) {
+    btn.style.display = 'block';
+    const roleLabel = saved.role === 'host' ? 'ホスト復元' : '途中復帰';
+    btn.textContent = `[ ↻ 前回の部屋 (${saved.roomCode}) に${roleLabel} ]`;
+    if (roomInput && !roomInput.value) {
+      roomInput.value = saved.roomCode;
+    }
+  } else {
+    btn.style.display = 'none';
+  }
+}
+checkResumeSessionBanner();
+
+function resumeLastSession() {
+  const saved = getSavedActiveSession();
+  if (!saved) {
+    checkResumeSessionBanner();
+    return;
+  }
+  document.getElementById('room-id-input').value = saved.roomCode;
+  if (saved.name && !document.getElementById('player-name-input').value.trim()) {
+    document.getElementById('player-name-input').value = saved.name;
+  }
+  if (saved.role === 'host') {
+    createRoom();
+  } else {
+    joinRoom();
+  }
+}
+
+function setReconnectBanner(visible, text = '') {
+  const el = document.getElementById('reconnect-banner');
+  const txt = document.getElementById('reconnect-banner-text');
+  if (!el) return;
+  if (visible) {
+    if (txt && text) txt.textContent = text;
+    el.style.display = 'flex';
+  } else {
+    el.style.display = 'none';
+  }
+}
 
 function setError(msg) {
   document.getElementById('title-error').textContent = msg;
@@ -1675,13 +1794,15 @@ function getCleanCode() {
   return code;
 }
 
-function createPlayerObj(id, name, skinId, isHostPlayer, isAi) {
+function createPlayerObj(id, name, skinId, isHostPlayer, isAi, sessionToken = '') {
   return {
     id,
+    sessionToken,
     name,
     skinId: skinId || 'wolf',
     isHostPlayer,
     isAi,
+    disconnected: false,
     hp: 5,
     maxHp: 5,
     slots: Array(8).fill(null),
@@ -1703,6 +1824,9 @@ function createPlayerObj(id, name, skinId, isHostPlayer, isAi) {
 function startSoloAiMatch() {
   ensureBgmStart();
   setError('');
+  intentionalLeave = true;
+  clearTimeout(reconnectTimer);
+  setReconnectBanner(false);
   if (peer) {
     peer.destroy();
     peer = null;
@@ -1719,11 +1843,11 @@ function startSoloAiMatch() {
   const aiNames = ['CPU-ALPHA', 'CPU-BETA', 'CPU-GAMMA', 'CPU-DELTA'];
   const otherSkins = MASK_SKINS.filter(s => s.id !== selectedSkinId);
 
-  const players = [createPlayerObj(myId, myName, selectedSkinId, true, false)];
+  const players = [createPlayerObj(myId, myName, selectedSkinId, true, false, mySessionToken)];
 
   for (let i = 0; i < aiCount; i++) {
     const aiSkin = otherSkins[i % otherSkins.length].id;
-    players.push(createPlayerObj('ai-bot-' + i, aiNames[i], aiSkin, false, true));
+    players.push(createPlayerObj('ai-bot-' + i, aiNames[i], aiSkin, false, true, 'ai-' + i));
   }
 
   gameState = {
@@ -1753,6 +1877,9 @@ function startSoloAiMatch() {
 function createRoom() {
   ensureBgmStart();
   setError('');
+  intentionalLeave = false;
+  clearTimeout(reconnectTimer);
+  setReconnectBanner(false);
   isSoloAi = false;
   myName = getCleanName();
   const code = getCleanCode();
@@ -1766,11 +1893,38 @@ function createRoom() {
 
   peer.on('open', (id) => {
     myId = id;
+    saveActiveSession(roomCode, 'host', myName, selectedSkinId);
+    const hudReconnBtn = document.getElementById('hud-reconnect-btn');
+    if (hudReconnBtn) hudReconnBtn.style.display = 'inline-block';
+
+    // ホスト落ちからの復元データがあれば復帰させる
+    const backup = loadHostBackupState(roomCode);
+    if (backup && Array.isArray(backup.players) && backup.players.length > 0 && backup.phase !== 'lobby' && backup.phase !== 'gameover') {
+      gameState = backup;
+      const hostPlayer = gameState.players.find(p => p.sessionToken === mySessionToken || p.isHostPlayer);
+      if (hostPlayer) {
+        const oldHostId = hostPlayer.id;
+        hostPlayer.id = myId;
+        hostPlayer.name = myName;
+        hostPlayer.skinId = selectedSkinId;
+        hostPlayer.disconnected = false;
+        if (gameState.aimTargetId === oldHostId) gameState.aimTargetId = myId;
+      }
+      gameState.players.forEach(p => {
+        if (!p.isHostPlayer && !p.isAi) p.disconnected = true;
+      });
+      if (gameState.phase === 'loading') {
+        gameState.phase = 'play';
+      }
+      broadcastState({ kind: 'banner', text: `ホストが復帰しました！参加者も再接続できます` });
+      return;
+    }
+
     gameState = {
       phase: 'lobby',
       maxPlayers: 5,
       round: 1,
-      players: [createPlayerObj(myId, myName, selectedSkinId, true, false)],
+      players: [createPlayerObj(myId, myName, selectedSkinId, true, false, mySessionToken)],
       turnIndex: 0,
       turnDirection: 1,
       shells: [],
@@ -1791,15 +1945,45 @@ function createRoom() {
     conn.on('data', (data) => handleHostReceive(conn.peer, data));
     conn.on('close', () => {
       delete connections[conn.peer];
-      gameState.players = gameState.players.filter(p => p.id !== conn.peer);
-      broadcastState();
+      const leftPlayer = gameState.players.find(p => p.id === conn.peer);
+      if (!leftPlayer) return;
+
+      if (gameState.phase === 'lobby') {
+        gameState.players = gameState.players.filter(p => p.id !== conn.peer);
+        broadcastState();
+      } else {
+        // ゲーム途中なら席・ライフ・アイテムを保持したまま切断状態にする
+        leftPlayer.disconnected = true;
+        if (gameState.phase === 'loot' && leftPlayer.lootPending && leftPlayer.lootPending.length > 0) {
+          let cursor = 0;
+          leftPlayer.lootPending.forEach(item => {
+            while (cursor < 8 && leftPlayer.slots[cursor] !== null) cursor++;
+            if (cursor < 8) {
+              leftPlayer.slots[cursor] = item;
+              cursor++;
+            }
+          });
+          leftPlayer.lootPending = [];
+          if (gameState.players.every(p => !p.alive || p.lootPending.length === 0)) {
+            gameState.phase = 'play';
+          }
+        }
+        broadcastState({ kind: 'banner', text: `⚠️ ${leftPlayer.name} が切断しました（同じ番号で再入室可能）` });
+      }
     });
+  });
+
+  peer.on('disconnected', () => {
+    if (!intentionalLeave && peer && !peer.destroyed) {
+      setReconnectBanner(true, 'ホストシグナル切断：再接続中...');
+      peer.reconnect();
+    }
   });
 
   peer.on('error', (err) => {
     document.getElementById('net-status').textContent = 'ERROR';
     if (err.type === 'unavailable-id') {
-      setError(`部屋番号 ${roomCode} は既に使用中です。「部屋に参加」を押すか別の番号にしてください。`);
+      setError(`部屋番号 ${roomCode} は既に稼働中です。途中復帰する場合は「部屋に参加」を押してください。`);
     } else {
       setError('通信エラー: ' + err.type);
     }
@@ -1809,35 +1993,111 @@ function createRoom() {
 function joinRoom() {
   ensureBgmStart();
   setError('');
+  intentionalLeave = false;
+  clearTimeout(reconnectTimer);
   isSoloAi = false;
   myName = getCleanName();
   const code = getCleanCode();
   if (!code) return;
   roomCode = code;
   isHost = false;
+  reconnectAttempts = 0;
   document.getElementById('net-status').textContent = 'CONNECTING...';
 
-  if (peer) peer.destroy();
+  connectClientPeer();
+}
+
+function connectClientPeer() {
+  if (intentionalLeave) return;
+  if (peer) {
+    try { peer.destroy(); } catch (e) {}
+  }
   peer = new Peer();
 
   peer.on('open', (id) => {
     myId = id;
-    hostConn = peer.connect(PEER_PREFIX + roomCode, { reliable: true });
-    hostConn.on('open', () => {
-      hostConn.send({ type: 'join', name: myName, skinId: selectedSkinId });
-      enterLobbyUI();
-    });
-    hostConn.on('data', (data) => handleClientReceive(data));
-    hostConn.on('close', () => {
-      alert('ホストとの接続が切断されました。');
-      location.reload();
-    });
+    const hudReconnBtn = document.getElementById('hud-reconnect-btn');
+    if (hudReconnBtn) hudReconnBtn.style.display = 'inline-block';
+    connectToHostChannel();
   });
 
   peer.on('error', (err) => {
     document.getElementById('net-status').textContent = 'ERROR';
-    setError('接続失敗: 部屋が存在しないか通信エラーです (' + err.type + ')');
+    if (gameState.phase === 'lobby' && !document.getElementById('game-screen').classList.contains('active')) {
+      setError('接続失敗: 部屋が存在しないか通信エラーです (' + err.type + ')');
+    } else {
+      scheduleClientReconnect();
+    }
   });
+}
+
+function connectToHostChannel() {
+  if (intentionalLeave || !peer || peer.destroyed) return;
+  hostConn = peer.connect(PEER_PREFIX + roomCode, { reliable: true });
+
+  hostConn.on('open', () => {
+    reconnectAttempts = 0;
+    clearTimeout(reconnectTimer);
+    setReconnectBanner(false);
+    saveActiveSession(roomCode, 'client', myName, selectedSkinId);
+    hostConn.send({
+      type: 'join',
+      name: myName,
+      skinId: selectedSkinId,
+      sessionToken: mySessionToken
+    });
+    if (gameState.phase === 'lobby' && !document.getElementById('game-screen').classList.contains('active')) {
+      enterLobbyUI();
+    }
+  });
+
+  hostConn.on('data', (data) => handleClientReceive(data));
+
+  hostConn.on('close', () => {
+    if (intentionalLeave) return;
+    scheduleClientReconnect();
+  });
+
+  hostConn.on('error', () => {
+    if (intentionalLeave) return;
+    scheduleClientReconnect();
+  });
+}
+
+function scheduleClientReconnect() {
+  if (intentionalLeave || isHost || isSoloAi) return;
+  clearTimeout(reconnectTimer);
+  reconnectAttempts++;
+  if (reconnectAttempts > 25) {
+    setReconnectBanner(true, `部屋 ${roomCode} への自動再接続に失敗しました`);
+    return;
+  }
+  setReconnectBanner(true, `通信切断：部屋 ${roomCode} へ再接続中... (${reconnectAttempts})`);
+  reconnectTimer = setTimeout(() => {
+    if (!peer || peer.destroyed) {
+      connectClientPeer();
+    } else if (peer.disconnected) {
+      peer.reconnect();
+      connectToHostChannel();
+    } else {
+      connectToHostChannel();
+    }
+  }, 1800);
+}
+
+function manualReconnectNow() {
+  if (isSoloAi) return;
+  if (isHost) {
+    if (peer && peer.disconnected && !peer.destroyed) {
+      peer.reconnect();
+    }
+    setReconnectBanner(false);
+    showBanner('ホスト通信を再確認しました', 1500);
+    return;
+  }
+  reconnectAttempts = 0;
+  setReconnectBanner(true, `部屋 ${roomCode} へ手動再接続中...`);
+  connectClientPeer();
 }
 
 function sendToHost(payload) {
@@ -1845,11 +2105,14 @@ function sendToHost(payload) {
     handleHostReceive(myId, payload);
   } else if (hostConn && hostConn.open) {
     hostConn.send(payload);
+  } else {
+    scheduleClientReconnect();
   }
 }
 
 function broadcastState(extraEvent = null) {
   if (!isHost) return;
+  saveHostBackupState();
   if (!isSoloAi) {
     const packet = { type: 'state', state: gameState, event: extraEvent };
     Object.values(connections).forEach(c => {
@@ -1882,7 +2145,7 @@ function renderLobby() {
     const skinObj = MASK_SKINS.find(s => s.id === p.skinId) || MASK_SKINS[0];
     const row = document.createElement('div');
     row.className = 'player-row';
-    row.textContent = `${p.name} [${skinObj.name}]` + (p.isHostPlayer ? ' [HOST]' : '');
+    row.textContent = `${p.name} [${skinObj.name}]` + (p.isHostPlayer ? ' [HOST]' : '') + (p.disconnected ? ' [切断中]' : '');
     listEl.appendChild(row);
 
     if (isHost && !p.isHostPlayer) {
@@ -1941,8 +2204,12 @@ function kickPlayer(targetId) {
 }
 
 function leaveRoom() {
+  intentionalLeave = true;
+  clearTimeout(reconnectTimer);
   clearTimeout(aiThinkTimer);
   clearTimeout(roundLoadingTimer);
+  clearActiveSession();
+  if (roomCode) localStorage.removeItem(HOST_BACKUP_PREFIX + roomCode);
   if (peer) peer.destroy();
   location.reload();
 }
@@ -1994,16 +2261,17 @@ function requestRematch() {
 function requestBackToLobby() {
   clearTimeout(aiThinkTimer);
   clearTimeout(roundLoadingTimer);
-  setBgmTrack(LOBBY_BGM_VIDEO_ID);
   if (isSoloAi) {
     isSoloAi = false;
     document.getElementById('result-modal').style.display = 'none';
     document.getElementById('game-screen').classList.remove('active');
     document.getElementById('title-screen').classList.add('active');
+    checkResumeSessionBanner();
     return;
   }
   if (isHost) {
     gameState.phase = 'lobby';
+    gameState.players = gameState.players.filter(p => !p.disconnected);
     resetMatchStats();
     broadcastState({ kind: 'back_to_lobby' });
   } else {
@@ -2114,7 +2382,7 @@ function startNewRound() {
         loot.push(rollWeightedItem());
       }
 
-      if (p.isAi) {
+      if (p.isAi || p.disconnected) {
         let slotCursor = 0;
         loot.forEach(item => {
           while (slotCursor < 8 && p.slots[slotCursor] !== null) slotCursor++;
@@ -2129,7 +2397,7 @@ function startNewRound() {
       }
     });
 
-    const anyLoot = gameState.players.some(p => p.alive && !p.isAi && p.lootPending.length > 0);
+    const anyLoot = gameState.players.some(p => p.alive && !p.isAi && !p.disconnected && p.lootPending.length > 0);
     gameState.phase = anyLoot ? 'loot' : 'play';
     broadcastState();
   }, loadDurationMs);
@@ -2160,6 +2428,36 @@ function advanceTurnIndex(bannerLogs = []) {
 
 function handleHostReceive(senderId, data) {
   if (data.type === 'join') {
+    let existing = null;
+    if (data.sessionToken) {
+      existing = gameState.players.find(p => p.sessionToken && p.sessionToken === data.sessionToken);
+    }
+    if (!existing && data.name) {
+      existing = gameState.players.find(p => p.disconnected && p.name === data.name);
+    }
+
+    if (existing) {
+      const oldId = existing.id;
+      if (oldId !== senderId && connections[oldId]) {
+        try { connections[oldId].close(); } catch (e) {}
+        delete connections[oldId];
+      }
+      existing.id = senderId;
+      existing.disconnected = false;
+      if (data.name) existing.name = data.name;
+      if (data.skinId && gameState.phase === 'lobby') existing.skinId = data.skinId;
+
+      if (gameState.aimTargetId === oldId) gameState.aimTargetId = senderId;
+      if (gameState.winnerId === oldId) gameState.winnerId = senderId;
+
+      if (gameState.phase === 'lobby') {
+        broadcastState();
+      } else {
+        broadcastState({ kind: 'banner', text: `🔄 ${existing.name} が部屋に途中復帰しました！` });
+      }
+      return;
+    }
+
     if (gameState.phase !== 'lobby' || gameState.players.length >= gameState.maxPlayers) {
       if (connections[senderId]) {
         connections[senderId].send({ type: 'kicked' });
@@ -2167,7 +2465,7 @@ function handleHostReceive(senderId, data) {
       }
       return;
     }
-    gameState.players.push(createPlayerObj(senderId, data.name, data.skinId, false, false));
+    gameState.players.push(createPlayerObj(senderId, data.name, data.skinId, false, false, data.sessionToken || ''));
     broadcastState();
     return;
   }
@@ -2175,6 +2473,7 @@ function handleHostReceive(senderId, data) {
   const pIndex = gameState.players.findIndex(p => p.id === senderId);
   if (pIndex === -1) return;
   const player = gameState.players[pIndex];
+  player.disconnected = false;
 
   if (data.type === 'look') {
     if (typeof data.yaw === 'number') player.lookYaw = data.yaw;
@@ -2186,7 +2485,7 @@ function handleHostReceive(senderId, data) {
   if (data.type === 'loot_done') {
     player.slots = data.slots.slice(0, 8);
     player.lootPending = [];
-    if (gameState.players.every(p => !p.alive || p.lootPending.length === 0)) {
+    if (gameState.players.every(p => !p.alive || p.disconnected || p.lootPending.length === 0)) {
       gameState.phase = 'play';
     }
     broadcastState();
@@ -2604,6 +2903,9 @@ function pickAiShootEnemy(enemies) {
 
 function handleClientReceive(data) {
   if (data.type === 'kicked') {
+    intentionalLeave = true;
+    clearTimeout(reconnectTimer);
+    clearActiveSession();
     alert('部屋からキックされたか、満員のため入室できませんでした。');
     location.reload();
   } else if (data.type === 'state') {
@@ -2626,9 +2928,17 @@ let isChamberCutscene = false;
 let activeShootOverride = null;
 let hitKnockback = {};
 
+function getMePlayer() {
+  return gameState.players.find(p => p.id === myId)
+    || gameState.players.find(p => p.sessionToken && p.sessionToken === mySessionToken);
+}
+
 function applyStateUpdate(newState, event) {
   gameState = newState;
-  updateBgmForGameState(gameState);
+  const me = getMePlayer();
+  if (me && me.id !== myId && myId) {
+    me.id = myId;
+  }
 
   if (gameState.phase === 'lobby') {
     document.getElementById('result-modal').style.display = 'none';
@@ -2638,6 +2948,7 @@ function applyStateUpdate(newState, event) {
     return;
   }
 
+  document.getElementById('title-screen').classList.remove('active');
   document.getElementById('lobby-screen').classList.remove('active');
   document.getElementById('game-screen').classList.add('active');
 
@@ -2692,8 +3003,7 @@ function applyStateUpdate(newState, event) {
     }
   }
 
-  const me = gameState.players.find(p => p.id === myId);
-  if (gameState.phase === 'loot' && me && me.alive && me.lootPending.length > 0) {
+  if (gameState.phase === 'loot' && me && me.alive && me.lootPending && me.lootPending.length > 0) {
     openLootModal(me);
   } else {
     document.getElementById('loot-modal').style.display = 'none';
@@ -2901,7 +3211,7 @@ function updateGameHUD() {
 
   const turnPlayer = gameState.players[gameState.turnIndex];
   const isMyTurn = (gameState.phase === 'play' && turnPlayer && turnPlayer.id === myId);
-  const me = gameState.players.find(p => p.id === myId);
+  const me = getMePlayer();
 
   const focusedEnemy = adrenalineFocusTargetId
     ? gameState.players.find(p => p.id === adrenalineFocusTargetId)
@@ -3013,7 +3323,7 @@ function finishLootPhase() {
    8. アイテム使用＆手錠・目薬・アドレナリンの直接選択UI
    ========================================================================== */
 function openItemUseModal(slotIndex, itemId) {
-  const me = gameState.players.find(p => p.id === myId);
+  const me = getMePlayer();
   if (me && me.noItemsNextTurn) {
     showBanner('💧 目薬の効果でこのターンはアイテムを使えません！', 2000);
     return;
@@ -3256,7 +3566,7 @@ function openShootTargetMenu() {
   hint.textContent = '🎯 撃つ相手(3D)をタップ';
   overlay.appendChild(hint);
 
-  const me = gameState.players.find(p => p.id === myId);
+  const me = getMePlayer();
   if (me && me.alive) {
     const selfBtn = document.createElement('button');
     selfBtn.className = 'btn';
@@ -3829,7 +4139,6 @@ function buildMaskMesh(skinId) {
   const eyeMat = new THREE.MeshBasicMaterial({ color: skin.eye });
   const eyeSocketMat = new THREE.MeshStandardMaterial({ color: 0x0d0d0f, roughness: 0.8 });
 
-  // 基本マスクベース（やや丸みと面取りを持たせた動物仮面ベース）
   const head = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.44, 0.36), mainMat);
   group.add(head);
 
@@ -3837,7 +4146,6 @@ function buildMaskMesh(skinId) {
   brow.position.set(0, 0.13, 0.015);
   group.add(brow);
 
-  // 両目＆アイソケット
   const eyeY = skin.id === 'owl' ? 0.06 : 0.05;
   const eyeR = skin.id === 'owl' ? 0.072 : 0.048;
   [-0.105, 0.105].forEach(ex => {
@@ -3855,10 +4163,8 @@ function buildMaskMesh(skinId) {
     group.add(socket, eye, pupil);
   });
 
-  // 動物種ごとの特徴パーツ
   switch (skin.id) {
     case 'wolf': {
-      // 尖った立ち耳（外殻＋内耳）
       [-0.14, 0.14].forEach(ex => {
         const ear = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.24, 4), mainMat);
         ear.position.set(ex, 0.32, -0.02);
@@ -3868,7 +4174,6 @@ function buildMaskMesh(skinId) {
         inner.rotation.z = ex < 0 ? 0.15 : -0.15;
         group.add(ear, inner);
       });
-      // 突き出たマズル＋頬毛＋鼻＋牙
       const snout = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.14, 0.22), subMat);
       snout.position.set(0, -0.08, 0.24);
       const snoutBridge = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.07, 0.20), mainMat);
@@ -3892,7 +4197,6 @@ function buildMaskMesh(skinId) {
     }
 
     case 'rabbit': {
-      // 長いウサ耳（片方少し折れ）
       [-0.11, 0.11].forEach((ex, i) => {
         const earGroup = new THREE.Group();
         earGroup.position.set(ex, 0.22, -0.02);
@@ -3909,7 +4213,6 @@ function buildMaskMesh(skinId) {
         }
         group.add(earGroup);
       });
-      // ふっくら頬＋ピンク鼻＋前歯2本
       [-0.10, 0.10].forEach(cx => {
         const cheek = new THREE.Mesh(new THREE.SphereGeometry(0.085, 10, 10), mainMat);
         cheek.position.set(cx, -0.09, 0.19);
@@ -3927,7 +4230,6 @@ function buildMaskMesh(skinId) {
     }
 
     case 'fox': {
-      // 大きな三角耳（先端黒）＋白い頬ひげ
       [-0.15, 0.15].forEach(ex => {
         const ear = new THREE.Mesh(new THREE.ConeGeometry(0.095, 0.26, 4), mainMat);
         ear.position.set(ex, 0.32, -0.02);
@@ -3949,7 +4251,6 @@ function buildMaskMesh(skinId) {
     }
 
     case 'pig': {
-      // 垂れ耳＋大きな豚鼻（鼻の穴2つ）
       [-0.21, 0.21].forEach(ex => {
         const ear = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.14, 0.06), subMat);
         ear.position.set(ex, 0.18, 0.08);
@@ -3970,7 +4271,6 @@ function buildMaskMesh(skinId) {
     }
 
     case 'bear': {
-      // 丸いクマ耳＋ベージュのマズル＋黒鼻
       [-0.18, 0.18].forEach(ex => {
         const ear = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.055, 16), mainMat);
         ear.rotation.x = Math.PI / 2;
@@ -3990,7 +4290,6 @@ function buildMaskMesh(skinId) {
     }
 
     case 'crow': {
-      // ペストマスク風の鋭く長いクチバシ＋頭の羽根
       const beakTop = new THREE.Mesh(new THREE.ConeGeometry(0.10, 0.36, 4), subMat);
       beakTop.rotation.x = Math.PI / 2 + 0.12;
       beakTop.position.set(0, -0.06, 0.34);
@@ -4008,7 +4307,6 @@ function buildMaskMesh(skinId) {
     }
 
     case 'tiger': {
-      // 丸耳＋額の「王」風ストライプ＋頬の縞模様＋白マズル
       [-0.17, 0.17].forEach(ex => {
         const ear = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.05, 14), mainMat);
         ear.rotation.x = Math.PI / 2;
@@ -4037,7 +4335,6 @@ function buildMaskMesh(skinId) {
     }
 
     case 'deer': {
-      // 立派な枝角（アントラー）＋耳＋鼻
       [-0.12, 0.12].forEach(ax => {
         const dir = ax < 0 ? -1 : 1;
         const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.024, 0.38, 8), subMat);
@@ -4067,7 +4364,6 @@ function buildMaskMesh(skinId) {
     }
 
     case 'shark': {
-      // 頭上の背びれ＋両サイドのヒレ＋ギザギザの歯が並ぶ大きな口
       const finTop = new THREE.Mesh(new THREE.ConeGeometry(0.10, 0.28, 4), mainMat);
       finTop.position.set(0, 0.33, -0.04);
       finTop.rotation.x = -0.35;
@@ -4098,7 +4394,6 @@ function buildMaskMesh(skinId) {
     }
 
     case 'owl': {
-      // 羽角（ミミズク耳）＋大きな顔盤リング＋鋭いカギクチバシ
       [-0.15, 0.15].forEach(ex => {
         const horn = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.20, 4), mainMat);
         horn.position.set(ex, 0.28, 0.04);
@@ -4542,6 +4837,7 @@ function update3DSceneFromState() {
 
     const isTurn = (gameState.phase === 'play' && gameState.players[gameState.turnIndex]?.id === p.id);
     const statusMarks = (p.rosaryActive ? '✝' : '') + (p.skipNextTurn ? '⛓️' : '') + (p.noItemsNextTurn ? '💧' : '');
+    const dcMark = p.disconnected ? ' [切断中]' : '';
     let prefix = '';
     if (isAimingMode && !isMe && p.alive) prefix = '🎯 ';
     else if (pendingPlayerTargetItem && !isMe && p.alive) {
@@ -4550,10 +4846,11 @@ function update3DSceneFromState() {
       prefix = p.id === adrenalineFocusTargetId ? '💉[確認中] ' : '💉 ';
     }
 
-    vis.nameTag.textContent = `${prefix}${p.name} (⚡${p.hp})${statusMarks}`;
+    vis.nameTag.textContent = `${prefix}${p.name} (⚡${p.hp})${statusMarks}${dcMark}`;
     vis.nameTag.className = 'name-tag'
       + (isTurn ? ' turn-active' : '')
       + (!p.alive ? ' dead' : '')
+      + (p.disconnected ? ' disconnected' : '')
       + (isAimingMode && !isMe && p.alive ? ' aimable' : '')
       + ((pendingPlayerTargetItem || adrenalineStealSlot !== null) && !isMe && p.alive ? ' item-targetable' : '');
     vis.nameTag.style.display = isMe ? 'none' : 'block';
